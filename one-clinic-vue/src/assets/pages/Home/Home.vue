@@ -4,8 +4,6 @@ import './Home.css'
 import {
   Button,
   Divider,
-  Sidebar,
-  menuVisible,
   features,
   benefits
 } from './Home.js'
@@ -18,10 +16,7 @@ import {
       <div class="container header-content">
 
         <div class="logo">
-          <svg width="40" height="40" viewBox="0 0 100 100">
-            <ellipse cx="35" cy="50" rx="30" ry="40" fill="#0B3042"/>
-            <ellipse cx="65" cy="50" rx="30" ry="40" fill="#1CA4A7" opacity="0.9"/>
-          </svg>
+          <img src="https://asfldefzwlocpuszoedj.supabase.co/storage/v1/object/public/LOGO/ONE%20CLINIC%20-%20LOGO%20-%20PNG.png" alt="One Clinic Logo" class="logo-img-main" />
 
           <span class="logo-text">
             <span class="logo-one">ONE</span>
@@ -40,45 +35,8 @@ import {
           <Button label="Começar Grátis" class="btn-primary"/>
         </div>
 
-        <Button
-          icon="pi pi-bars"
-          text
-          class="menu-mobile"
-          @click="menuVisible = true"
-        />
       </div>
     </header>
-
-    <Sidebar
-      v-model:visible="menuVisible"
-      position="right"
-      class="sidebar-custom"
-    >
-      <template #header>
-        <div class="logo">
-          <svg width="32" height="32" viewBox="0 0 100 100">
-            <ellipse cx="35" cy="50" rx="30" ry="40" fill="#0B3042"/>
-            <ellipse cx="65" cy="50" rx="30" ry="40" fill="#1CA4A7" opacity="0.9"/>
-          </svg>
-
-          <span class="logo-text">
-            <span class="logo-one">ONE</span>
-            <span class="logo-clinic">clinic</span>
-          </span>
-        </div>
-      </template>
-
-      <div class="mobile-nav">
-        <a href="#recursos" class="mobile-nav-link" @click="menuVisible = false">Recursos</a>
-        <a href="#beneficios" class="mobile-nav-link" @click="menuVisible = false">Benefícios</a>
-        <a href="#contato" class="mobile-nav-link" @click="menuVisible = false">Contato</a>
-
-        <Divider />
-
-        <Button label="Entrar" outlined class="w-full btn-outline"/>
-        <Button label="Começar Grátis" class="w-full btn-primary"/>
-      </div>
-    </Sidebar>
 
     <section class="hero">
       <div class="hero-bg">
@@ -315,10 +273,7 @@ import {
 
           <div class="logo">
 
-            <svg width="32" height="32" viewBox="0 0 100 100">
-              <ellipse cx="35" cy="50" rx="30" ry="40" fill="#1CA4A7"/>
-              <ellipse cx="65" cy="50" rx="30" ry="40" fill="#C7E7E5" opacity="0.8"/>
-            </svg>
+            <img src="https://asfldefzwlocpuszoedj.supabase.co/storage/v1/object/public/LOGO/ONE%20CLINIC%20-%20LOGO%20-%20PNG.png" alt="One Clinic Logo" class="logo-img-footer" />
 
             <span class="logo-text">
               <span class="logo-one footer-logo-one">ONE</span>

@@ -1,10 +1,5 @@
-import { ref } from 'vue'
-
 import Button from 'primevue/button'
 import Divider from 'primevue/divider'
-import Sidebar from 'primevue/sidebar'
-
-const menuVisible = ref(false)
 
 const features = [
   {
@@ -71,8 +66,6 @@ const benefits = [
 export {
   Button,
   Divider,
-  Sidebar,
-  menuVisible,
   features,
   benefits
 }
