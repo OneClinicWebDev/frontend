@@ -1,14 +1,17 @@
 <script setup>
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { Button } from '../Home.js'
 
-defineEmits(['close'])
+const emit = defineEmits(['close'])
+const router = useRouter()
 
 const cpf = ref('')
 const senha = ref('')
 
 const handleLogin = () => {
-  console.log('Autenticando CPF:', cpf.value)
+  emit('close')
+  router.push('/app/dashboard')
 }
 </script>
 
@@ -98,14 +101,14 @@ const handleLogin = () => {
   right: 1.5rem;
   background: none;
   border: none;
-  color: #6B7280;
+  color: var(--cor-secundaria);
   font-size: 1.2rem;
   cursor: pointer;
   transition: color 0.3s ease;
 }
 
 .close-btn:hover {
-  color: var(--cor-secundaria);
+  color: var(--cor-primaria);
 }
 
 .modal-header {
@@ -120,7 +123,7 @@ const handleLogin = () => {
 }
 
 .modal-header p {
-  color: #6B7280;
+  color: var(--cor-secundaria);
   font-size: 0.95rem;
 }
 
