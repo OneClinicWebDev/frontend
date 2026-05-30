@@ -1,5 +1,6 @@
 <script setup>
 import { Button } from '../Home.js'
+defineEmits(['open-login'])
 </script>
 
 <template>
@@ -20,7 +21,7 @@ import { Button } from '../Home.js'
       </p>
       <div class="hero-actions">
         <Button label="Começar Teste Grátis" class="btn-primary btn-large" />
-        <Button label="Ver Demonstração" outlined class="btn-outline btn-large" />
+        <Button label="Entrar" outlined class="btn-outline btn-large" @click="$emit('open-login')" />
       </div>
       <div class="hero-stats">
         <div class="stat">

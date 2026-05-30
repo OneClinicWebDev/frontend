@@ -1,5 +1,6 @@
 <script setup>
 import { Button } from '../Home.js'
+defineEmits(['open-login'])
 </script>
 
 <template>
@@ -18,8 +19,8 @@ import { Button } from '../Home.js'
         <a href="#contato" class="nav-link">Contato</a>
       </nav>
       <div class="header-actions">
-        <Button label="Entrar" text class="btn-text"/>
-        <Button label="Começar Grátis" class="btn-primary"/>
+        <Button label="Entrar" text class="btn-text" @click="$emit('open-login')" />
+        <Button label="Começar Grátis" class="btn-primary" />
       </div>
     </div>
   </header>
