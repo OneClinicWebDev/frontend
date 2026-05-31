@@ -1,5 +1,7 @@
 <script setup>
 import { Button } from '../Home.js'
+import { LOGO_URL } from '../../../../config.js'
+
 defineEmits(['open-login'])
 </script>
 
@@ -7,7 +9,7 @@ defineEmits(['open-login'])
   <header class="header">
     <div class="container header-content">
       <div class="logo">
-        <img src="https://asfldefzwlocpuszoedj.supabase.co/storage/v1/object/public/LOGO/ONE%20CLINIC%20-%20LOGO%20-%20PNG.png" alt="One Clinic Logo" class="logo-img-main" />
+        <img :src="LOGO_URL" alt="One Clinic Logo" class="logo-img-main" />
         <span class="logo-text">
           <span class="logo-one">ONE</span>
           <span class="logo-clinic">clinic</span>

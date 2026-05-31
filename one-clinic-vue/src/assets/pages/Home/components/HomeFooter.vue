@@ -1,9 +1,13 @@
+<script setup>
+import { LOGO_URL } from '../../../../config.js'
+</script>
+
 <template>
   <footer class="footer" id="contato">
     <div class="container footer-content">
       <div class="footer-brand">
         <div class="logo">
-          <img src="https://asfldefzwlocpuszoedj.supabase.co/storage/v1/object/public/LOGO/ONE%20CLINIC%20-%20LOGO%20-%20PNG.png" alt="One Clinic Logo" class="logo-img-footer" />
+          <img :src="LOGO_URL" alt="One Clinic Logo" class="logo-img-footer" />
           <span class="logo-text">
             <span class="logo-one footer-logo-one">ONE</span>
             <span class="logo-clinic footer-logo-clinic">clinic</span>

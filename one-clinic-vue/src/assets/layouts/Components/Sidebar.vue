@@ -10,7 +10,7 @@
     <div class="sidebar-header" @click="isCollapsed = !isCollapsed" title="Clique para expandir/recolher">
       
       <div v-if="isCollapsed && !isMobile" class="logo-wrapper">
-        <img src="https://asfldefzwlocpuszoedj.supabase.co/storage/v1/object/public/LOGO/ONE%20CLINIC%20-%20LOGO%20-%20PNG.png" alt="Logo" class="logo-img" />
+        <img :src="LOGO_URL" alt="Logo" class="logo-img" />
       </div>
 
       <div v-else class="logo-text-wrapper">
@@ -70,6 +70,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
+import { LOGO_URL } from '@/config.js'
 
 const isCollapsed = ref(true)
 const isMobile = ref(false)
