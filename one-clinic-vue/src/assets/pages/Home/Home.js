@@ -23,8 +23,8 @@ const features = [
   },
   {
     icon: 'pi pi-id-card',
-    title: 'Equipe e Profissionais',
-    description: 'Cadastro de profissionais, agendas individuais e controle de comissões.'
+    title: 'Equipe e Colaboradores',
+    description: 'Cadastro de Colaboradores, agendas individuais e controle de comissões.'
   },
   {
     icon: 'pi pi-chart-bar',

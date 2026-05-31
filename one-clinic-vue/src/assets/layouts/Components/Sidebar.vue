@@ -53,9 +53,9 @@
         <span>Estoque</span>
       </router-link>
       
-      <router-link to="/app/profissionais" class="nav-item" @click="closeOnMobile">
+      <router-link to="/app/Colaboradores" class="nav-item" @click="closeOnMobile">
         <div class="icon-wrapper"><i class="pi pi-id-card"></i></div>
-        <span>Profissionais</span>
+        <span>Colaboradores</span>
       </router-link>
     </nav>
 

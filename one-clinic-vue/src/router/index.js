@@ -8,7 +8,7 @@ import Atendimentos from '../assets/pages/Atendimentos/Atendimentos.vue'
 import Clientes from '../assets/pages/Clientes/Clientes.vue'
 import Estoque from '../assets/pages/Estoque/Estoque.vue'
 import Financeiro from '../assets/pages/Financeiro/Financeiro.vue'
-import Profissionais from '../assets/pages/Profissionais/Profissionais.vue'
+import Colaboradores from '../assets/pages/Colaboradores/Colaboradores.vue'
 
 const routes = [
   { 
@@ -51,9 +51,9 @@ const routes = [
         component: Financeiro 
       },
       { 
-        path: 'profissionais', 
-        name: 'Profissionais', 
-        component: Profissionais 
+        path: 'Colaboradores', 
+        name: 'Colaboradores', 
+        component: Colaboradores 
       }
     ]
   }
