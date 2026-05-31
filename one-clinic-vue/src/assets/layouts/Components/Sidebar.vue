@@ -97,13 +97,15 @@ onUnmounted(() => {
 
 <style scoped>
 .sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
   width: 250px;
   background-color: var(--cor-escura, #1F2937);
   color: var(--branco, #FFFFFF);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  min-height: 100vh;
   transition: width 0.55s cubic-bezier(0.4, 0, 0.2, 1), transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
   z-index: 1000;
@@ -187,6 +189,13 @@ onUnmounted(() => {
   flex-direction: column;
   gap: 0.35rem;
   flex-grow: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none; 
+}
+
+.sidebar-nav::-webkit-scrollbar {
+  display: none; 
 }
 
 .nav-item {
@@ -239,6 +248,8 @@ onUnmounted(() => {
 .sidebar-footer {
   padding: 1rem 0;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: var(--cor-escura, #1F2937);
+  z-index: 10;
 }
 
 .sidebar-overlay {
