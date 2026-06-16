@@ -9,7 +9,30 @@ const router = useRouter()
 const cpf = ref('')
 const senha = ref('')
 
+const formatCpf = (event) => {
+  let value = event.target.value.replace(/\D/g, '')
+
+  value = value.replace(/^(\d{3})(\d)/, '$1.$2')
+  value = value.replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
+  value = value.replace(/\.(\d{3})(\d)/, '.$1-$2')
+  value = value.slice(0, 14)
+
+  cpf.value = value
+}
+
 const handleLogin = () => {
+  const cpfLimpo = cpf.value.replace(/\D/g, '')
+
+  if (cpfLimpo.length !== 11) {
+    alert('CPF deve conter 11 números.')
+    return
+  }
+
+  if (!senha.value.trim()) {
+    alert('Informe sua senha.')
+    return
+  }
+
   emit('close')
   router.push('/app/dashboard')
 }
@@ -33,8 +56,11 @@ const handleLogin = () => {
           <input
             type="text"
             id="cpf"
-            v-model="cpf"
+            :value="cpf"
+            @input="formatCpf"
             placeholder="000.000.000-00"
+            maxlength="14"
+            inputmode="numeric"
             required
           />
         </div>
@@ -147,7 +173,7 @@ const handleLogin = () => {
 
 .input-group input {
   padding: 0.875rem 1rem;
-  border: 1px solid #D1D5DB;
+  border: 1px solid #d1d5db;
   border-radius: 10px;
   font-size: 1rem;
   outline: none;

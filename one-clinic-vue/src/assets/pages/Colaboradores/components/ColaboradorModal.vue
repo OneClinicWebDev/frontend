@@ -10,7 +10,7 @@
             </button>
           </header>
 
-          <form @submit.prevent="salvar" class="modal-form">
+          <form @submit.prevent="salvar" class="modal-form">    
             <div class="form-row">
               <div class="form-group flex-2">
                 <label>Nome Completo</label>
