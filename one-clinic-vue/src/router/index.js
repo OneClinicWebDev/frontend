@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 import Home from '../assets/pages/Home/Home.vue'
 import SystemLayout from '../assets/layouts/SystemLayout.vue'
+
 import Dashboard from '../assets/pages/Dashboard/Dashboard.vue'
 import Agenda from '../assets/pages/Agenda/Agenda.vue'
 import Atendimentos from '../assets/pages/Atendimentos/Atendimentos.vue'
@@ -11,49 +12,78 @@ import Financeiro from '../assets/pages/Financeiro/Financeiro.vue'
 import Colaboradores from '../assets/pages/Colaboradores/Colaboradores.vue'
 
 const routes = [
-  { 
-    path: '/', 
-    name: 'Home', 
-    component: Home 
+  {
+    path: '/',
+    name: 'Home',
+    component: Home
   },
+
   {
     path: '/app',
     component: SystemLayout,
+
     children: [
-      { 
-        path: 'dashboard', 
-        name: 'Dashboard', 
-        component: Dashboard 
+      {
+        path: 'dashboard',
+        name: 'Dashboard',
+        component: Dashboard,
+        meta: {
+          title: 'Dashboard'
+        }
       },
-      { 
-        path: 'agenda', 
-        name: 'Agenda', 
-        component: Agenda 
+
+      {
+        path: 'agenda',
+        name: 'Agenda',
+        component: Agenda,
+        meta: {
+          title: 'Agenda'
+        }
       },
-      { 
-        path: 'atendimentos', 
-        name: 'Atendimentos', 
-        component: Atendimentos 
+
+      {
+        path: 'atendimentos',
+        name: 'Atendimentos',
+        component: Atendimentos,
+        meta: {
+          title: 'Atendimentos'
+        }
       },
-      { 
-        path: 'clientes', 
-        name: 'Clientes', 
-        component: Clientes 
+
+      {
+        path: 'clientes',
+        name: 'Clientes',
+        component: Clientes,
+        meta: {
+          title: 'Clientes'
+        }
       },
-      { 
-        path: 'estoque', 
-        name: 'Estoque', 
-        component: Estoque 
+
+      {
+        path: 'estoque',
+        name: 'Estoque',
+        component: Estoque,
+        meta: {
+          title: 'Estoque'
+        }
       },
-      { 
-        path: 'financeiro', 
-        name: 'Financeiro', 
-        component: Financeiro 
+
+      {
+        path: 'financeiro',
+        name: 'Financeiro',
+        component: Financeiro,
+        meta: {
+          title: 'Financeiro'
+        }
       },
-      { 
-        path: 'Colaboradores', 
-        name: 'Colaboradores', 
-        component: Colaboradores 
+
+      {
+        path: 'colaboradores',
+        name: 'Colaboradores',
+        component: Colaboradores,
+        meta: {
+          title: 'Colaboradores'
+        }
       }
     ]
   }
