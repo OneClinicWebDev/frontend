@@ -35,7 +35,10 @@
 
             <div class="dropdown-divider"></div>
 
-            <button class="dropdown-item logout">
+            <button
+              class="dropdown-item logout"
+              @click="logout"
+            >
               <i class="pi pi-sign-out"></i>
               <span>Sair</span>
             </button>
@@ -48,9 +51,10 @@
 
 <script setup>
 import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 const route = useRoute()
+const router = useRouter()
 
 const menuOpen = ref(false)
 const menuRef = ref(null)
@@ -72,6 +76,13 @@ const pageTitle = computed(() => {
 
 const toggleMenu = () => {
   menuOpen.value = !menuOpen.value
+}
+
+const logout = () => {
+  localStorage.clear()
+  sessionStorage.clear()
+  menuOpen.value = false
+  router.replace('/')
 }
 
 const handleClickOutside = (event) => {
@@ -96,16 +107,12 @@ onBeforeUnmount(() => {
 .system-header {
   height: 64px;
   min-height: 64px;
-
   display: flex;
   align-items: center;
   justify-content: space-between;
-
   padding: 0 1.5rem;
-
   background: var(--branco);
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-
   position: sticky;
   top: 0;
   z-index: 100;
@@ -118,9 +125,7 @@ onBeforeUnmount(() => {
 
 .header-left h1 {
   margin: 0;
-
   color: var(--cor-escura);
-
   font-size: 1.45rem;
   font-weight: 700;
   letter-spacing: -0.02em;
@@ -139,15 +144,11 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   gap: 0.65rem;
-
   background: transparent;
   border: none;
-
   cursor: pointer;
-
   padding: 0.35rem 0.5rem;
   border-radius: 10px;
-
   transition: all 0.25s ease;
 }
 
@@ -158,24 +159,18 @@ onBeforeUnmount(() => {
 .avatar {
   width: 40px;
   height: 40px;
-
   border-radius: 50%;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   font-size: 0.95rem;
   font-weight: 700;
-
   color: var(--branco);
-
   background: linear-gradient(
     135deg,
     var(--cor-primaria),
     var(--cor-escura)
   );
-
   box-shadow: 0 4px 10px rgba(28, 164, 167, 0.2);
 }
 
@@ -198,46 +193,31 @@ onBeforeUnmount(() => {
 
 .dropdown-menu {
   position: absolute;
-
   top: calc(100% + 10px);
   right: 0;
-
   width: 240px;
-
   background: var(--branco);
-
   border-radius: 14px;
-
   border: 1px solid rgba(0, 0, 0, 0.06);
-
   box-shadow:
     0 10px 30px rgba(0, 0, 0, 0.08),
     0 2px 8px rgba(0, 0, 0, 0.04);
-
   overflow: hidden;
-
   z-index: 999;
 }
 
 .dropdown-item {
   width: 100%;
-
   display: flex;
   align-items: center;
   gap: 0.9rem;
-
   background: transparent;
   border: none;
-
   padding: 1rem 1.1rem;
-
   cursor: pointer;
-
   color: var(--cor-escura);
-
   font-size: 0.95rem;
   font-weight: 500;
-
   transition: all 0.2s ease;
 }
 
