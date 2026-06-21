@@ -2,7 +2,7 @@
   <Transition name="fade">
     <div class="modal-overlay" v-if="isOpen" @click.self="fechar">
       <Transition name="scale">
-        <div class="modal-container">
+        <div class="modal-container" v-if="isOpen">
           <header class="modal-header">
             <h3>{{ tituloModal }}</h3>
             <button class="btn-close" @click="fechar">
@@ -10,9 +10,9 @@
             </button>
           </header>
 
-          <form @submit.prevent="salvar" class="modal-form">    
+          <form @submit.prevent="salvar" class="modal-form">
             <div class="form-row">
-              <div class="form-group flex-2">
+              <div class="form-group flex-1">
                 <label>Nome Completo</label>
                 <input 
                   type="text" 
@@ -20,10 +20,10 @@
                   required 
                   minlength="3"
                   :disabled="isDetalhes"
-                  placeholder="Ex: Dra. Maria Santos" 
+                  placeholder="Ex: Carlos Mendes" 
                 />
               </div>
-
+              
               <div class="form-group flex-1">
                 <label>CPF</label>
                 <input 
@@ -40,13 +40,13 @@
 
             <div class="form-row">
               <div class="form-group flex-1">
-                <label>E-mail</label>
+                <label>E-mail Corporativo</label>
                 <input 
                   type="email" 
                   v-model="form.email" 
                   required 
                   :disabled="isDetalhes"
-                  placeholder="exemplo@oneclinic.com" 
+                  placeholder="Ex: carlos@empresa.com" 
                 />
               </div>
 
@@ -66,35 +66,36 @@
 
             <div class="form-row">
               <div class="form-group flex-1">
-                <label>Função</label>
-                <select v-model="form.funcao" :disabled="isDetalhes">
-                  <option value="Profissional">Profissional</option>
-                  <option value="Admin">Admin</option>
-                  <option value="Secretário">Secretário</option>
-                </select>
-              </div>
-
-              <div class="form-group flex-1" v-if="form.funcao === 'Profissional'">
-                <label>Especialidade</label>
+                <label>Cargo</label>
                 <input 
                   type="text" 
-                  v-model="form.especialidade" 
-                  required
+                  v-model="form.cargo" 
+                  required 
                   :disabled="isDetalhes"
-                  placeholder="Ex: Dermatologista" 
+                  placeholder="Ex: Desenvolvedor Senior" 
+                />
+              </div>
+              
+              <div class="form-group flex-1">
+                <label>Departamento</label>
+                <input 
+                  type="text" 
+                  v-model="form.departamento" 
+                  required 
+                  :disabled="isDetalhes"
+                  placeholder="Ex: TI" 
                 />
               </div>
             </div>
 
             <div class="form-row">
-              <div class="form-group flex-2">
-                <label>Horário de Trabalho</label>
+              <div class="form-group flex-1">
+                <label>Data de Admissão</label>
                 <input 
-                  type="text" 
-                  v-model="form.horario" 
-                  required
+                  type="date" 
+                  v-model="form.admissao" 
+                  required 
                   :disabled="isDetalhes"
-                  placeholder="Ex: Segunda a Sexta, 8h-18h" 
                 />
               </div>
 
@@ -103,16 +104,18 @@
                 <select v-model="form.status" :disabled="isDetalhes">
                   <option value="ativo">Ativo</option>
                   <option value="inativo">Inativo</option>
+                  <option value="ferias">Em Férias</option>
                 </select>
               </div>
             </div>
 
             <div class="form-group" v-if="mode !== 'criar'">
-              <label>Criado em</label>
+              <label>Registro no Sistema</label>
               <input 
                 type="text" 
                 v-model="form.criadoEm" 
                 disabled 
+                class="bg-gray"
               />
             </div>
 
@@ -147,9 +150,9 @@ const form = ref({
   cpf: '',
   email: '',
   telefone: '',
-  funcao: 'Profissional',
-  especialidade: '',
-  horario: '',
+  cargo: '',
+  departamento: '',
+  admissao: '',
   status: 'ativo',
   criadoEm: ''
 })
@@ -196,27 +199,35 @@ const processarTelefone = (event) => {
   form.value.telefone = exibicaoTelefone.value
 }
 
+const formatarDataInput = (dataStr) => {
+  if (!dataStr) return ''
+  if (dataStr.includes('/')) {
+    const [dia, mes, ano] = dataStr.split('/')
+    return `${ano}-${mes}-${dia}`
+  }
+  return dataStr
+}
+
+const formatarDataVisualizacao = (dataStr) => {
+  if (!dataStr) return ''
+  if (dataStr.includes('-')) {
+    const [ano, mes, dia] = dataStr.split('-')
+    return `${dia}/${mes}/${ano}`
+  }
+  return dataStr
+}
+
 watch(() => props.isOpen, (aberto) => {
   if (aberto) {
     if (props.colaboradorEdicao && props.mode !== 'criar') {
-      form.value = { ...props.colaboradorEdicao }
+      form.value = { ...props.colaboradorEdicao, admissao: formatarDataInput(props.colaboradorEdicao.admissao) }
       exibicaoCpf.value = props.colaboradorEdicao.cpf
       exibicaoTelefone.value = props.colaboradorEdicao.telefone
     } else {
-      form.value = { 
-        nome: '', cpf: '', email: '', telefone: '', 
-        funcao: 'Profissional', especialidade: '', horario: '', 
-        status: 'ativo', criadoEm: '' 
-      }
+      form.value = { nome: '', cpf: '', email: '', telefone: '', cargo: '', departamento: '', admissao: '', status: 'ativo', criadoEm: '' }
       exibicaoCpf.value = ''
       exibicaoTelefone.value = ''
     }
-  }
-})
-
-watch(() => form.value.funcao, (novaFuncao) => {
-  if (novaFuncao !== 'Profissional') {
-    form.value.especialidade = ''
   }
 })
 
@@ -226,7 +237,11 @@ const fechar = () => {
 
 const salvar = () => {
   if (isDetalhes.value) return
-  emit('save', { ...form.value })
+  const dadosSalvos = {
+    ...form.value,
+    admissao: formatarDataVisualizacao(form.value.admissao)
+  }
+  emit('save', dadosSalvos)
   fechar()
 }
 </script>
@@ -238,25 +253,21 @@ const salvar = () => {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: rgba(31, 41, 55, 0.4);
+  background-color: rgba(31, 41, 55, 0.5);
   backdrop-filter: blur(4px);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 2000;
-  padding: 1rem;
 }
 
 .modal-container {
-  background-color: var(--branco, #FFFFFF);
-  border-radius: 12px;
+  background-color: #FFFFFF;
+  border-radius: 16px;
   width: 100%;
-  max-width: 600px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  max-width: 600px; /* Aumentado para acomodar duas colunas */
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
   overflow: hidden;
-  max-height: 90vh;
-  display: flex;
-  flex-direction: column;
 }
 
 .modal-header {
@@ -264,8 +275,8 @@ const salvar = () => {
   justify-content: space-between;
   align-items: center;
   padding: 1.25rem 1.5rem;
-  background-color: var(--cor-escura, #1F2937);
-  color: var(--branco, #FFFFFF);
+  background-color: #1F2937;
+  color: #FFFFFF;
 }
 
 .modal-header h3 {
@@ -277,11 +288,11 @@ const salvar = () => {
 .btn-close {
   background: none;
   border: none;
-  color: var(--branco, #FFFFFF);
+  color: #FFFFFF;
   opacity: 0.7;
   cursor: pointer;
-  font-size: 1.1rem;
   transition: opacity 0.2s ease;
+  font-size: 1.2rem;
 }
 
 .btn-close:hover {
@@ -292,107 +303,106 @@ const salvar = () => {
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
-  gap: 1.1rem;
-  overflow-y: auto;
+  gap: 1.25rem;
 }
 
 .form-row {
   display: flex;
   gap: 1rem;
-  flex-wrap: wrap;
+}
+
+@media (max-width: 600px) {
+  .form-row {
+    flex-direction: column;
+  }
 }
 
 .flex-1 {
   flex: 1;
-  min-width: 200px;
-}
-
-.flex-2 {
-  flex: 2;
-  min-width: 250px;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.5rem;
 }
 
 .form-group label {
   font-size: 0.85rem;
   font-weight: 600;
-  color: var(--cor-secundaria, #6B7280);
+  color: #6B7280;
 }
 
 .form-group input,
 .form-group select {
-  padding: 0.65rem 0.75rem;
-  border: 1px solid var(--cor-clara, #E5E7EB);
-  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  border: 1px solid #E5E7EB;
+  border-radius: 10px;
   outline: none;
   font-size: 0.95rem;
-  color: var(--cor-escura, #1F2937);
-  background-color: var(--branco, #FFFFFF);
-  transition: border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  color: #1F2937;
+  transition: all 0.2s ease;
+  background-color: #FFFFFF;
 }
 
 .form-group input:focus,
 .form-group select:focus {
-  border-color: var(--cor-primaria, #1CA4A7);
+  border-color: #1CA4A7;
   box-shadow: 0 0 0 3px rgba(28, 164, 167, 0.1);
 }
 
 .form-group input:disabled,
-.form-group select:disabled {
-  background-color: var(--cor-fundo, #F9FAFB);
-  color: var(--cor-secundaria, #6B7280);
+.form-group select:disabled,
+.bg-gray {
+  background-color: #F9FAFB;
+  color: #9CA3AF;
   cursor: not-allowed;
-  border-color: rgba(0, 0, 0, 0.05);
+  border-color: #E5E7EB;
 }
 
 .modal-footer {
   display: flex;
   justify-content: flex-end;
-  gap: 0.75rem;
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--cor-clara, #E5E7EB);
+  gap: 1rem;
+  margin-top: 0.5rem;
 }
 
 .btn-cancelar {
-  background: none;
-  border: 1px solid var(--cor-clara, #E5E7EB);
-  color: var(--cor-secundaria, #6B7280);
-  padding: 0.6rem 1.2rem;
-  border-radius: 6px;
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  color: #6B7280;
+  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
   cursor: pointer;
-  font-weight: 500;
-  transition: background-color 0.2s ease;
+  font-weight: 600;
+  transition: all 0.2s ease;
 }
 
 .btn-cancelar:hover {
-  background-color: var(--cor-fundo, #F9FAFB);
+  background-color: #F9FAFB;
+  color: #1F2937;
 }
 
 .btn-salvar {
-  background-color: var(--cor-escura, #1F2937);
-  color: var(--branco, #FFFFFF);
+  background-color: #1CA4A7;
+  color: #FFFFFF;
   border: none;
-  padding: 0.6rem 1.5rem;
-  border-radius: 6px;
+  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
   cursor: pointer;
-  font-weight: 500;
-  transition: background-color 0.2s ease, transform 0.1s ease;
+  font-weight: 600;
+  transition: all 0.2s ease;
 }
 
 .btn-salvar:hover {
-  background-color: var(--cor-primaria, #1CA4A7);
+  background-color: #158a8d;
   transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(28, 164, 167, 0.2);
 }
 
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.25s ease;
+  transition: opacity 0.3s ease;
 }
 
 .fade-enter-from,

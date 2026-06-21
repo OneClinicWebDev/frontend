@@ -96,7 +96,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import StatCard from './components/StatCard.vue'
+import StatCard from "../../layouts/Components/StatCard.vue";
 import ClientCard from './components/ClientCard.vue'
 import ClientModal from './components/ClientModal.vue'
 

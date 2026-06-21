@@ -1,7 +1,6 @@
 <template>
   <div class="page-container">
     <main class="page-content">
-      
       <div class="action-panel">
         <div class="top-row">
           <div class="search-input-wrapper">
@@ -11,7 +10,7 @@
               type="text"
               class="search-input"
               placeholder="Buscar por cliente ou serviço..."
-            >
+            />
           </div>
 
           <div class="action-buttons">
@@ -35,9 +34,27 @@
             </div>
 
             <div class="view-toggle" v-show="displayMode === 'calendar'">
-              <button class="btn-view" :class="{ active: currentView === 'timeGridDay' }" @click="changeView('timeGridDay')">Dia</button>
-              <button class="btn-view" :class="{ active: currentView === 'timeGridWeek' }" @click="changeView('timeGridWeek')">Semana</button>
-              <button class="btn-view" :class="{ active: currentView === 'dayGridMonth' }" @click="changeView('dayGridMonth')">Mês</button>
+              <button
+                class="btn-view"
+                :class="{ active: currentView === 'timeGridDay' }"
+                @click="changeView('timeGridDay')"
+              >
+                Dia
+              </button>
+              <button
+                class="btn-view"
+                :class="{ active: currentView === 'timeGridWeek' }"
+                @click="changeView('timeGridWeek')"
+              >
+                Semana
+              </button>
+              <button
+                class="btn-view"
+                :class="{ active: currentView === 'dayGridMonth' }"
+                @click="changeView('dayGridMonth')"
+              >
+                Mês
+              </button>
             </div>
 
             <button class="btn-novo" @click="openCreateModal">
@@ -54,7 +71,7 @@
               <option v-for="p in profissionaisBD" :key="p" :value="p">{{ p }}</option>
             </select>
           </div>
-          
+
           <div class="divider"></div>
 
           <div class="filter-group">
@@ -71,11 +88,13 @@
           <div class="divider"></div>
 
           <div class="filter-group">
-            <span class="filter-label"><i class="pi pi-calendar-minus"></i> Período:</span>
+            <span class="filter-label"
+              ><i class="pi pi-calendar-minus"></i> Período:</span
+            >
             <div class="date-range-inputs">
-              <input v-model="filters.dataInicio" type="date" class="filter-select">
+              <input v-model="filters.dataInicio" type="date" class="filter-select" />
               <span class="date-separator">até</span>
-              <input v-model="filters.dataFim" type="date" class="filter-select">
+              <input v-model="filters.dataFim" type="date" class="filter-select" />
             </div>
           </div>
 
@@ -105,7 +124,6 @@
       </div>
 
       <div class="agenda-content" :class="{ 'layout-list': displayMode === 'list' }">
-        
         <div class="calendar-wrapper action-panel" v-show="displayMode === 'calendar'">
           <FullCalendar ref="calendarRef" :options="calendarOptions" />
         </div>
@@ -122,8 +140,12 @@
               @click="editAppointment(item)"
             >
               <div class="appointment-header">
-                <span class="appointment-time">{{ formatarDataBR(item.dataInicio) }} • {{ item.horaInicio }}</span>
-                <span :class="['status-badge', `badge-${item.status}`]">{{ formatStatus(item.status) }}</span>
+                <span class="appointment-time"
+                  >{{ formatarDataBR(item.dataInicio) }} • {{ item.horaInicio }}</span
+                >
+                <span :class="['status-badge', `badge-${item.status}`]">{{
+                  formatStatus(item.status)
+                }}</span>
               </div>
               <div class="appointment-client">{{ item.cliente }}</div>
               <div class="appointment-details">
@@ -138,7 +160,12 @@
           </div>
         </aside>
 
-        <TransitionGroup name="list" tag="div" class="cards-grid" v-show="displayMode === 'list'">
+        <TransitionGroup
+          name="list"
+          tag="div"
+          class="cards-grid"
+          v-show="displayMode === 'list'"
+        >
           <div
             v-for="item in filteredAppointments"
             :key="item.id"
@@ -147,11 +174,14 @@
           >
             <div class="appointment-header">
               <span class="appointment-time">
-                <i class="pi pi-calendar"></i> {{ formatarDataBR(item.dataInicio) }} | {{ item.horaInicio }} às {{ item.horaFim }}
+                <i class="pi pi-calendar"></i> {{ formatarDataBR(item.dataInicio) }} |
+                {{ item.horaInicio }} às {{ item.horaFim }}
               </span>
-              <span :class="['status-badge', `badge-${item.status}`]">{{ formatStatus(item.status) }}</span>
+              <span :class="['status-badge', `badge-${item.status}`]">{{
+                formatStatus(item.status)
+              }}</span>
             </div>
-            
+
             <div class="appointment-client-large">
               <div class="client-avatar">{{ gerarIniciais(item.cliente) }}</div>
               <h4>{{ item.cliente }}</h4>
@@ -176,7 +206,10 @@
           </div>
         </TransitionGroup>
 
-        <div v-if="displayMode === 'list' && filteredAppointments.length === 0" class="empty-state list-empty">
+        <div
+          v-if="displayMode === 'list' && filteredAppointments.length === 0"
+          class="empty-state list-empty"
+        >
           <i class="pi pi-search"></i>
           <p>Nenhum agendamento encontrado para os filtros atuais.</p>
         </div>
@@ -188,7 +221,7 @@
         <Transition name="scale">
           <div class="modal-container" v-if="modalOpen">
             <header class="modal-header">
-              <h3>{{ editing ? 'Editar Agendamento' : 'Novo Agendamento' }}</h3>
+              <h3>{{ editing ? "Editar Agendamento" : "Novo Agendamento" }}</h3>
               <button class="btn-close" @click="closeModal">
                 <i class="pi pi-times"></i>
               </button>
@@ -199,7 +232,9 @@
                 <label>Cliente</label>
                 <select v-model="form.cliente" class="form-control">
                   <option value="" disabled>Selecione o cliente...</option>
-                  <option v-for="c in clientesBD" :key="c.cpf" :value="c.nome">{{ c.nome }} ({{ c.cpf }})</option>
+                  <option v-for="c in clientesBD" :key="c.cpf" :value="c.nome">
+                    {{ c.nome }} ({{ c.cpf }})
+                  </option>
                 </select>
               </div>
 
@@ -215,7 +250,9 @@
                   <label>Profissional</label>
                   <select v-model="form.profissional" class="form-control">
                     <option value="" disabled>Selecione...</option>
-                    <option v-for="p in profissionaisBD" :key="p" :value="p">{{ p }}</option>
+                    <option v-for="p in profissionaisBD" :key="p" :value="p">
+                      {{ p }}
+                    </option>
                   </select>
                 </div>
               </div>
@@ -224,21 +261,21 @@
                 <div class="form-row">
                   <div class="form-group">
                     <label>Data Inicial</label>
-                    <input v-model="form.dataInicio" type="date" class="form-control">
+                    <input v-model="form.dataInicio" type="date" class="form-control" />
                   </div>
                   <div class="form-group">
                     <label>Hora Inicial</label>
-                    <input v-model="form.horaInicio" type="time" class="form-control">
+                    <input v-model="form.horaInicio" type="time" class="form-control" />
                   </div>
                 </div>
                 <div class="form-row mt-3">
                   <div class="form-group">
                     <label>Data Final</label>
-                    <input v-model="form.dataFim" type="date" class="form-control">
+                    <input v-model="form.dataFim" type="date" class="form-control" />
                   </div>
                   <div class="form-group">
                     <label>Hora Final</label>
-                    <input v-model="form.horaFim" type="time" class="form-control">
+                    <input v-model="form.horaFim" type="time" class="form-control" />
                   </div>
                 </div>
               </div>
@@ -255,14 +292,21 @@
             </div>
 
             <footer class="modal-footer">
-              <button v-if="editing" type="button" class="btn-excluir" @click="deleteAppointment">
+              <button
+                v-if="editing"
+                type="button"
+                class="btn-excluir"
+                @click="deleteAppointment"
+              >
                 Excluir
               </button>
               <div class="footer-actions">
-                <button type="button" class="btn-cancelar" @click="closeModal">Cancelar</button>
-                <button 
-                  type="button" 
-                  class="btn-salvar" 
+                <button type="button" class="btn-cancelar" @click="closeModal">
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  class="btn-salvar"
                   @click="saveAppointment"
                   :disabled="!isFormValid"
                 >
@@ -278,129 +322,192 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import FullCalendar from '@fullcalendar/vue3'
-import dayGridPlugin from '@fullcalendar/daygrid'
-import timeGridPlugin from '@fullcalendar/timegrid'
-import interactionPlugin from '@fullcalendar/interaction'
+import { ref, computed } from "vue";
+import FullCalendar from "@fullcalendar/vue3";
+import dayGridPlugin from "@fullcalendar/daygrid";
+import timeGridPlugin from "@fullcalendar/timegrid";
+import interactionPlugin from "@fullcalendar/interaction";
 
-const calendarRef = ref(null)
-const currentView = ref('timeGridWeek')
-const displayMode = ref('calendar')
-const modalOpen = ref(false)
-const editing = ref(false)
-const selectedId = ref(null)
+const calendarRef = ref(null);
+const currentView = ref("timeGridWeek");
+const displayMode = ref("calendar");
+const modalOpen = ref(false);
+const editing = ref(false);
+const selectedId = ref(null);
 
 const filters = ref({
-  search: '',
-  profissional: '',
-  status: '',
-  dataInicio: '',
-  dataFim: ''
-})
+  search: "",
+  profissional: "",
+  status: "",
+  dataInicio: "",
+  dataFim: "",
+});
 
 const hasActiveFilters = computed(() => {
-  return filters.value.search !== '' || 
-         filters.value.profissional !== '' || 
-         filters.value.status !== '' || 
-         filters.value.dataInicio !== '' || 
-         filters.value.dataFim !== ''
-})
+  return (
+    filters.value.search !== "" ||
+    filters.value.profissional !== "" ||
+    filters.value.status !== "" ||
+    filters.value.dataInicio !== "" ||
+    filters.value.dataFim !== ""
+  );
+});
 
 const clearFilters = () => {
-  filters.value = { search: '', profissional: '', status: '', dataInicio: '', dataFim: '' }
-}
+  filters.value = {
+    search: "",
+    profissional: "",
+    status: "",
+    dataInicio: "",
+    dataFim: "",
+  };
+};
 
 const clientesBD = ref([
-  { nome: 'Ana Silva', cpf: '111.222.333-44' },
-  { nome: 'Carla Santos', cpf: '222.333.444-55' },
-  { nome: 'Marcos Paulo', cpf: '333.444.555-66' }
-])
+  { nome: "Ana Silva", cpf: "111.222.333-44" },
+  { nome: "Carla Santos", cpf: "222.333.444-55" },
+  { nome: "Marcos Paulo", cpf: "333.444.555-66" },
+]);
 
-const servicosBD = ref(['Limpeza de Pele', 'Botox', 'Preenchimento Facial', 'Drenagem Linfática'])
-const profissionaisBD = ref(['Dra. Maria', 'Dr. Paulo', 'Dra. Fernanda'])
+const servicosBD = ref([
+  "Limpeza de Pele",
+  "Botox",
+  "Preenchimento Facial",
+  "Drenagem Linfática",
+]);
+const profissionaisBD = ref(["Dra. Maria", "Dr. Paulo", "Dra. Fernanda"]);
 
 const form = ref({
-  cliente: '', servico: '', profissional: '', 
-  dataInicio: '', horaInicio: '', dataFim: '', horaFim: '', status: 'confirmado'
-})
+  cliente: "",
+  servico: "",
+  profissional: "",
+  dataInicio: "",
+  horaInicio: "",
+  dataFim: "",
+  horaFim: "",
+  status: "confirmado",
+});
 
 const isFormValid = computed(() => {
-  return form.value.cliente && form.value.servico && 
-         form.value.profissional && form.value.dataInicio && 
-         form.value.horaInicio && form.value.dataFim && form.value.horaFim
-})
+  return (
+    form.value.cliente &&
+    form.value.servico &&
+    form.value.profissional &&
+    form.value.dataInicio &&
+    form.value.horaInicio &&
+    form.value.dataFim &&
+    form.value.horaFim
+  );
+});
 
 const appointments = ref([
   {
-    id: 1, cliente: 'Ana Silva', servico: 'Limpeza de Pele', profissional: 'Dra. Maria',
-    dataInicio: '2026-06-18', horaInicio: '09:00', dataFim: '2026-06-18', horaFim: '10:00', status: 'confirmado'
+    id: 1,
+    cliente: "Ana Silva",
+    servico: "Limpeza de Pele",
+    profissional: "Dra. Maria",
+    dataInicio: "2026-06-18",
+    horaInicio: "09:00",
+    dataFim: "2026-06-18",
+    horaFim: "10:00",
+    status: "confirmado",
   },
   {
-    id: 2, cliente: 'Carla Santos', servico: 'Botox', profissional: 'Dr. Paulo',
-    dataInicio: '2026-06-18', horaInicio: '11:00', dataFim: '2026-06-18', horaFim: '12:00', status: 'pendente'
+    id: 2,
+    cliente: "Carla Santos",
+    servico: "Botox",
+    profissional: "Dr. Paulo",
+    dataInicio: "2026-06-18",
+    horaInicio: "11:00",
+    dataFim: "2026-06-18",
+    horaFim: "12:00",
+    status: "pendente",
   },
   {
-    id: 3, cliente: 'Marcos Paulo', servico: 'Preenchimento Facial', profissional: 'Dra. Fernanda',
-    dataInicio: '2026-06-19', horaInicio: '14:00', dataFim: '2026-06-19', horaFim: '15:30', status: 'em_andamento'
-  }
-])
+    id: 3,
+    cliente: "Marcos Paulo",
+    servico: "Preenchimento Facial",
+    profissional: "Dra. Fernanda",
+    dataInicio: "2026-06-19",
+    horaInicio: "14:00",
+    dataFim: "2026-06-19",
+    horaFim: "15:30",
+    status: "em_andamento",
+  },
+]);
 
 const formatarDataBR = (data) => {
-  if (!data) return ''
-  const partes = data.split('-')
-  if (partes.length !== 3) return data
-  return `${partes[2]}/${partes[1]}/${partes[0]}`
-}
+  if (!data) return "";
+  const partes = data.split("-");
+  if (partes.length !== 3) return data;
+  return `${partes[2]}/${partes[1]}/${partes[0]}`;
+};
 
 const formatStatus = (status) => {
   const map = {
-    'confirmado': 'Confirmado',
-    'pendente': 'Pendente',
-    'em_andamento': 'Em Andamento',
-    'cancelado': 'Cancelado'
-  }
-  return map[status] || status
-}
+    confirmado: "Confirmado",
+    pendente: "Pendente",
+    em_andamento: "Em Andamento",
+    cancelado: "Cancelado",
+  };
+  return map[status] || status;
+};
 
 const gerarIniciais = (nome) => {
-  if(!nome) return ''
-  return nome.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
-}
+  if (!nome) return "";
+  return nome
+    .split(" ")
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+};
 
 const filteredAppointments = computed(() => {
-  return appointments.value.filter(item => {
-    const s = filters.value.search.toLowerCase()
-    const matchSearch = item.cliente.toLowerCase().includes(s) || item.servico.toLowerCase().includes(s)
-    const matchProf = !filters.value.profissional || item.profissional === filters.value.profissional
-    const matchStatus = !filters.value.status || item.status === filters.value.status
-    const matchDataIni = !filters.value.dataInicio || item.dataInicio >= filters.value.dataInicio
-    const matchDataFim = !filters.value.dataFim || item.dataInicio <= filters.value.dataFim
+  return appointments.value
+    .filter((item) => {
+      const s = filters.value.search.toLowerCase();
+      const matchSearch =
+        item.cliente.toLowerCase().includes(s) || item.servico.toLowerCase().includes(s);
+      const matchProf =
+        !filters.value.profissional || item.profissional === filters.value.profissional;
+      const matchStatus = !filters.value.status || item.status === filters.value.status;
+      const matchDataIni =
+        !filters.value.dataInicio || item.dataInicio >= filters.value.dataInicio;
+      const matchDataFim =
+        !filters.value.dataFim || item.dataInicio <= filters.value.dataFim;
 
-    return matchSearch && matchProf && matchStatus && matchDataIni && matchDataFim
-  }).sort((a, b) => {
-    const dateA = new Date(`${a.dataInicio}T${a.horaInicio}`)
-    const dateB = new Date(`${b.dataInicio}T${b.horaInicio}`)
-    return dateA - dateB
-  })
-})
+      return matchSearch && matchProf && matchStatus && matchDataIni && matchDataFim;
+    })
+    .sort((a, b) => {
+      const dateA = new Date(`${a.dataInicio}T${a.horaInicio}`);
+      const dateB = new Date(`${b.dataInicio}T${b.horaInicio}`);
+      return dateA - dateB;
+    });
+});
 
-const totalAgendamentos = computed(() => filteredAppointments.value.length)
-const confirmados = computed(() => filteredAppointments.value.filter(i => i.status === 'confirmado').length)
-const pendentes = computed(() => filteredAppointments.value.filter(i => i.status === 'pendente').length)
-const cancelados = computed(() => filteredAppointments.value.filter(i => i.status === 'cancelado').length)
+const totalAgendamentos = computed(() => filteredAppointments.value.length);
+const confirmados = computed(
+  () => filteredAppointments.value.filter((i) => i.status === "confirmado").length
+);
+const pendentes = computed(
+  () => filteredAppointments.value.filter((i) => i.status === "pendente").length
+);
+const cancelados = computed(
+  () => filteredAppointments.value.filter((i) => i.status === "cancelado").length
+);
 
 // Cores suaves para o calendário
 const eventColors = {
-  'confirmado': { bg: '#ECFDF5', border: '#A7F3D0', text: '#10B981' }, // Verde suave
-  'pendente': { bg: '#FFF7ED', border: '#FED7AA', text: '#F97316' },   // Laranja suave
-  'em_andamento': { bg: '#EFF6FF', border: '#BFDBFE', text: '#3B82F6' }, // Azul suave
-  'cancelado': { bg: '#FEF2F2', border: '#FECACA', text: '#EF4444' }     // Vermelho suave
-}
+  confirmado: { bg: "#ECFDF5", border: "#A7F3D0", text: "#10B981" },
+  pendente: { bg: "#FFF7ED", border: "#FED7AA", text: "#F97316" },
+  em_andamento: { bg: "#EFF6FF", border: "#BFDBFE", text: "#3B82F6" },
+  cancelado: { bg: "#FEF2F2", border: "#FECACA", text: "#EF4444" },
+};
 
 const events = computed(() => {
-  return filteredAppointments.value.map(item => {
-    const theme = eventColors[item.status] || eventColors['confirmado']
+  return filteredAppointments.value.map((item) => {
+    const theme = eventColors[item.status] || eventColors["confirmado"];
     return {
       id: item.id,
       title: `${item.cliente} • ${item.servico}`,
@@ -409,112 +516,127 @@ const events = computed(() => {
       backgroundColor: theme.bg,
       borderColor: theme.border,
       textColor: theme.text,
-      extendedProps: { ...item }
-    }
-  })
-})
+      extendedProps: { ...item },
+    };
+  });
+});
 
 const openCreateModal = () => {
-  editing.value = false
+  editing.value = false;
   form.value = {
-    cliente: '', servico: '', profissional: '', status: 'confirmado',
-    dataInicio: '', horaInicio: '', dataFim: '', horaFim: ''
-  }
-  modalOpen.value = true
-}
+    cliente: "",
+    servico: "",
+    profissional: "",
+    status: "confirmado",
+    dataInicio: "",
+    horaInicio: "",
+    dataFim: "",
+    horaFim: "",
+  };
+  modalOpen.value = true;
+};
 
 const closeModal = () => {
-  modalOpen.value = false
-}
+  modalOpen.value = false;
+};
 
-const editAppointment = appointment => {
-  editing.value = true
-  selectedId.value = appointment.id
-  form.value = { ...appointment }
-  modalOpen.value = true
-}
+const editAppointment = (appointment) => {
+  editing.value = true;
+  selectedId.value = appointment.id;
+  form.value = { ...appointment };
+  modalOpen.value = true;
+};
 
 const saveAppointment = () => {
   if (editing.value) {
-    const index = appointments.value.findIndex(item => item.id === selectedId.value)
-    appointments.value[index] = { ...form.value, id: selectedId.value }
+    const index = appointments.value.findIndex((item) => item.id === selectedId.value);
+    appointments.value[index] = { ...form.value, id: selectedId.value };
   } else {
-    appointments.value.push({ id: Date.now(), ...form.value })
+    appointments.value.push({ id: Date.now(), ...form.value });
   }
-  closeModal()
-}
+  closeModal();
+};
 
 const deleteAppointment = () => {
-  appointments.value = appointments.value.filter(item => item.id !== selectedId.value)
-  closeModal()
-}
+  appointments.value = appointments.value.filter((item) => item.id !== selectedId.value);
+  closeModal();
+};
 
-const changeView = view => {
-  if(displayMode.value !== 'calendar') return
-  currentView.value = view
+const changeView = (view) => {
+  if (displayMode.value !== "calendar") return;
+  currentView.value = view;
   if (calendarRef.value) {
-    calendarRef.value.getApi().changeView(view)
+    calendarRef.value.getApi().changeView(view);
   }
-}
+};
 
 const calendarOptions = {
   plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
-  initialView: 'timeGridWeek',
+  initialView: "timeGridWeek",
   editable: true,
   selectable: true,
-  locale: 'pt-br',
-  slotMinTime: '07:00:00',
-  slotMaxTime: '21:00:00',
+  locale: "pt-br",
+  slotMinTime: "07:00:00",
+  slotMaxTime: "21:00:00",
   headerToolbar: {
-    left: 'prev,next today',
-    center: 'title',
-    right: ''
+    left: "prev,next today",
+    center: "title",
+    right: "",
   },
-  buttonText: { today: 'Hoje' },
+  buttonText: { today: "Hoje" },
   select(info) {
-    editing.value = false
-    const dateStr = info.startStr.slice(0, 10)
-    const timeStr = info.startStr.includes('T') ? info.startStr.substring(11, 16) : ''
-    let endStr = info.endStr.slice(0, 10)
-    let endTimeStr = info.endStr.includes('T') ? info.endStr.substring(11, 16) : ''
+    editing.value = false;
+    const dateStr = info.startStr.slice(0, 10);
+    const timeStr = info.startStr.includes("T") ? info.startStr.substring(11, 16) : "";
+    let endStr = info.endStr.slice(0, 10);
+    let endTimeStr = info.endStr.includes("T") ? info.endStr.substring(11, 16) : "";
 
-    if(!endTimeStr && timeStr) {
-       endStr = dateStr
-       const [h, m] = timeStr.split(':')
-       endTimeStr = `${String(Number(h)+1).padStart(2, '0')}:${m}`
+    if (!endTimeStr && timeStr) {
+      endStr = dateStr;
+      const [h, m] = timeStr.split(":");
+      endTimeStr = `${String(Number(h) + 1).padStart(2, "0")}:${m}`;
     }
 
     form.value = {
-      cliente: '', servico: '', profissional: '', status: 'confirmado',
-      dataInicio: dateStr, horaInicio: timeStr, dataFim: endStr || dateStr, horaFim: endTimeStr
-    }
-    modalOpen.value = true
+      cliente: "",
+      servico: "",
+      profissional: "",
+      status: "confirmado",
+      dataInicio: dateStr,
+      horaInicio: timeStr,
+      dataFim: endStr || dateStr,
+      horaFim: endTimeStr,
+    };
+    modalOpen.value = true;
   },
   eventClick(info) {
-    const item = appointments.value.find(e => e.id == info.event.id)
-    if (item) editAppointment(item)
+    const item = appointments.value.find((e) => e.id == info.event.id);
+    if (item) editAppointment(item);
   },
   eventDrop(info) {
-    const item = appointments.value.find(e => e.id == info.event.id)
-    if (!item) return
-    item.dataInicio = info.event.start.toISOString().split('T')[0]
-    if(info.event.start.toTimeString) item.horaInicio = info.event.start.toTimeString().slice(0, 5)
-    if(info.event.end) {
-      item.dataFim = info.event.end.toISOString().split('T')[0]
-      item.horaFim = info.event.end.toTimeString().slice(0, 5)
+    const item = appointments.value.find((e) => e.id == info.event.id);
+    if (!item) return;
+    item.dataInicio = info.event.start.toISOString().split("T")[0];
+    if (info.event.start.toTimeString)
+      item.horaInicio = info.event.start.toTimeString().slice(0, 5);
+    if (info.event.end) {
+      item.dataFim = info.event.end.toISOString().split("T")[0];
+      item.horaFim = info.event.end.toTimeString().slice(0, 5);
     }
   },
   eventResize(info) {
-    const item = appointments.value.find(e => e.id == info.event.id)
-    if (!item || !info.event.end) return
-    item.dataFim = info.event.end.toISOString().split('T')[0]
-    item.horaFim = info.event.end.toTimeString().slice(0, 5)
-  }
-}
+    const item = appointments.value.find((e) => e.id == info.event.id);
+    if (!item || !info.event.end) return;
+    item.dataFim = info.event.end.toISOString().split("T")[0];
+    item.horaFim = info.event.end.toTimeString().slice(0, 5);
+  },
+};
 
-Object.defineProperty(calendarOptions, 'events', {
-  get() { return events.value }
-})
+Object.defineProperty(calendarOptions, "events", {
+  get() {
+    return events.value;
+  },
+});
 </script>
 
 <style scoped>
@@ -622,7 +744,7 @@ Object.defineProperty(calendarOptions, 'events', {
 .btn-view.active {
   background-color: var(--branco);
   color: var(--cor-primaria);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   font-weight: 600;
 }
 
@@ -708,7 +830,7 @@ Object.defineProperty(calendarOptions, 'events', {
 .btn-limpar {
   background: none;
   border: none;
-  color: #EF4444;
+  color: #ef4444;
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
@@ -722,10 +844,10 @@ Object.defineProperty(calendarOptions, 'events', {
 }
 
 .btn-limpar:hover {
-  background-color: #FEF2F2;
+  background-color: #fef2f2;
 }
 
-/* Stats */
+
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -763,11 +885,17 @@ Object.defineProperty(calendarOptions, 'events', {
   margin: 0;
 }
 
-.text-success { color: #10B981 !important; }
-.text-warning { color: #F97316 !important; }
-.text-danger { color: #EF4444 !important; }
+.text-success {
+  color: #10b981 !important;
+}
+.text-warning {
+  color: #f97316 !important;
+}
+.text-danger {
+  color: #ef4444 !important;
+}
 
-/* Content Layout */
+
 .agenda-content {
   display: grid;
   grid-template-columns: 1fr 340px;
@@ -778,7 +906,6 @@ Object.defineProperty(calendarOptions, 'events', {
   display: block;
 }
 
-/* Cards de Agendamento Genéricos */
 .appointment-card {
   background-color: var(--branco);
   border: 1px solid rgba(0, 0, 0, 0.05);
@@ -834,7 +961,6 @@ Object.defineProperty(calendarOptions, 'events', {
   gap: 0.4rem;
 }
 
-/* Status Badges - Cores Suaves/Pastéis */
 .status-badge {
   font-size: 0.7rem;
   font-weight: 600;
@@ -843,12 +969,27 @@ Object.defineProperty(calendarOptions, 'events', {
   border: 1px solid transparent;
 }
 
-.badge-confirmado { background-color: #ECFDF5; color: #10B981; border-color: #A7F3D0; }
-.badge-pendente { background-color: #FFF7ED; color: #F97316; border-color: #FED7AA; }
-.badge-em_andamento { background-color: #EFF6FF; color: #3B82F6; border-color: #BFDBFE; }
-.badge-cancelado { background-color: #FEF2F2; color: #EF4444; border-color: #FECACA; }
+.badge-confirmado {
+  background-color: #ecfdf5;
+  color: #10b981;
+  border-color: #a7f3d0;
+}
+.badge-pendente {
+  background-color: #fff7ed;
+  color: #f97316;
+  border-color: #fed7aa;
+}
+.badge-em_andamento {
+  background-color: #eff6ff;
+  color: #3b82f6;
+  border-color: #bfdbfe;
+}
+.badge-cancelado {
+  background-color: #fef2f2;
+  color: #ef4444;
+  border-color: #fecaca;
+}
 
-/* Side Panel */
 .panel-header {
   margin-bottom: 1rem;
   padding-bottom: 0.75rem;
@@ -874,10 +1015,14 @@ Object.defineProperty(calendarOptions, 'events', {
   padding-right: 0.5rem;
 }
 
-.appointments-list::-webkit-scrollbar { width: 4px; }
-.appointments-list::-webkit-scrollbar-thumb { background: rgba(0,0,0,.1); border-radius: 4px; }
+.appointments-list::-webkit-scrollbar {
+  width: 4px;
+}
+.appointments-list::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
 
-/* Cards Grid (List Mode) */
 .cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -957,10 +1102,16 @@ Object.defineProperty(calendarOptions, 'events', {
   text-align: center;
 }
 
-.empty-state i { font-size: 2rem; }
-.list-empty { grid-column: 1 / -1; background: var(--branco); border-radius: 12px; border: 1px dashed var(--cor-clara); }
+.empty-state i {
+  font-size: 2rem;
+}
+.list-empty {
+  grid-column: 1 / -1;
+  background: var(--branco);
+  border-radius: 12px;
+  border: 1px dashed var(--cor-clara);
+}
 
-/* Modais */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -1016,8 +1167,8 @@ Object.defineProperty(calendarOptions, 'events', {
 }
 
 .btn-close:hover {
-  background-color: #FEF2F2;
-  color: #EF4444;
+  background-color: #fef2f2;
+  color: #ef4444;
 }
 
 .modal-body {
@@ -1069,7 +1220,9 @@ Object.defineProperty(calendarOptions, 'events', {
   margin-top: 0.5rem;
 }
 
-.mt-3 { margin-top: 1rem; }
+.mt-3 {
+  margin-top: 1rem;
+}
 
 .modal-footer {
   display: flex;
@@ -1097,7 +1250,9 @@ Object.defineProperty(calendarOptions, 'events', {
   transition: all 0.2s;
 }
 
-.btn-cancelar:hover { background-color: var(--cor-fundo); }
+.btn-cancelar:hover {
+  background-color: var(--cor-fundo);
+}
 
 .btn-salvar {
   background-color: var(--cor-primaria);
@@ -1122,8 +1277,8 @@ Object.defineProperty(calendarOptions, 'events', {
 
 .btn-excluir {
   background: transparent;
-  border: 1px solid #FECACA;
-  color: #EF4444;
+  border: 1px solid #fecaca;
+  color: #ef4444;
   padding: 0.6rem 1.2rem;
   border-radius: 8px;
   cursor: pointer;
@@ -1131,58 +1286,177 @@ Object.defineProperty(calendarOptions, 'events', {
   transition: all 0.2s;
 }
 
-.btn-excluir:hover { background-color: #FEF2F2; }
+.btn-excluir:hover {
+  background-color: #fef2f2;
+}
 
-/* FullCalendar Resets (Cleaner look) */
-:deep(.fc) { font-family: inherit; }
-:deep(.fc-toolbar-title) { font-size: 1.15rem !important; font-weight: 600 !important; color: var(--cor-escura); }
-:deep(.fc-button) { background: var(--cor-fundo) !important; border: 1px solid var(--cor-clara) !important; color: var(--cor-secundaria) !important; box-shadow: none !important; font-weight: 500 !important; border-radius: 8px !important; text-transform: capitalize; transition: all .2s ease; }
-:deep(.fc-button:hover) { background: var(--branco) !important; color: var(--cor-escura) !important; border-color: var(--cor-secundaria) !important; }
-:deep(.fc-button-active) { background: var(--cor-primaria) !important; color: var(--branco) !important; border-color: var(--cor-primaria) !important; }
-:deep(.fc-scrollgrid) { border-color: var(--cor-clara) !important; border-radius: 10px; overflow: hidden; }
-:deep(.fc-theme-standard td, .fc-theme-standard th) { border-color: var(--cor-clara) !important; }
-:deep(.fc-col-header-cell) { background-color: var(--cor-fundo); padding: 0.5rem 0; font-weight: 600; font-size: 0.85rem; color: var(--cor-secundaria); }
-:deep(.fc-timegrid-slot-label) { font-size: 0.8rem; color: var(--cor-secundaria); }
-:deep(.fc-v-event) { border-radius: 6px !important; padding: 3px 5px !important; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: transform 0.2s ease; border-left-width: 3px !important; }
-:deep(.fc-v-event:hover) { transform: scale(1.01); z-index: 5 !important; box-shadow: 0 4px 8px rgba(0,0,0,0.08); }
-:deep(.fc-event-main) { font-weight: 500; font-size: 0.8rem; }
-:deep(.fc-day-today) { background-color: rgba(28,164,167,.02) !important; }
+:deep(.fc) {
+  font-family: inherit;
+}
+:deep(.fc-toolbar-title) {
+  font-size: 1.15rem !important;
+  font-weight: 600 !important;
+  color: var(--cor-escura);
+}
+:deep(.fc-button) {
+  background: var(--cor-fundo) !important;
+  border: 1px solid var(--cor-clara) !important;
+  color: var(--cor-secundaria) !important;
+  box-shadow: none !important;
+  font-weight: 500 !important;
+  border-radius: 8px !important;
+  text-transform: capitalize;
+  transition: all 0.2s ease;
+}
+:deep(.fc-button:hover) {
+  background: var(--branco) !important;
+  color: var(--cor-escura) !important;
+  border-color: var(--cor-secundaria) !important;
+}
+:deep(.fc-button-active) {
+  background: var(--cor-primaria) !important;
+  color: var(--branco) !important;
+  border-color: var(--cor-primaria) !important;
+}
+:deep(.fc-scrollgrid) {
+  border-color: var(--cor-clara) !important;
+  border-radius: 10px;
+  overflow: hidden;
+}
+:deep(.fc-theme-standard td, .fc-theme-standard th) {
+  border-color: var(--cor-clara) !important;
+}
+:deep(.fc-col-header-cell) {
+  background-color: var(--cor-fundo);
+  padding: 0.5rem 0;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--cor-secundaria);
+}
+:deep(.fc-timegrid-slot-label) {
+  font-size: 0.8rem;
+  color: var(--cor-secundaria);
+}
+:deep(.fc-v-event) {
+  border-radius: 6px !important;
+  padding: 3px 5px !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease;
+  border-left-width: 3px !important;
+}
+:deep(.fc-v-event:hover) {
+  transform: scale(1.01);
+  z-index: 5 !important;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+}
+:deep(.fc-event-main) {
+  font-weight: 500;
+  font-size: 0.8rem;
+}
+:deep(.fc-day-today) {
+  background-color: rgba(28, 164, 167, 0.02) !important;
+}
 
-/* Animações (Baseadas no Clientes) */
-.list-enter-active, .list-leave-active { transition: all 0.4s ease; }
-.list-enter-from, .list-leave-to { opacity: 0; transform: scale(0.95) translateY(10px); }
-.list-leave-active { position: absolute; }
+.list-enter-active,
+.list-leave-active {
+  transition: all 0.4s ease;
+}
+.list-enter-from,
+.list-leave-to {
+  opacity: 0;
+  transform: scale(0.95) translateY(10px);
+}
+.list-leave-active {
+  position: absolute;
+}
 
-.fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
 
-.scale-enter-active, .scale-leave-active { transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
-.scale-enter-from, .scale-leave-to { transform: scale(0.95); }
+.scale-enter-active,
+.scale-leave-active {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.scale-enter-from,
+.scale-leave-to {
+  transform: scale(0.95);
+}
 
 /* Responsividade */
 @media (max-width: 1200px) {
-  .agenda-content { grid-template-columns: 1fr; }
-  .side-panel { order: -1; }
+  .agenda-content {
+    grid-template-columns: 1fr;
+  }
+  .side-panel {
+    order: -1;
+  }
 }
 
 @media (max-width: 992px) {
-  .stats-grid { grid-template-columns: repeat(2, 1fr); }
-  .filters-row { flex-direction: column; align-items: flex-start; gap: 1rem; }
-  .divider { display: none; }
-  .btn-limpar { margin-left: 0; }
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .filters-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  .divider {
+    display: none;
+  }
+  .btn-limpar {
+    margin-left: 0;
+  }
 }
 
 @media (max-width: 768px) {
-  .page-content { padding: 1rem; }
-  .top-row { flex-direction: column; align-items: stretch; }
-  .search-input-wrapper { max-width: 100%; }
-  .action-buttons { flex-wrap: wrap; justify-content: space-between; }
-  .btn-novo { width: 100%; justify-content: center; margin-top: 0.5rem; }
-  .form-row { grid-template-columns: 1fr; gap: 0.5rem; }
-  .modal-footer { flex-wrap: wrap; flex-direction: column-reverse; gap: 1rem; }
-  .footer-actions { width: 100%; display: flex; }
-  .footer-actions button { flex: 1; }
-  .btn-excluir { width: 100%; }
-  :deep(.fc-toolbar) { flex-direction: column; gap: 1rem; }
+  .page-content {
+    padding: 1rem;
+  }
+  .top-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .search-input-wrapper {
+    max-width: 100%;
+  }
+  .action-buttons {
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+  .btn-novo {
+    width: 100%;
+    justify-content: center;
+    margin-top: 0.5rem;
+  }
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+  .modal-footer {
+    flex-wrap: wrap;
+    flex-direction: column-reverse;
+    gap: 1rem;
+  }
+  .footer-actions {
+    width: 100%;
+    display: flex;
+  }
+  .footer-actions button {
+    flex: 1;
+  }
+  .btn-excluir {
+    width: 100%;
+  }
+  :deep(.fc-toolbar) {
+    flex-direction: column;
+    gap: 1rem;
+  }
 }
 </style>
