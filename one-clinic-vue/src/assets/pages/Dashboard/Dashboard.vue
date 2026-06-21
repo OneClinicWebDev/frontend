@@ -9,6 +9,7 @@
 
     <DashboardActions
       @novo-cliente="abrirModalCliente"
+      @novo-agendamento="abrirModalAgendamento"
     />
 
     <ClientModal
@@ -18,20 +19,48 @@
       @close="fecharModal"
       @save="salvarCliente"
     />
+
+    <AgendaFormModal
+      :isOpen="isModalAgendamentoOpen"
+      :editing="false"
+      :form="formAgendamento"
+      :clientesBD="clientesBD"
+      :servicosBD="servicosBD"
+      :profissionaisBD="profissionaisBD"
+      :isValid="true"
+      @close="fecharModalAgendamento"
+      @save="salvarAgendamento"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, reactive } from 'vue'
 
 import DashboardStats from './components/DashboardStats.vue'
 import DashboardAgenda from './components/DashboardAgenda.vue'
 import DashboardRecentClients from './components/DashboardRecentClients.vue'
 import DashboardActions from './components/DashboardActions.vue'
-
 import ClientModal from '../Clientes/components/ClientModal.vue'
+import AgendaFormModal from '../Agenda/components/AgendaFormModal.vue'
 
 const isModalOpen = ref(false)
+const isModalAgendamentoOpen = ref(false)
+
+const clientesBD = ref([])
+const servicosBD = ref([])
+const profissionaisBD = ref([])
+
+const formAgendamento = reactive({
+  cliente: '',
+  servico: '',
+  profissional: '',
+  dataInicio: '',
+  horaInicio: '',
+  dataFim: '',
+  horaFim: '',
+  status: 'pendente'
+})
 
 const abrirModalCliente = () => {
   isModalOpen.value = true
@@ -42,9 +71,19 @@ const fecharModal = () => {
 }
 
 const salvarCliente = (cliente) => {
-  console.log('Cliente criado:', cliente)
-
   isModalOpen.value = false
+}
+
+const abrirModalAgendamento = () => {
+  isModalAgendamentoOpen.value = true
+}
+
+const fecharModalAgendamento = () => {
+  isModalAgendamentoOpen.value = false
+}
+
+const salvarAgendamento = () => {
+  isModalAgendamentoOpen.value = false
 }
 </script>
 

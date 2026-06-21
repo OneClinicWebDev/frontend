@@ -3,7 +3,10 @@
     <h3>Ações Rápidas</h3>
 
     <div class="actions-buttons">
-      <button class="btn-action">
+      <button 
+        class="btn-action"
+        @click="$emit('novo-agendamento')"
+      >
         <i class="pi pi-calendar-plus"></i>
         Novo Agendamento
       </button>
@@ -25,7 +28,7 @@
 </template>
 
 <script setup>
-defineEmits(['novo-cliente'])
+defineEmits(['novo-cliente', 'novo-agendamento'])
 </script>
 
 <style scoped>
@@ -84,4 +87,4 @@ defineEmits(['novo-cliente'])
     width: 100%;
   }
 }
-</style>    
+</style>
