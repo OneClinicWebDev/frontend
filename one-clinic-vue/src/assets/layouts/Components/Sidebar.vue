@@ -43,7 +43,7 @@
         <span>Atendimentos</span>
       </router-link>
       
-      <router-link to="/app/financeiro" class="nav-item" @click="closeOnMobile">
+      <router-link v-if="usuarioRole === 'admin'" to="/app/financeiro" class="nav-item" @click="closeOnMobile">
         <div class="icon-wrapper"><i class="pi pi-dollar"></i></div>
         <span>Financeiro</span>
       </router-link>
@@ -53,7 +53,7 @@
         <span>Estoque</span>
       </router-link>
       
-      <router-link to="/app/Colaboradores" class="nav-item" @click="closeOnMobile">
+      <router-link v-if="usuarioRole === 'admin'" to="/app/Colaboradores" class="nav-item" @click="closeOnMobile">
         <div class="icon-wrapper"><i class="pi pi-id-card"></i></div>
         <span>Colaboradores</span>
       </router-link>
@@ -74,6 +74,7 @@ import { LOGO_URL } from '@/config.js'
 
 const isCollapsed = ref(true)
 const isMobile = ref(false)
+const usuarioRole = ref('')
 
 const checkScreenSize = () => {
   isMobile.value = window.innerWidth <= 768
@@ -88,6 +89,13 @@ const closeOnMobile = () => {
 onMounted(() => {
   checkScreenSize()
   window.addEventListener('resize', checkScreenSize)
+
+  // Recupera role do usuário
+  const sessao = localStorage.getItem('oneclinic_user')
+  if (sessao) {
+    const dados = JSON.parse(sessao)
+    usuarioRole.value = dados.role
+  }
 })
 
 onUnmounted(() => {
