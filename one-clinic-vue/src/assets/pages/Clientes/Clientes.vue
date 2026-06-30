@@ -5,10 +5,10 @@
         <div class="top-row">
           <div class="search-input-wrapper">
             <i class="pi pi-search search-icon"></i>
-            <input 
-              type="text" 
-              v-model="searchQuery" 
-              :placeholder="placeholderBusca" 
+            <input
+              type="text"
+              v-model="searchQuery"
+              :placeholder="placeholderBusca"
               class="search-input"
             />
           </div>
@@ -21,8 +21,8 @@
           <div class="filter-group">
             <span class="filter-label"><i class="pi pi-filter"></i> Buscar em:</span>
             <div class="chips-container">
-              <button 
-                v-for="campo in camposBusca" 
+              <button
+                v-for="campo in camposBusca"
                 :key="campo.value"
                 :class="['chip', { active: camposAtivos.includes(campo.value) }]"
                 @click="toggleCampo(campo.value)"
@@ -31,14 +31,12 @@
               </button>
             </div>
           </div>
-
           <div class="divider"></div>
-
           <div class="filter-group">
             <span class="filter-label"><i class="pi pi-check-circle"></i> Status:</span>
             <div class="chips-container">
-              <button 
-                v-for="status in statusBusca" 
+              <button
+                v-for="status in statusBusca"
                 :key="status.value"
                 :class="['chip chip-status', { active: filtroStatus === status.value }]"
                 @click="filtroStatus = status.value"
@@ -47,7 +45,6 @@
               </button>
             </div>
           </div>
-
           <button class="btn-limpar" @click="limparFiltros" v-if="temFiltroAtivo">
             <i class="pi pi-filter-slash"></i> Limpar
           </button>
@@ -61,24 +58,24 @@
       </div>
 
       <TransitionGroup name="list" tag="div" class="clients-grid">
-        <ClientCard 
-          v-for="cliente in clientesFiltrados" 
-          :key="cliente.id" 
+        <ClientCard
+          v-for="cliente in clientesFiltrados"
+          :key="cliente.id"
           :cliente="cliente"
           @detalhes="abrirModalDetalhes"
           @editar="abrirModalEdicao"
           @toggle-status="alternarStatus"
         />
       </TransitionGroup>
-      
+
       <div v-if="clientesFiltrados.length === 0" class="empty-state">
         <i class="pi pi-users"></i>
         <p>Nenhum cliente encontrado.</p>
       </div>
     </main>
 
-    <ClientModal 
-      :is-open="isModalOpen" 
+    <ClientModal
+      :is-open="isModalOpen"
       :mode="modalMode"
       :cliente-edicao="clienteSelecionado"
       @close="fecharModal"
@@ -95,152 +92,158 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed } from "vue";
+import { store } from "@/store.js";
 import StatCard from "../../layouts/Components/StatCard.vue";
-import ClientCard from './components/ClientCard.vue'
-import ClientModal from './components/ClientModal.vue'
+import ClientCard from "./components/ClientCard.vue";
+import ClientModal from "./components/ClientModal.vue";
 
-const searchQuery = ref('')
-const camposAtivos = ref(['nome'])
-const filtroStatus = ref('todos')
-const isModalOpen = ref(false)
-const modalMode = ref('criar')
-const clienteSelecionado = ref(null)
-const toast = ref({ show: false, message: '' })
+const searchQuery = ref("");
+const camposAtivos = ref(["nome"]);
+const filtroStatus = ref("todos");
+const isModalOpen = ref(false);
+const modalMode = ref("criar");
+const clienteSelecionado = ref(null);
+const toast = ref({ show: false, message: "" });
 
 const camposBusca = [
-  { label: 'Nome', value: 'nome' },
-  { label: 'CPF', value: 'cpf' },
-  { label: 'E-mail', value: 'email' },
-  { label: 'Telefone', value: 'telefone' }
-]
+  { label: "Nome", value: "nome" },
+  { label: "CPF", value: "cpf" },
+  { label: "E-mail", value: "email" },
+  { label: "Telefone", value: "telefone" },
+];
 
 const statusBusca = [
-  { label: 'Todos', value: 'todos' },
-  { label: 'Ativos', value: 'ativo' },
-  { label: 'Inativos', value: 'inativo' }
-]
+  { label: "Todos", value: "todos" },
+  { label: "Ativos", value: "ativo" },
+  { label: "Inativos", value: "inativo" },
+];
 
-const clientes = ref([
-  { id: 1, iniciais: 'AS', nome: 'Ana Silva', cpf: '123.456.789-01', status: 'ativo', email: 'ana.silva@email.com', telefone: '(11) 98765-4321', endereco: 'Av. Paulista, 1000 - São Paulo SP', criadoEm: '30/05/2026 14:22 GMT-3', ultimaVisita: '02/05/2026', totalVisitas: 15 },
-  { id: 2, iniciais: 'CS', nome: 'Carla Santos', cpf: '987.654.321-00', status: 'inativo', email: 'carla.santos@email.com', telefone: '(11) 97654-3210', endereco: 'Rua Augusta, 450 - São Paulo SP', criadoEm: '29/05/2026 09:15 GMT-3', ultimaVisita: '01/05/2026', totalVisitas: 8 },
-  { id: 3, iniciais: 'JL', nome: 'Julia Lima', cpf: '456.789.123-00', status: 'ativo', email: 'julia.lima@email.com', telefone: '(11) 96543-2109', endereco: 'Rua Alagoas, 12 - Santos SP', criadoEm: '25/05/2026 17:40 GMT-3', ultimaVisita: '28/04/2026', totalVisitas: 22 }
-])
-
-const totalClientes = computed(() => clientes.value.length)
-const clientesAtivos = computed(() => clientes.value.filter(c => c.status === 'ativo').length)
+const totalClientes = computed(() => store.clientes.length);
+const clientesAtivos = computed(
+  () => store.clientes.filter((c) => c.status === "ativo").length
+);
 const mediaVisitas = computed(() => {
-  if (clientes.value.length === 0) return 0
-  const total = clientes.value.reduce((acc, c) => acc + c.totalVisitas, 0)
-  return Math.round(total / clientes.value.length)
-})
+  if (store.clientes.length === 0) return 0;
+  const total = store.clientes.reduce((acc, c) => acc + c.totalVisitas, 0);
+  return Math.round(total / store.clientes.length);
+});
 
 const placeholderBusca = computed(() => {
-  const campos = camposBusca.filter(c => camposAtivos.value.includes(c.value)).map(c => c.label)
-  return `Buscar por ${campos.join(', ')}...`
-})
+  const campos = camposBusca
+    .filter((c) => camposAtivos.value.includes(c.value))
+    .map((c) => c.label);
+  return `Buscar por ${campos.join(", ")}...`;
+});
 
 const temFiltroAtivo = computed(() => {
-  return searchQuery.value.length > 0 || 
-         camposAtivos.value.length > 1 || 
-         (camposAtivos.value.length === 1 && camposAtivos.value[0] !== 'nome') ||
-         filtroStatus.value !== 'todos'
-})
+  return (
+    searchQuery.value.length > 0 ||
+    camposAtivos.value.length > 1 ||
+    (camposAtivos.value.length === 1 && camposAtivos.value[0] !== "nome") ||
+    filtroStatus.value !== "todos"
+  );
+});
 
 const toggleCampo = (campo) => {
-  const index = camposAtivos.value.indexOf(campo)
+  const index = camposAtivos.value.indexOf(campo);
   if (index === -1) {
-    camposAtivos.value.push(campo)
+    camposAtivos.value.push(campo);
   } else {
     if (camposAtivos.value.length > 1) {
-      camposAtivos.value.splice(index, 1)
+      camposAtivos.value.splice(index, 1);
     }
   }
-}
+};
 
 const limparFiltros = () => {
-  camposAtivos.value = ['nome']
-  filtroStatus.value = 'todos'
-  searchQuery.value = ''
-}
+  camposAtivos.value = ["nome"];
+  filtroStatus.value = "todos";
+  searchQuery.value = "";
+};
 
 const clientesFiltrados = computed(() => {
-  let resultado = clientes.value
+  let resultado = store.clientes;
 
-  if (filtroStatus.value !== 'todos') {
-    resultado = resultado.filter(c => c.status === filtroStatus.value)
+  if (filtroStatus.value !== "todos") {
+    resultado = resultado.filter((c) => c.status === filtroStatus.value);
   }
 
   if (!searchQuery.value || camposAtivos.value.length === 0) {
-    return resultado
+    return resultado;
   }
 
-  const queryLimpa = searchQuery.value.toLowerCase().replace(/\D/g, '')
-  const queryNormal = searchQuery.value.toLowerCase()
+  const queryLimpa = searchQuery.value.toLowerCase().replace(/\D/g, "");
+  const queryNormal = searchQuery.value.toLowerCase();
 
-  return resultado.filter(c => {
-    return camposAtivos.value.some(campo => {
-      if (campo === 'cpf' || campo === 'telefone') {
-        const valorLimpo = String(c[campo]).replace(/\D/g, '')
-        return valorLimpo.includes(queryLimpa) || valorLimpo.includes(queryNormal)
+  return resultado.filter((c) => {
+    return camposAtivos.value.some((campo) => {
+      if (campo === "cpf" || campo === "telefone") {
+        const valorLimpo = String(c[campo]).replace(/\D/g, "");
+        return valorLimpo.includes(queryLimpa) || valorLimpo.includes(queryNormal);
       }
-      const valor = String(c[campo]).toLowerCase()
-      return valor.includes(queryNormal)
-    })
-  })
-})
+      const valor = String(c[campo]).toLowerCase();
+      return valor.includes(queryNormal);
+    });
+  });
+});
 
 const dispararToast = (mensagem) => {
-  toast.value.message = mensagem
-  toast.value.show = true
+  toast.value.message = mensagem;
+  toast.value.show = true;
   setTimeout(() => {
-    toast.value.show = false
-  }, 3500)
-}
+    toast.value.show = false;
+  }, 3500);
+};
 
 const abrirModalCriacao = () => {
-  modalMode.value = 'criar'
-  clienteSelecionado.value = null
-  isModalOpen.value = true
-}
+  modalMode.value = "criar";
+  clienteSelecionado.value = null;
+  isModalOpen.value = true;
+};
 
 const abrirModalEdicao = (cliente) => {
-  modalMode.value = 'editar'
-  clienteSelecionado.value = cliente
-  isModalOpen.value = true
-}
+  modalMode.value = "editar";
+  clienteSelecionado.value = cliente;
+  isModalOpen.value = true;
+};
 
 const abrirModalDetalhes = (cliente) => {
-  modalMode.value = 'detalhes'
-  clienteSelecionado.value = cliente
-  isModalOpen.value = true
-}
+  modalMode.value = "detalhes";
+  clienteSelecionado.value = cliente;
+  isModalOpen.value = true;
+};
 
 const fecharModal = () => {
-  isModalOpen.value = false
-  clienteSelecionado.value = null
-}
+  isModalOpen.value = false;
+  clienteSelecionado.value = null;
+};
 
 const gerarIniciais = (nome) => {
-  return nome.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
-}
+  return nome
+    .split(" ")
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+};
 
 const obterTimestamp = () => {
-  const agora = new Date()
-  const data = agora.toLocaleDateString('pt-BR')
-  const hora = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-  return `${data} ${hora} GMT-3`
-}
+  const agora = new Date();
+  const data = agora.toLocaleDateString("pt-BR");
+  const hora = agora.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  return `${data} ${hora} GMT-3`;
+};
 
 const salvarCliente = (dadosCliente) => {
   if (dadosCliente.id) {
-    const index = clientes.value.findIndex(c => c.id === dadosCliente.id)
+    const index = store.clientes.findIndex((c) => c.id === dadosCliente.id);
     if (index !== -1) {
-      clientes.value[index] = {
+      store.clientes[index] = {
         ...dadosCliente,
-        iniciais: gerarIniciais(dadosCliente.nome)
-      }
-      dispararToast(`Cliente "${dadosCliente.nome}" atualizado com sucesso!`)
+        iniciais: gerarIniciais(dadosCliente.nome),
+      };
+      dispararToast(`Cliente "${dadosCliente.nome}" atualizado com sucesso!`);
     }
   } else {
     const novo = {
@@ -248,22 +251,22 @@ const salvarCliente = (dadosCliente) => {
       id: Date.now(),
       iniciais: gerarIniciais(dadosCliente.nome),
       criadoEm: obterTimestamp(),
-      ultimaVisita: '-',
-      totalVisitas: 0
-    }
-    clientes.value.unshift(novo)
-    dispararToast(`Cliente "${dadosCliente.nome}" cadastrado com sucesso!`)
+      ultimaVisita: "-",
+      totalVisitas: 0,
+    };
+    store.clientes.unshift(novo);
+    dispararToast(`Cliente "${dadosCliente.nome}" cadastrado com sucesso!`);
   }
-}
+};
 
 const alternarStatus = (cliente) => {
-  const index = clientes.value.findIndex(c => c.id === cliente.id)
+  const index = store.clientes.findIndex((c) => c.id === cliente.id);
   if (index !== -1) {
-    const novoStatus = clientes.value[index].status === 'ativo' ? 'inativo' : 'ativo'
-    clientes.value[index].status = novoStatus
-    dispararToast(`Cliente "${cliente.nome}" foi marcado como ${novoStatus}.`)
+    const novoStatus = store.clientes[index].status === "ativo" ? "inativo" : "ativo";
+    store.clientes[index].status = novoStatus;
+    dispararToast(`Cliente "${cliente.nome}" foi marcado como ${novoStatus}.`);
   }
-}
+};
 </script>
 
 <style scoped>
@@ -273,12 +276,10 @@ const alternarStatus = (cliente) => {
   display: flex;
   flex-direction: column;
 }
-
 .page-content {
   padding: 2rem;
   flex-grow: 1;
 }
-
 .action-panel {
   background-color: var(--branco);
   border-radius: 12px;
@@ -290,20 +291,17 @@ const alternarStatus = (cliente) => {
   flex-direction: column;
   gap: 1.25rem;
 }
-
 .top-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
 }
-
 .search-input-wrapper {
   position: relative;
   flex-grow: 1;
   max-width: 600px;
 }
-
 .search-icon {
   position: absolute;
   left: 1.25rem;
@@ -313,7 +311,6 @@ const alternarStatus = (cliente) => {
   opacity: 0.6;
   font-size: 1.1rem;
 }
-
 .search-input {
   width: 100%;
   padding: 0.85rem 1rem 0.85rem 3rem;
@@ -325,13 +322,11 @@ const alternarStatus = (cliente) => {
   background-color: var(--cor-fundo);
   transition: all 0.3s ease;
 }
-
 .search-input:focus {
   border-color: var(--cor-primaria);
   background-color: var(--branco);
   box-shadow: 0 0 0 4px rgba(28, 164, 167, 0.1);
 }
-
 .btn-novo {
   display: flex;
   align-items: center;
@@ -347,26 +342,22 @@ const alternarStatus = (cliente) => {
   transition: all 0.3s ease;
   white-space: nowrap;
 }
-
 .btn-novo:hover {
   background-color: #158a8d;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(28, 164, 167, 0.25);
 }
-
 .filters-row {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 1.5rem;
 }
-
 .filter-group {
   display: flex;
   align-items: center;
   gap: 0.75rem;
 }
-
 .filter-label {
   font-size: 0.85rem;
   font-weight: 600;
@@ -375,17 +366,11 @@ const alternarStatus = (cliente) => {
   align-items: center;
   gap: 0.35rem;
 }
-
-.filter-label i {
-  font-size: 0.9rem;
-}
-
 .chips-container {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
 }
-
 .chip {
   background-color: var(--cor-fundo);
   border: 1px solid var(--cor-clara);
@@ -398,33 +383,28 @@ const alternarStatus = (cliente) => {
   transition: all 0.2s ease;
   user-select: none;
 }
-
 .chip:hover {
   border-color: var(--cor-primaria);
   color: var(--cor-primaria);
 }
-
 .chip.active {
   background-color: var(--cor-primaria);
   border-color: var(--cor-primaria);
   color: var(--branco);
 }
-
 .chip-status.active {
   background-color: var(--cor-escura);
   border-color: var(--cor-escura);
 }
-
 .divider {
   width: 1px;
   height: 24px;
   background-color: var(--cor-clara);
 }
-
 .btn-limpar {
   background: none;
   border: none;
-  color: #DC2626;
+  color: #dc2626;
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
@@ -436,24 +416,20 @@ const alternarStatus = (cliente) => {
   gap: 0.4rem;
   margin-left: auto;
 }
-
 .btn-limpar:hover {
-  background-color: #FEF2F2;
+  background-color: #fef2f2;
 }
-
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 1.5rem;
   margin-bottom: 2rem;
 }
-
 .clients-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 1.5rem;
 }
-
 .empty-state {
   display: flex;
   flex-direction: column;
@@ -464,11 +440,9 @@ const alternarStatus = (cliente) => {
   opacity: 0.5;
   gap: 0.5rem;
 }
-
 .empty-state i {
   font-size: 2.5rem;
 }
-
 .toast-notification {
   position: fixed;
   bottom: 2rem;
@@ -484,32 +458,26 @@ const alternarStatus = (cliente) => {
   border-left: 4px solid var(--cor-primaria);
   z-index: 3000;
 }
-
 .toast-notification i {
   color: var(--cor-primaria);
   font-size: 1.2rem;
 }
-
 .list-enter-active,
 .list-leave-active {
   transition: all 0.4s ease;
 }
-
 .list-enter-from,
 .list-leave-to {
   opacity: 0;
   transform: scale(0.9) translateY(20px);
 }
-
 .list-leave-active {
   position: absolute;
 }
-
 .toast-enter-active,
 .toast-leave-active {
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
-
 .toast-enter-from {
   opacity: 0;
   transform: translateY(30px) scale(0.9);
@@ -518,7 +486,6 @@ const alternarStatus = (cliente) => {
   opacity: 0;
   transform: translateY(20px) scale(0.9);
 }
-
 @media (max-width: 992px) {
   .filters-row {
     flex-direction: column;
@@ -532,7 +499,6 @@ const alternarStatus = (cliente) => {
     margin-left: 0;
   }
 }
-
 @media (max-width: 768px) {
   .page-content {
     padding: 1rem;
