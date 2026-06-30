@@ -8,6 +8,7 @@ const router = useRouter()
 
 const cpf = ref('')
 const senha = ref('')
+const erroLogin = ref(false)
 
 const formatCpf = (event) => {
   let value = event.target.value.replace(/\D/g, '')
@@ -20,8 +21,26 @@ const formatCpf = (event) => {
   cpf.value = value
 }
 
+const usuariosMockados = [
+  {
+    cpf: '14300204900',
+    senha: 'Wedley210505',
+    nome: 'Ana Olichta',
+    cargo: 'Administrador',
+    role: 'admin'
+  },
+  {
+    cpf: '10950875929',
+    senha: 'Wedley210505',
+    nome: 'Wedley Schmoeller',
+    cargo: 'Secretário',
+    role: 'atendente'
+  }
+]
+
 const handleLogin = () => {
   const cpfLimpo = cpf.value.replace(/\D/g, '')
+  erroLogin.value = false
 
   if (cpfLimpo.length !== 11) {
     alert('CPF deve conter 11 números.')
@@ -33,8 +52,22 @@ const handleLogin = () => {
     return
   }
 
-  emit('close')
-  router.push('/app/dashboard')
+  const usuarioEncontrado = usuariosMockados.find(
+    u => u.cpf === cpfLimpo && u.senha === senha.value
+  )
+
+  if (usuarioEncontrado) {
+    localStorage.setItem('oneclinic_user', JSON.stringify({
+      nome: usuarioEncontrado.nome,
+      cargo: usuarioEncontrado.cargo,
+      role: usuarioEncontrado.role
+    }))
+    
+    emit('close')
+    router.push('/app/dashboard')
+  } else {
+    erroLogin.value = true
+  }
 }
 </script>
 
@@ -74,6 +107,10 @@ const handleLogin = () => {
             placeholder="Sua senha"
             required
           />
+        </div>
+
+        <div v-if="erroLogin" class="error-msg">
+          Usuário ou senha incorretos.
         </div>
 
         <div class="modal-actions">
@@ -184,6 +221,14 @@ const handleLogin = () => {
 .input-group input:focus {
   border-color: var(--cor-primaria);
   box-shadow: 0 0 0 3px rgba(28, 164, 167, 0.15);
+}
+
+.error-msg {
+  color: #dc2626;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-align: center;
+  margin-top: -0.5rem;
 }
 
 .modal-actions {
