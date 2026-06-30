@@ -27,7 +27,7 @@
 
           <div class="user-info">
             <span class="user-name">{{ userName }}</span>
-            <span class="user-role">Administrador</span>
+            <span class="user-role">{{ userRole }}</span>
           </div>
 
           <i
@@ -40,7 +40,7 @@
           <div v-if="menuOpen" class="dropdown-menu">
             <div class="dropdown-header-mobile">
               <span class="mobile-name">{{ userName }}</span>
-              <span class="mobile-role">Administrador</span>
+              <span class="mobile-role">{{ userRole }}</span>
             </div>
             
             <button class="dropdown-item">
@@ -76,13 +76,15 @@ const router = useRouter()
 const menuOpen = ref(false)
 const menuRef = ref(null)
 
-const userName = ref('Ana Olichta')
+const userName = ref('Carregando...')
+const userRole = ref('')
 
 const currentTime = ref('')
 const currentDate = ref('')
 let timerInterval = null
 
 const initials = computed(() => {
+  if (!userName.value || userName.value === 'Carregando...') return ''
   return userName.value
     .split(' ')
     .slice(0, 2)
@@ -117,7 +119,7 @@ const toggleMenu = () => {
 }
 
 const logout = () => {
-  localStorage.clear()
+  localStorage.removeItem('oneclinic_user')
   sessionStorage.clear()
   menuOpen.value = false
   router.replace('/')
@@ -136,6 +138,17 @@ onMounted(() => {
   document.addEventListener('click', handleClickOutside)
   updateDateTime()
   timerInterval = setInterval(updateDateTime, 1000)
+
+  // Recupera usuário logado
+  const sessao = localStorage.getItem('oneclinic_user')
+  if (sessao) {
+    const dados = JSON.parse(sessao)
+    userName.value = dados.nome
+    userRole.value = dados.cargo
+  } else {
+    // Se não houver sessão, joga de volta pro login
+    router.replace('/')
+  }
 })
 
 onBeforeUnmount(() => {
