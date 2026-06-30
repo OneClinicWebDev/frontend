@@ -93,6 +93,7 @@
 
 <script setup>
 import { ref, computed } from "vue";
+import { store } from "@/store.js";
 import StatCard from "../../layouts/Components/StatCard.vue";
 import ColaboradorCard from "./components/ColaboradorCard.vue";
 import ColaboradorModal from "./components/ColaboradorModal.vue";
@@ -119,54 +120,12 @@ const statusBusca = [
   { label: "Férias", value: "ferias" },
 ];
 
-const colaboradores = ref([
-  {
-    id: 1,
-    iniciais: "CM",
-    nome: "Carlos Mendes",
-    cpf: "123.456.789-01",
-    status: "ativo",
-    cargo: "Médico Ortopedista",
-    departamento: "Corpo Clínico",
-    email: "carlos.mendes@email.com",
-    telefone: "(11) 98765-4321",
-    admissao: "15/01/2026",
-    criadoEm: "10/01/2026 14:22 GMT-3",
-  },
-  {
-    id: 2,
-    iniciais: "MC",
-    nome: "Mariana Costa",
-    cpf: "987.654.321-00",
-    status: "ferias",
-    cargo: "Recepcionista",
-    departamento: "Atendimento",
-    email: "mariana.costa@email.com",
-    telefone: "(11) 97654-3210",
-    admissao: "03/03/2026",
-    criadoEm: "01/03/2026 09:15 GMT-3",
-  },
-  {
-    id: 3,
-    iniciais: "FS",
-    nome: "Fernando Silva",
-    cpf: "456.789.123-00",
-    status: "ativo",
-    cargo: "Administrador",
-    departamento: "Gestão",
-    email: "fernando.silva@email.com",
-    telefone: "(11) 96543-2109",
-    admissao: "20/02/2026",
-    criadoEm: "15/02/2026 17:40 GMT-3",
-  },
-]);
-
-const totalColaboradores = computed(() => colaboradores.value.length);
+const totalColaboradores = computed(() => store.colaboradores.length);
 const colaboradoresAtivos = computed(
-  () => colaboradores.value.filter((c) => c.status === "ativo").length
+  () => store.colaboradores.filter((c) => c.status === "ativo").length
 );
 const colaboradoresFerias = computed(
-  () => colaboradores.value.filter((c) => c.status === "ferias").length
+  () => store.colaboradores.filter((c) => c.status === "ferias").length
 );
 
 const placeholderBusca = computed(() => {
@@ -203,7 +162,7 @@ const limparFiltros = () => {
 };
 
 const colaboradoresFiltrados = computed(() => {
-  let resultado = colaboradores.value;
+  let resultado = store.colaboradores;
   if (filtroStatus.value !== "todos")
     resultado = resultado.filter((c) => c.status === filtroStatus.value);
   if (!searchQuery.value || camposAtivos.value.length === 0) return resultado;
@@ -269,9 +228,9 @@ const obterTimestamp = () => {
 
 const salvarColaborador = (dados) => {
   if (dados.id) {
-    const index = colaboradores.value.findIndex((c) => c.id === dados.id);
+    const index = store.colaboradores.findIndex((c) => c.id === dados.id);
     if (index !== -1) {
-      colaboradores.value[index] = { ...dados, iniciais: gerarIniciais(dados.nome) };
+      store.colaboradores[index] = { ...dados, iniciais: gerarIniciais(dados.nome) };
       dispararToast(`Colaborador "${dados.nome}" atualizado!`);
     }
   } else {
@@ -281,17 +240,17 @@ const salvarColaborador = (dados) => {
       iniciais: gerarIniciais(dados.nome),
       criadoEm: obterTimestamp(),
     };
-    colaboradores.value.unshift(novo);
+    store.colaboradores.unshift(novo);
     dispararToast(`Colaborador "${dados.nome}" cadastrado!`);
   }
 };
 
 const alternarStatus = (colaborador) => {
-  const index = colaboradores.value.findIndex((c) => c.id === colaborador.id);
+  const index = store.colaboradores.findIndex((c) => c.id === colaborador.id);
   if (index !== -1) {
     const novoStatus =
-      colaboradores.value[index].status === "ativo" ? "inativo" : "ativo";
-    colaboradores.value[index].status = novoStatus;
+      store.colaboradores[index].status === "ativo" ? "inativo" : "ativo";
+    store.colaboradores[index].status = novoStatus;
     dispararToast(`Colaborador "${colaborador.nome}" alterado para ${novoStatus}.`);
   }
 };

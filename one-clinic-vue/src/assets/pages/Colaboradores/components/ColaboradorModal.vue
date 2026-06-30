@@ -72,7 +72,7 @@
                   v-model="form.cargo" 
                   required 
                   :disabled="isDetalhes"
-                  placeholder="Ex: Desenvolvedor Senior" 
+                  placeholder="Ex: Massoterapeuta" 
                 />
               </div>
               
@@ -83,7 +83,7 @@
                   v-model="form.departamento" 
                   required 
                   :disabled="isDetalhes"
-                  placeholder="Ex: TI" 
+                  placeholder="Ex: Profissional de Estética" 
                 />
               </div>
             </div>
