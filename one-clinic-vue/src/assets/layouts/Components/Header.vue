@@ -1,67 +1,118 @@
 <template>
-  <header class="system-header">
+  <header class="system-header" data-cy="header">
     <div class="header-left">
-      <h1>{{ pageTitle }}</h1>
+      <h1 data-cy="page-title">{{ pageTitle }}</h1>
     </div>
 
     <div class="header-right">
-      <div class="datetime-wrapper">
-        <div class="datetime-block">
+
+      <div class="datetime-wrapper" data-cy="datetime-wrapper">
+        <div class="datetime-block" data-cy="date-block">
           <i class="pi pi-calendar"></i>
-          <span>{{ currentDate }}</span>
+          <span data-cy="current-date">{{ currentDate }}</span>
         </div>
-        
+
         <div class="divider"></div>
-        
-        <div class="datetime-block">
+
+        <div class="datetime-block" data-cy="time-block">
           <i class="pi pi-clock"></i>
-          <span>{{ currentTime }}</span>
+          <span data-cy="current-time">{{ currentTime }}</span>
         </div>
       </div>
 
-      <div class="user-menu" ref="menuRef">
-        <button class="user-button" @click="toggleMenu" :class="{ 'is-active': menuOpen }">
-          <div class="avatar">
+      <div
+        class="user-menu"
+        ref="menuRef"
+        data-cy="user-menu"
+      >
+        <button
+          class="user-button"
+          data-cy="user-button"
+          @click="toggleMenu"
+          :class="{ 'is-active': menuOpen }"
+        >
+          <div class="avatar" data-cy="avatar">
             {{ initials }}
           </div>
 
           <div class="user-info">
-            <span class="user-name">{{ userName }}</span>
-            <span class="user-role">{{ userRole }}</span>
+            <span class="user-name" data-cy="user-name">
+              {{ userName }}
+            </span>
+
+            <span class="user-role" data-cy="user-role">
+              {{ userRole }}
+            </span>
           </div>
 
           <i
             class="pi pi-chevron-down toggle-icon"
+            data-cy="toggle-icon"
             :class="{ 'rotate': menuOpen }"
           ></i>
         </button>
 
         <Transition name="dropdown">
-          <div v-if="menuOpen" class="dropdown-menu">
-            <div class="dropdown-header-mobile">
-              <span class="mobile-name">{{ userName }}</span>
-              <span class="mobile-role">{{ userRole }}</span>
+          <div
+            v-if="menuOpen"
+            class="dropdown-menu"
+            data-cy="dropdown-menu"
+          >
+
+            <div
+              class="dropdown-header-mobile"
+              data-cy="dropdown-mobile-header"
+            >
+              <span
+                class="mobile-name"
+                data-cy="mobile-user-name"
+              >
+                {{ userName }}
+              </span>
+
+              <span
+                class="mobile-role"
+                data-cy="mobile-user-role"
+              >
+                {{ userRole }}
+              </span>
             </div>
-            
-            <button class="dropdown-item">
+
+            <button
+              class="dropdown-item"
+              data-cy="menu-profile"
+            >
               <i class="pi pi-user"></i>
               <span>Meu Perfil</span>
             </button>
 
-            <button class="dropdown-item">
+            <button
+              class="dropdown-item"
+              data-cy="menu-settings"
+            >
               <i class="pi pi-cog"></i>
               <span>Configurações</span>
             </button>
 
-            <div class="dropdown-divider"></div>
+            <div
+              class="dropdown-divider"
+              data-cy="dropdown-divider"
+            ></div>
 
-            <button class="dropdown-item logout" @click="logout">
+            <button
+              class="dropdown-item logout"
+              data-cy="menu-logout"
+              @click="logout"
+            >
               <i class="pi pi-sign-out"></i>
               <span>Sair do Sistema</span>
             </button>
+
           </div>
         </Transition>
+
       </div>
+
     </div>
   </header>
 </template>
