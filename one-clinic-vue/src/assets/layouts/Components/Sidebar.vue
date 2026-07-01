@@ -1,14 +1,32 @@
 <template>
-  <div class="sidebar-overlay" :class="{ 'active': !isCollapsed && isMobile }" @click="isCollapsed = true"></div>
+  <div
+    data-cy="sidebar-overlay"
+    class="sidebar-overlay"
+    :class="{ 'active': !isCollapsed && isMobile }"
+    @click="isCollapsed = true"
+  ></div>
 
-  <button v-show="isCollapsed && isMobile" class="mobile-toggle" @click="isCollapsed = false">
+  <button
+    data-cy="mobile-toggle"
+    v-show="isCollapsed && isMobile"
+    class="mobile-toggle"
+    @click="isCollapsed = false"
+  >
     <i class="pi pi-bars"></i>
   </button>
 
-  <aside :class="['sidebar', { 'collapsed': isCollapsed }]">
-    
-    <div class="sidebar-header" @click="isCollapsed = !isCollapsed" title="Clique para expandir/recolher">
-      
+  <aside
+    data-cy="sidebar"
+    :class="['sidebar', { 'collapsed': isCollapsed }]"
+  >
+
+    <div
+      data-cy="sidebar-header"
+      class="sidebar-header"
+      @click="isCollapsed = !isCollapsed"
+      title="Clique para expandir/recolher"
+    >
+
       <div v-if="isCollapsed && !isMobile" class="logo-wrapper">
         <img :src="LOGO_URL" alt="Logo" class="logo-img" />
       </div>
@@ -23,48 +41,93 @@
     </div>
 
     <nav class="sidebar-nav">
-      <router-link to="/app/dashboard" class="nav-item" @click="closeOnMobile">
+
+      <router-link
+        data-cy="menu-dashboard"
+        to="/app/dashboard"
+        class="nav-item"
+        @click="closeOnMobile"
+      >
         <div class="icon-wrapper"><i class="pi pi-th-large"></i></div>
         <span>Dashboard</span>
       </router-link>
-      
-      <router-link to="/app/agenda" class="nav-item" @click="closeOnMobile">
+
+      <router-link
+        data-cy="menu-agenda"
+        to="/app/agenda"
+        class="nav-item"
+        @click="closeOnMobile"
+      >
         <div class="icon-wrapper"><i class="pi pi-calendar"></i></div>
         <span>Agenda</span>
       </router-link>
-      
-      <router-link to="/app/clientes" class="nav-item" @click="closeOnMobile">
+
+      <router-link
+        data-cy="menu-clientes"
+        to="/app/clientes"
+        class="nav-item"
+        @click="closeOnMobile"
+      >
         <div class="icon-wrapper"><i class="pi pi-users"></i></div>
         <span>Clientes</span>
       </router-link>
-      
-      <router-link to="/app/atendimentos" class="nav-item" @click="closeOnMobile">
+
+      <router-link
+        data-cy="menu-atendimentos"
+        to="/app/atendimentos"
+        class="nav-item"
+        @click="closeOnMobile"
+      >
         <div class="icon-wrapper"><i class="pi pi-list"></i></div>
         <span>Atendimentos</span>
       </router-link>
-      
-      <router-link v-if="usuarioRole === 'admin'" to="/app/financeiro" class="nav-item" @click="closeOnMobile">
+
+      <router-link
+        v-if="usuarioRole === 'admin'"
+        data-cy="menu-financeiro"
+        to="/app/financeiro"
+        class="nav-item"
+        @click="closeOnMobile"
+      >
         <div class="icon-wrapper"><i class="pi pi-dollar"></i></div>
         <span>Financeiro</span>
       </router-link>
-      
-      <router-link to="/app/estoque" class="nav-item" @click="closeOnMobile">
+
+      <router-link
+        data-cy="menu-estoque"
+        to="/app/estoque"
+        class="nav-item"
+        @click="closeOnMobile"
+      >
         <div class="icon-wrapper"><i class="pi pi-box"></i></div>
         <span>Estoque</span>
       </router-link>
-      
-      <router-link v-if="usuarioRole === 'admin'" to="/app/Colaboradores" class="nav-item" @click="closeOnMobile">
+
+      <router-link
+        v-if="usuarioRole === 'admin'"
+        data-cy="menu-colaboradores"
+        to="/app/Colaboradores"
+        class="nav-item"
+        @click="closeOnMobile"
+      >
         <div class="icon-wrapper"><i class="pi pi-id-card"></i></div>
         <span>Colaboradores</span>
       </router-link>
+
     </nav>
 
     <div class="sidebar-footer">
-      <a href="#" class="nav-item" @click="closeOnMobile">
+      <a
+        data-cy="menu-configuracoes"
+        href="#"
+        class="nav-item"
+        @click="closeOnMobile"
+      >
         <div class="icon-wrapper"><i class="pi pi-cog"></i></div>
         <span>Configurações</span>
       </a>
     </div>
+
   </aside>
 </template>
 
