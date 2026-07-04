@@ -5,9 +5,14 @@
         <div class="client-avatar">{{ cliente.iniciais }}</div>
         <div class="client-name-status">
           <h3 class="client-name">{{ cliente.nome }}</h3>
-          <span :class="['status-badge', cliente.status === 'ativo' ? 'badge-ativo' : 'badge-inativo']">
-            {{ cliente.status }}
-          </span>
+          <div class="badges-container">
+            <span :class="['status-badge', cliente.status === 'ativo' ? 'badge-ativo' : 'badge-inativo']">
+              {{ cliente.status === 'ativo' ? 'Ativo' : 'Inativo' }}
+            </span>
+            <span :class="['status-badge', cliente.statusFinanceiro === 'Em dia' ? 'badge-em-dia' : 'badge-em-atraso']">
+              {{ cliente.statusFinanceiro }}
+            </span>
+          </div>
         </div>
       </div>
       
@@ -26,7 +31,7 @@
           <div class="dropdown-divider"></div>
           <button class="dropdown-item" @click.stop="emitirAcao('toggle-status')">
             <i :class="['pi', cliente.status === 'ativo' ? 'pi-ban' : 'pi-check-circle']"></i> 
-            {{ cliente.status === 'ativo' ? 'Desativar' : 'Ativar' }}
+            {{ cliente.status === 'ativo' ? 'Desativar Cadastro' : 'Ativar Cadastro' }}
           </button>
         </div>
       </div>
@@ -45,10 +50,6 @@
         <i class="pi pi-phone"></i>
         <span>{{ cliente.telefone }}</span>
       </div>
-      <div class="contact-row text-truncate">
-        <i class="pi pi-map-marker"></i>
-        <span>{{ cliente.endereco }}</span>
-      </div>
     </div>
 
     <hr class="card-divider" />
@@ -59,8 +60,8 @@
         <span class="info-value">{{ cliente.ultimaVisita || 'Nenhuma' }}</span>
       </div>
       <div class="footer-info text-right">
-        <span class="info-label">Total</span>
-        <span class="info-value">{{ cliente.totalVisitas }} visitas</span>
+        <span class="info-label">Total de visitas</span>
+        <span class="info-value">{{ cliente.totalVisitas }}</span>
       </div>
     </div>
   </div>
@@ -151,7 +152,13 @@ onUnmounted(() => {
   font-size: 1.05rem;
   font-weight: 600;
   color: var(--cor-escura);
-  margin: 0 0 0.25rem 0;
+  margin: 0 0 0.35rem 0;
+}
+
+.badges-container {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
 }
 
 .status-badge {
@@ -159,7 +166,6 @@ onUnmounted(() => {
   font-weight: 600;
   padding: 0.15rem 0.5rem;
   border-radius: 4px;
-  text-transform: lowercase;
 }
 
 .badge-ativo {
@@ -170,6 +176,16 @@ onUnmounted(() => {
 .badge-inativo {
   background-color: var(--cor-fundo);
   color: var(--cor-secundaria);
+}
+
+.badge-em-dia {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.badge-em-atraso {
+  background-color: #fee2e2;
+  color: #991b1b;
 }
 
 .menu-container {
@@ -201,7 +217,7 @@ onUnmounted(() => {
   border-radius: 8px;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   padding: 0.5rem 0;
-  min-width: 150px;
+  min-width: 170px;
   z-index: 10;
 }
 
@@ -245,12 +261,6 @@ onUnmounted(() => {
   color: var(--cor-secundaria);
   opacity: 0.8;
   font-size: 0.85rem;
-}
-
-.text-truncate {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .contact-row i {

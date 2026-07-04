@@ -60,38 +60,22 @@
               />
             </div>
 
-            <div class="form-group">
-              <label>Endereço Completo</label>
-              <input
-                type="text"
-                v-model="form.endereco"
-                required
-                minlength="5"
-                :disabled="isDetalhes"
-                placeholder="Ex: Rua das Flores, 123 - Centro"
-              />
-            </div>
+            <div class="form-row">
+              <div class="form-group half-width">
+                <label>Status Cadastro</label>
+                <select v-model="form.status" :disabled="isDetalhes">
+                  <option value="ativo">Ativo</option>
+                  <option value="inativo">Inativo</option>
+                </select>
+              </div>
 
-            <div class="form-group">
-              <label>Profissional Responsável</label>
-              <select v-model="form.profissionalId" required :disabled="isDetalhes">
-                <option value="" disabled>Selecione um profissional</option>
-                <option
-                  v-for="prof in profissionaisAtivos"
-                  :key="prof.id"
-                  :value="prof.id"
-                >
-                  {{ prof.nome }} ({{ prof.cargo }})
-                </option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label>Status</label>
-              <select v-model="form.status" :disabled="isDetalhes">
-                <option value="ativo">Ativo</option>
-                <option value="inativo">Inativo</option>
-              </select>
+              <div class="form-group half-width">
+                <label>Status Financeiro</label>
+                <select v-model="form.statusFinanceiro" :disabled="isDetalhes">
+                  <option value="Em dia">Em dia</option>
+                  <option value="Em atraso">Em atraso</option>
+                </select>
+              </div>
             </div>
 
             <div class="form-group" v-if="mode !== 'criar'">
@@ -116,7 +100,6 @@
 
 <script setup>
 import { ref, watch, computed } from "vue";
-import { store } from "@/store.js";
 
 const props = defineProps({
   isOpen: Boolean,
@@ -131,18 +114,13 @@ const form = ref({
   cpf: "",
   email: "",
   telefone: "",
-  endereco: "",
-  profissionalId: "",
   status: "ativo",
+  statusFinanceiro: "Em dia",
   criadoEm: "",
 });
 
 const exibicaoCpf = ref("");
 const exibicaoTelefone = ref("");
-
-const profissionaisAtivos = computed(() => {
-  return store.colaboradores.filter((c) => c.status === "ativo");
-});
 
 const tituloModal = computed(() => {
   if (props.mode === "detalhes") return "Detalhes do Cliente";
@@ -197,9 +175,8 @@ watch(
           cpf: "",
           email: "",
           telefone: "",
-          endereco: "",
-          profissionalId: "",
           status: "ativo",
+          statusFinanceiro: "Em dia",
           criadoEm: "",
         };
         exibicaoCpf.value = "";
@@ -273,6 +250,13 @@ const salvar = () => {
   display: flex;
   flex-direction: column;
   gap: 1.1rem;
+}
+.form-row {
+  display: flex;
+  gap: 1rem;
+}
+.half-width {
+  flex: 1;
 }
 .form-group {
   display: flex;

@@ -31,9 +31,11 @@
               </button>
             </div>
           </div>
+          
           <div class="divider"></div>
+          
           <div class="filter-group">
-            <span class="filter-label"><i class="pi pi-check-circle"></i> Status:</span>
+            <span class="filter-label"><i class="pi pi-check-circle"></i> Cadastro:</span>
             <div class="chips-container">
               <button
                 v-for="status in statusBusca"
@@ -45,6 +47,23 @@
               </button>
             </div>
           </div>
+
+          <div class="divider"></div>
+
+          <div class="filter-group">
+            <span class="filter-label"><i class="pi pi-dollar"></i> Financeiro:</span>
+            <div class="chips-container">
+              <button
+                v-for="fin in financeiroBusca"
+                :key="fin.value"
+                :class="['chip chip-financeiro', { active: filtroFinanceiro === fin.value }]"
+                @click="filtroFinanceiro = fin.value"
+              >
+                {{ fin.label }}
+              </button>
+            </div>
+          </div>
+
           <button class="btn-limpar" @click="limparFiltros" v-if="temFiltroAtivo">
             <i class="pi pi-filter-slash"></i> Limpar
           </button>
@@ -54,7 +73,7 @@
       <div class="stats-grid">
         <StatCard :number="totalClientes" label="Total de Clientes" />
         <StatCard :number="clientesAtivos" label="Clientes Ativos" />
-        <StatCard :number="mediaVisitas" label="Média de Visitas" />
+        <StatCard :number="clientesEmAtraso" label="Em Atraso" />
       </div>
 
       <TransitionGroup name="list" tag="div" class="clients-grid">
@@ -101,6 +120,7 @@ import ClientModal from "./components/ClientModal.vue";
 const searchQuery = ref("");
 const camposAtivos = ref(["nome"]);
 const filtroStatus = ref("todos");
+const filtroFinanceiro = ref("todos");
 const isModalOpen = ref(false);
 const modalMode = ref("criar");
 const clienteSelecionado = ref(null);
@@ -119,15 +139,19 @@ const statusBusca = [
   { label: "Inativos", value: "inativo" },
 ];
 
+const financeiroBusca = [
+  { label: "Todos", value: "todos" },
+  { label: "Em dia", value: "Em dia" },
+  { label: "Em atraso", value: "Em atraso" },
+];
+
 const totalClientes = computed(() => store.clientes.length);
 const clientesAtivos = computed(
   () => store.clientes.filter((c) => c.status === "ativo").length
 );
-const mediaVisitas = computed(() => {
-  if (store.clientes.length === 0) return 0;
-  const total = store.clientes.reduce((acc, c) => acc + c.totalVisitas, 0);
-  return Math.round(total / store.clientes.length);
-});
+const clientesEmAtraso = computed(
+  () => store.clientes.filter((c) => c.statusFinanceiro === "Em atraso").length
+);
 
 const placeholderBusca = computed(() => {
   const campos = camposBusca
@@ -141,7 +165,8 @@ const temFiltroAtivo = computed(() => {
     searchQuery.value.length > 0 ||
     camposAtivos.value.length > 1 ||
     (camposAtivos.value.length === 1 && camposAtivos.value[0] !== "nome") ||
-    filtroStatus.value !== "todos"
+    filtroStatus.value !== "todos" ||
+    filtroFinanceiro.value !== "todos"
   );
 });
 
@@ -159,6 +184,7 @@ const toggleCampo = (campo) => {
 const limparFiltros = () => {
   camposAtivos.value = ["nome"];
   filtroStatus.value = "todos";
+  filtroFinanceiro.value = "todos";
   searchQuery.value = "";
 };
 
@@ -167,6 +193,10 @@ const clientesFiltrados = computed(() => {
 
   if (filtroStatus.value !== "todos") {
     resultado = resultado.filter((c) => c.status === filtroStatus.value);
+  }
+
+  if (filtroFinanceiro.value !== "todos") {
+    resultado = resultado.filter((c) => c.statusFinanceiro === filtroFinanceiro.value);
   }
 
   if (!searchQuery.value || camposAtivos.value.length === 0) {
@@ -264,7 +294,7 @@ const alternarStatus = (cliente) => {
   if (index !== -1) {
     const novoStatus = store.clientes[index].status === "ativo" ? "inativo" : "ativo";
     store.clientes[index].status = novoStatus;
-    dispararToast(`Cliente "${cliente.nome}" foi marcado como ${novoStatus}.`);
+    dispararToast(`Cadastro de "${cliente.nome}" marcado como ${novoStatus}.`);
   }
 };
 </script>
@@ -395,6 +425,11 @@ const alternarStatus = (cliente) => {
 .chip-status.active {
   background-color: var(--cor-escura);
   border-color: var(--cor-escura);
+}
+.chip-financeiro.active {
+  background-color:  #158a8d;
+  border-color: rgba(28, 164, 167, 0.25);
+  color: var(--branco);
 }
 .divider {
   width: 1px;
