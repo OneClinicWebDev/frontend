@@ -5,14 +5,9 @@
         <div class="client-avatar">{{ cliente.iniciais }}</div>
         <div class="client-name-status">
           <h3 class="client-name">{{ cliente.nome }}</h3>
-          <div class="badges-container">
-            <span :class="['status-badge', cliente.status === 'ativo' ? 'badge-ativo' : 'badge-inativo']">
-              {{ cliente.status === 'ativo' ? 'Ativo' : 'Inativo' }}
-            </span>
-            <span :class="['status-badge', cliente.statusFinanceiro === 'Em dia' ? 'badge-em-dia' : 'badge-em-atraso']">
-              {{ cliente.statusFinanceiro }}
-            </span>
-          </div>
+          <span :class="['status-badge', getBadgeClass(cliente.status)]">
+            {{ formatStatus(cliente.status) }}
+          </span>
         </div>
       </div>
       
@@ -31,7 +26,7 @@
           <div class="dropdown-divider"></div>
           <button class="dropdown-item" @click.stop="emitirAcao('toggle-status')">
             <i :class="['pi', cliente.status === 'ativo' ? 'pi-ban' : 'pi-check-circle']"></i> 
-            {{ cliente.status === 'ativo' ? 'Desativar Cadastro' : 'Ativar Cadastro' }}
+            {{ cliente.status === 'ativo' ? 'Desativar' : 'Ativar' }}
           </button>
         </div>
       </div>
@@ -39,8 +34,10 @@
 
     <div class="client-contact">
       <div class="contact-row">
-        <i class="pi pi-id-card"></i>
-        <span>{{ cliente.cpf }}</span>
+        <i class="pi pi-wallet"></i>
+        <span :class="['font-semibold', cliente.statusFinanceiro === 'Em atraso' ? 'text-red' : 'text-green']">
+          {{ cliente.statusFinanceiro }}
+        </span>
       </div>
       <div class="contact-row">
         <i class="pi pi-envelope"></i>
@@ -56,12 +53,12 @@
 
     <div class="card-footer">
       <div class="footer-info">
-        <span class="info-label">Última visita</span>
+        <span class="info-label">Última Visita</span>
         <span class="info-value">{{ cliente.ultimaVisita || 'Nenhuma' }}</span>
       </div>
       <div class="footer-info text-right">
-        <span class="info-label">Total de visitas</span>
-        <span class="info-value">{{ cliente.totalVisitas }}</span>
+        <span class="info-label">CPF</span>
+        <span class="info-value text-sm">{{ cliente.cpf }}</span>
       </div>
     </div>
   </div>
@@ -94,6 +91,15 @@ const emitirDblClick = () => {
   emit('detalhes', props.cliente)
 }
 
+const getBadgeClass = (status) => {
+  if (status === 'ativo') return 'badge-ativo'
+  return 'badge-inativo'
+}
+
+const formatStatus = (status) => {
+  return status
+}
+
 onMounted(() => {
   window.addEventListener('click', fecharMenu)
 })
@@ -104,22 +110,25 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 .client-card {
-  background-color: var(--branco);
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  border-radius: 12px;
-  padding: 1.25rem;
+  background-color: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 16px;
+  padding: 1.5rem;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
-  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
+  font-family: 'Inter', sans-serif;
 }
 
 .client-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 15px -3px rgba(28, 164, 167, 0.15);
-  border-color: var(--cor-clara);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.12);
+  border-color: #CBD5E1;
 }
 
 .card-header {
@@ -136,56 +145,44 @@ onUnmounted(() => {
 }
 
 .client-avatar {
-  width: 44px;
-  height: 44px;
-  background-color: var(--cor-clara);
-  color: var(--cor-secundaria);
+  width: 50px;
+  height: 50px;
+  background-color: #F1F5F9;
+  color: #1CA4A7;
+  border: 1px solid #E2E8F0;
   border-radius: 50%;
   display: flex;
   justify-content: center;
   align-items: center;
   font-weight: 700;
-  font-size: 1rem;
+  font-size: 1.1rem;
+  flex-shrink: 0;
 }
 
 .client-name {
-  font-size: 1.05rem;
-  font-weight: 600;
-  color: var(--cor-escura);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #334155;
   margin: 0 0 0.35rem 0;
 }
 
-.badges-container {
-  display: flex;
-  gap: 0.4rem;
-  flex-wrap: wrap;
-}
-
 .status-badge {
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  padding: 0.15rem 0.5rem;
-  border-radius: 4px;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  text-transform: capitalize;
+  display: inline-block;
 }
 
 .badge-ativo {
-  background-color: var(--cor-primaria);
-  color: var(--branco);
+  background-color: #ECFDF5;
+  color: #059669;
 }
 
 .badge-inativo {
-  background-color: var(--cor-fundo);
-  color: var(--cor-secundaria);
-}
-
-.badge-em-dia {
-  background-color: #d1fae5;
-  color: #065f46;
-}
-
-.badge-em-atraso {
-  background-color: #fee2e2;
-  color: #991b1b;
+  background-color: #F1F5F9;
+  color: #64748B;
 }
 
 .menu-container {
@@ -195,92 +192,112 @@ onUnmounted(() => {
 .btn-dots {
   background: none;
   border: none;
-  color: var(--cor-secundaria);
-  opacity: 0.6;
+  color: #94A3B8;
   cursor: pointer;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  transition: background-color 0.2s, opacity 0.2s;
+  padding: 0.4rem;
+  border-radius: 8px;
+  font-size: 1.2rem;
+  transition: all 0.2s ease;
 }
 
 .btn-dots:hover {
-  background-color: var(--cor-fundo);
-  opacity: 1;
+  color: #334155;
+  background-color: #F1F5F9;
 }
 
 .dropdown-menu {
   position: absolute;
   top: 100%;
   right: 0;
-  background: var(--branco);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 8px;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
   padding: 0.5rem 0;
-  min-width: 170px;
+  min-width: 180px;
   z-index: 10;
+  transform-origin: top right;
 }
 
 .dropdown-item {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.75rem;
   width: 100%;
-  padding: 0.6rem 1rem;
+  padding: 0.75rem 1.25rem;
   background: none;
   border: none;
   text-align: left;
   font-size: 0.9rem;
-  color: var(--cor-escura);
+  font-weight: 500;
+  color: #475569;
   cursor: pointer;
-  transition: background-color 0.2s, color 0.2s;
+  transition: all 0.2s ease;
+  font-family: inherit;
 }
 
 .dropdown-item:hover {
-  background-color: var(--cor-fundo);
-  color: var(--cor-primaria);
+  background-color: #F8FAFC;
+  color: #1CA4A7;
 }
 
 .dropdown-divider {
   height: 1px;
-  background-color: var(--cor-clara);
+  background-color: #F1F5F9;
   margin: 0.25rem 0;
 }
 
 .client-contact {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  margin-bottom: 1.25rem;
+  gap: 0.6rem;
+  margin-bottom: 1.5rem;
 }
 
 .contact-row {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  color: var(--cor-secundaria);
-  opacity: 0.8;
-  font-size: 0.85rem;
+  gap: 0.75rem;
+  color: #64748B;
+  font-size: 0.9rem;
+}
+
+.font-semibold {
+  font-weight: 600;
+  color: #334155;
+}
+
+.text-green {
+  color: #059669;
+}
+
+.text-red {
+  color: #EF4444;
 }
 
 .contact-row i {
-  color: var(--cor-primaria);
+  color: #94A3B8;
+  font-size: 1rem;
+  width: 16px;
+  text-align: center;
 }
 
 .card-divider {
   border: 0;
-  border-top: 1px solid rgba(0, 0, 0, 0.06);
-  margin: 0 0 1rem 0;
+  border-top: 1px dashed #E2E8F0;
+  margin: 0 0 1.25rem 0;
 }
 
 .card-footer {
   display: flex;
   justify-content: space-between;
+  align-items: flex-end;
 }
 
 .footer-info {
   display: flex;
   flex-direction: column;
+  gap: 0.2rem;
 }
 
 .text-right {
@@ -289,14 +306,19 @@ onUnmounted(() => {
 
 .info-label {
   font-size: 0.75rem;
-  color: var(--cor-secundaria);
-  opacity: 0.6;
-  margin-bottom: 0.15rem;
+  font-weight: 600;
+  color: #94A3B8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .info-value {
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   font-weight: 600;
-  color: var(--cor-escura);
+  color: #334155;
+}
+
+.text-sm {
+  font-size: 0.85rem;
 }
 </style>
