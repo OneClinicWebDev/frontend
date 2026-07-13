@@ -293,11 +293,13 @@ const alternarStatus = (colaborador) => {
   justify-content: space-between;
   align-items: center;
   gap: 1.5rem;
+  flex-wrap: wrap;
 }
 .search-input-wrapper {
   position: relative;
   flex-grow: 1;
   max-width: 600px;
+  width: 100%;
 }
 .search-icon {
   position: absolute;
@@ -479,5 +481,42 @@ const alternarStatus = (colaborador) => {
 .toast-leave-to {
   opacity: 0;
   transform: translateY(20px) scale(0.9);
+}
+
+@media (max-width: 992px) {
+  .top-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .search-input-wrapper {
+    max-width: 100%;
+  }
+  .btn-novo {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 768px) {
+  .page-content {
+    padding: 1rem;
+  }
+  .filters-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.25rem;
+  }
+  .filter-group {
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+  }
+  .divider {
+    display: none;
+  }
+  .btn-limpar {
+    margin-left: 0;
+    width: 100%;
+    justify-content: center;
+  }
 }
 </style>
