@@ -34,12 +34,16 @@
 
     <div class="collaborator-contact">
       <div class="contact-row">
-        <i class="pi pi-briefcase"></i>
-        <span class="font-semibold">{{ colaborador.cargo }}</span>
+        <i class="pi pi-id-card"></i>
+        <span class="font-semibold">{{ colaborador.funcao }}</span>
       </div>
-      <div class="contact-row">
-        <i class="pi pi-sitemap"></i>
-        <span>{{ colaborador.departamento }}</span>
+      <div class="contact-row" v-if="colaborador.funcao === 'Profissional' && colaborador.especialidade">
+        <i class="pi pi-star"></i>
+        <span class="text-highlight">{{ colaborador.especialidade }}</span>
+      </div>
+      <div class="contact-row" v-if="colaborador.status === 'ferias'">
+        <i class="pi pi-calendar-clock"></i>
+        <span class="text-ferias">{{ colaborador.inicioFerias }} até {{ colaborador.fimFerias }}</span>
       </div>
       <div class="contact-row">
         <i class="pi pi-envelope"></i>
@@ -55,8 +59,12 @@
 
     <div class="card-footer">
       <div class="footer-info">
-        <span class="info-label">Data de Admissão</span>
+        <span class="info-label">Admissão</span>
         <span class="info-value">{{ colaborador.admissao }}</span>
+      </div>
+      <div class="footer-info" v-if="colaborador.status === 'inativo' && colaborador.demissao">
+        <span class="info-label text-red">Demissão</span>
+        <span class="info-value">{{ colaborador.demissao }}</span>
       </div>
       <div class="footer-info text-right">
         <span class="info-label">CPF</span>
@@ -114,55 +122,60 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 .collaborator-card {
   background-color: #FFFFFF;
-  border: 1px solid #E5E7EB;
+  border: 1px solid #E2E8F0;
   border-radius: 16px;
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
+  font-family: 'Inter', sans-serif;
 }
 
 .collaborator-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.12);
+  border-color: #CBD5E1;
 }
 
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
 }
 
 .collaborator-info-main {
   display: flex;
-  gap: 1.25rem;
+  gap: 1rem;
   align-items: center;
 }
 
 .collaborator-avatar {
-  width: 56px;
-  height: 56px;
-  background-color: #1F2937;
-  color: #FFFFFF;
+  width: 50px;
+  height: 50px;
+  background-color: #F1F5F9;
+  color: #1CA4A7;
+  border: 1px solid #E2E8F0;
   border-radius: 50%;
   display: flex;
   justify-content: center;
   align-items: center;
-  font-weight: 600;
-  font-size: 1.2rem;
+  font-weight: 700;
+  font-size: 1.1rem;
   flex-shrink: 0;
 }
 
 .collaborator-name {
   font-size: 1.1rem;
   font-weight: 700;
-  color: #1F2937;
-  margin: 0 0 0.25rem 0;
+  color: #334155;
+  margin: 0 0 0.35rem 0;
 }
 
 .status-badge {
@@ -170,22 +183,23 @@ onUnmounted(() => {
   font-weight: 600;
   padding: 0.25rem 0.75rem;
   border-radius: 20px;
-  text-transform: lowercase;
+  text-transform: capitalize;
+  display: inline-block;
 }
 
 .badge-ativo {
-  background-color: #DEF7EC;
-  color: #03543F;
+  background-color: #ECFDF5;
+  color: #059669;
 }
 
 .badge-ferias {
-  background-color: #FEF3C7;
-  color: #92400E;
+  background-color: #FFFBEB;
+  color: #D97706;
 }
 
 .badge-inativo {
-  background-color: #F3F4F6;
-  color: #6B7280;
+  background-color: #F1F5F9;
+  color: #64748B;
 }
 
 .menu-container {
@@ -195,17 +209,17 @@ onUnmounted(() => {
 .btn-dots {
   background: none;
   border: none;
-  color: #6B7280;
+  color: #94A3B8;
   cursor: pointer;
-  padding: 0.25rem;
+  padding: 0.4rem;
   border-radius: 8px;
   font-size: 1.2rem;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 }
 
 .btn-dots:hover {
-  color: #1F2937;
-  background-color: #F9FAFB;
+  color: #334155;
+  background-color: #F1F5F9;
 }
 
 .dropdown-menu {
@@ -213,11 +227,11 @@ onUnmounted(() => {
   top: 100%;
   right: 0;
   background: #FFFFFF;
-  border: 1px solid #E5E7EB;
-  border-radius: 10px;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
   padding: 0.5rem 0;
-  min-width: 160px;
+  min-width: 180px;
   z-index: 10;
   transform-origin: top right;
 }
@@ -227,32 +241,33 @@ onUnmounted(() => {
   align-items: center;
   gap: 0.75rem;
   width: 100%;
-  padding: 0.75rem 1rem;
+  padding: 0.75rem 1.25rem;
   background: none;
   border: none;
   text-align: left;
   font-size: 0.9rem;
   font-weight: 500;
-  color: #1F2937;
+  color: #475569;
   cursor: pointer;
   transition: all 0.2s ease;
+  font-family: inherit;
 }
 
 .dropdown-item:hover {
-  background-color: #F9FAFB;
+  background-color: #F8FAFC;
   color: #1CA4A7;
 }
 
 .dropdown-divider {
   height: 1px;
-  background-color: #E5E7EB;
+  background-color: #F1F5F9;
   margin: 0.25rem 0;
 }
 
 .collaborator-contact {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.6rem;
   margin-bottom: 1.5rem;
 }
 
@@ -260,18 +275,27 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  color: #6B7280;
+  color: #64748B;
   font-size: 0.9rem;
 }
 
 .font-semibold {
   font-weight: 600;
-  color: #4B5563;
+  color: #334155;
+}
+
+.text-highlight {
+  font-weight: 500;
+  color: #1CA4A7;
+}
+
+.text-ferias {
+  font-weight: 500;
+  color: #D97706;
 }
 
 .contact-row i {
-  color: #6B7280;
-  opacity: 0.6;
+  color: #94A3B8;
   font-size: 1rem;
   width: 16px;
   text-align: center;
@@ -279,18 +303,20 @@ onUnmounted(() => {
 
 .card-divider {
   border: 0;
-  border-top: 1px solid #F9FAFB;
+  border-top: 1px dashed #E2E8F0;
   margin: 0 0 1.25rem 0;
 }
 
 .card-footer {
   display: flex;
   justify-content: space-between;
+  align-items: flex-end;
 }
 
 .footer-info {
   display: flex;
   flex-direction: column;
+  gap: 0.2rem;
 }
 
 .text-right {
@@ -299,15 +325,20 @@ onUnmounted(() => {
 
 .info-label {
   font-size: 0.75rem;
-  font-weight: 500;
-  color: #6B7280;
-  margin-bottom: 0.25rem;
+  font-weight: 600;
+  color: #94A3B8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.text-red {
+  color: #EF4444;
 }
 
 .info-value {
   font-size: 0.95rem;
-  font-weight: 700;
-  color: #1F2937;
+  font-weight: 600;
+  color: #334155;
 }
 
 .text-sm {
