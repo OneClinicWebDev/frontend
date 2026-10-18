@@ -48,22 +48,6 @@
             </div>
           </div>
 
-          <div class="divider"></div>
-
-          <div class="filter-group">
-            <span class="filter-label"><i class="pi pi-dollar"></i> Financeiro:</span>
-            <div class="chips-container">
-              <button
-                v-for="fin in financeiroBusca"
-                :key="fin.value"
-                :class="['chip chip-financeiro', { active: filtroFinanceiro === fin.value }]"
-                @click="filtroFinanceiro = fin.value"
-              >
-                {{ fin.label }}
-              </button>
-            </div>
-          </div>
-
           <button class="btn-limpar" @click="limparFiltros" v-if="temFiltroAtivo">
             <i class="pi pi-filter-slash"></i> Limpar
           </button>
@@ -71,9 +55,18 @@
       </div>
 
       <div class="stats-grid">
-        <StatCard :number="totalClientes" label="Total de Clientes" />
-        <StatCard :number="clientesAtivos" label="Clientes Ativos" />
-        <StatCard :number="clientesEmAtraso" label="Em Atraso" />
+        <div class="stat-card">
+          <span class="stat-number">{{ totalClientes }}</span>
+          <span class="stat-label">Total de Clientes</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-number">{{ clientesAtivos }}</span>
+          <span class="stat-label">Clientes Ativos</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-number">{{ clientesInativos }}</span>
+          <span class="stat-label">Clientes Inativos</span>
+        </div>
       </div>
 
       <TransitionGroup name="list" tag="div" class="clients-grid">
@@ -89,7 +82,7 @@
 
       <div v-if="clientesFiltrados.length === 0" class="empty-state">
         <i class="pi pi-users empty-icon"></i>
-        <p>Nenhum cliente encontrado.</p>
+        <p>Nenhum cliente encontrado com os filtros atuais.</p>
       </div>
     </main>
 
@@ -113,14 +106,12 @@
 <script setup>
 import { ref, computed } from "vue";
 import { store } from "@/store.js";
-import StatCard from "../../layouts/Components/StatCard.vue";
 import ClientCard from "./components/ClientCard.vue";
 import ClientModal from "./components/ClientModal.vue";
 
 const searchQuery = ref("");
 const camposAtivos = ref(["nome"]);
 const filtroStatus = ref("todos");
-const filtroFinanceiro = ref("todos");
 const isModalOpen = ref(false);
 const modalMode = ref("criar");
 const clienteSelecionado = ref(null);
@@ -135,22 +126,16 @@ const camposBusca = [
 
 const statusBusca = [
   { label: "Todos", value: "todos" },
-  { label: "Ativos", value: "ativo" },
-  { label: "Inativos", value: "inativo" },
-];
-
-const financeiroBusca = [
-  { label: "Todos", value: "todos" },
-  { label: "Em dia", value: "Em dia" },
-  { label: "Em atraso", value: "Em atraso" },
+  { label: "Ativos", value: "ATIVO" },
+  { label: "Inativos", value: "INATIVO" },
 ];
 
 const totalClientes = computed(() => store.clientes.length);
 const clientesAtivos = computed(
-  () => store.clientes.filter((c) => c.status === "ativo").length
+  () => store.clientes.filter((c) => c.status_cadastro === "ATIVO").length
 );
-const clientesEmAtraso = computed(
-  () => store.clientes.filter((c) => c.statusFinanceiro === "Em atraso").length
+const clientesInativos = computed(
+  () => store.clientes.filter((c) => c.status_cadastro === "INATIVO").length
 );
 
 const placeholderBusca = computed(() => {
@@ -165,8 +150,7 @@ const temFiltroAtivo = computed(() => {
     searchQuery.value.length > 0 ||
     camposAtivos.value.length > 1 ||
     (camposAtivos.value.length === 1 && camposAtivos.value[0] !== "nome") ||
-    filtroStatus.value !== "todos" ||
-    filtroFinanceiro.value !== "todos"
+    filtroStatus.value !== "todos"
   );
 });
 
@@ -184,7 +168,6 @@ const toggleCampo = (campo) => {
 const limparFiltros = () => {
   camposAtivos.value = ["nome"];
   filtroStatus.value = "todos";
-  filtroFinanceiro.value = "todos";
   searchQuery.value = "";
 };
 
@@ -192,11 +175,7 @@ const clientesFiltrados = computed(() => {
   let resultado = store.clientes;
 
   if (filtroStatus.value !== "todos") {
-    resultado = resultado.filter((c) => c.status === filtroStatus.value);
-  }
-
-  if (filtroFinanceiro.value !== "todos") {
-    resultado = resultado.filter((c) => c.statusFinanceiro === filtroFinanceiro.value);
+    resultado = resultado.filter((c) => c.status_cadastro === filtroStatus.value);
   }
 
   if (!searchQuery.value || camposAtivos.value.length === 0) {
@@ -209,10 +188,10 @@ const clientesFiltrados = computed(() => {
   return resultado.filter((c) => {
     return camposAtivos.value.some((campo) => {
       if (campo === "cpf" || campo === "telefone") {
-        const valorLimpo = String(c[campo]).replace(/\D/g, "");
+        const valorLimpo = String(c[campo] || '').replace(/\D/g, "");
         return valorLimpo.includes(queryLimpa) || valorLimpo.includes(queryNormal);
       }
-      const valor = String(c[campo]).toLowerCase();
+      const valor = String(c[campo] || '').toLowerCase();
       return valor.includes(queryNormal);
     });
   });
@@ -250,6 +229,7 @@ const fecharModal = () => {
 };
 
 const gerarIniciais = (nome) => {
+  if (!nome) return "";
   return nome
     .split(" ")
     .map((n) => n[0])
@@ -265,6 +245,16 @@ const obterTimestamp = () => {
   return `${data} ${hora} GMT-3`;
 };
 
+const gerarUUID = () => {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+};
+
 const salvarCliente = (dadosCliente) => {
   if (dadosCliente.id) {
     const index = store.clientes.findIndex((c) => c.id === dadosCliente.id);
@@ -278,11 +268,9 @@ const salvarCliente = (dadosCliente) => {
   } else {
     const novo = {
       ...dadosCliente,
-      id: Date.now(),
+      id: gerarUUID(),
       iniciais: gerarIniciais(dadosCliente.nome),
-      criadoEm: obterTimestamp(),
-      ultimaVisita: "-",
-      totalVisitas: 0,
+      criadoEm: obterTimestamp()
     };
     store.clientes.unshift(novo);
     dispararToast(`Cliente "${dadosCliente.nome}" cadastrado com sucesso!`);
@@ -292,8 +280,8 @@ const salvarCliente = (dadosCliente) => {
 const alternarStatus = (cliente) => {
   const index = store.clientes.findIndex((c) => c.id === cliente.id);
   if (index !== -1) {
-    const novoStatus = store.clientes[index].status === "ativo" ? "inativo" : "ativo";
-    store.clientes[index].status = novoStatus;
+    const novoStatus = store.clientes[index].status_cadastro === "ATIVO" ? "INATIVO" : "ATIVO";
+    store.clientes[index].status_cadastro = novoStatus;
     dispararToast(`Cadastro de "${cliente.nome}" marcado como ${novoStatus}.`);
   }
 };
@@ -304,7 +292,7 @@ const alternarStatus = (cliente) => {
 
 .page-container {
   min-height: 100vh;
-  background-color: #F8FAFC;
+  background-color: #F9FAFB;
   display: flex;
   flex-direction: column;
   font-family: 'Inter', sans-serif;
@@ -323,8 +311,8 @@ const alternarStatus = (cliente) => {
   border-radius: 16px;
   padding: 1.5rem;
   margin-bottom: 2rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-  border: 1px solid #F1F5F9;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border: 1px solid #E5E7EB;
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
@@ -334,7 +322,7 @@ const alternarStatus = (cliente) => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 1.5rem;
+  gap: 1rem;
 }
 
 .search-input-wrapper {
@@ -348,19 +336,20 @@ const alternarStatus = (cliente) => {
   left: 1.25rem;
   top: 50%;
   transform: translateY(-50%);
-  color: #94A3B8;
+  color: #6B7280;
+  opacity: 0.6;
   font-size: 1.1rem;
 }
 
 .search-input {
   width: 100%;
   padding: 0.85rem 1rem 0.85rem 3rem;
-  border: 1px solid #E2E8F0;
-  border-radius: 12px;
+  border: 1px solid #E5E7EB;
+  border-radius: 10px;
   outline: none;
   font-size: 1rem;
-  color: #334155;
-  background-color: #F8FAFC;
+  color: #1F2937;
+  background-color: #F9FAFB;
   transition: all 0.3s ease;
   font-family: inherit;
 }
@@ -379,7 +368,7 @@ const alternarStatus = (cliente) => {
   color: #FFFFFF;
   padding: 0.85rem 1.5rem;
   border: none;
-  border-radius: 12px;
+  border-radius: 10px;
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
@@ -391,7 +380,6 @@ const alternarStatus = (cliente) => {
 .btn-novo:hover {
   background-color: #158A8D;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(28, 164, 167, 0.2);
 }
 
 .filters-row {
@@ -404,13 +392,14 @@ const alternarStatus = (cliente) => {
 .filter-group {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 0.75rem;
 }
 
 .filter-label {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #64748B;
+  color: #6B7280;
   display: flex;
   align-items: center;
   gap: 0.35rem;
@@ -423,9 +412,9 @@ const alternarStatus = (cliente) => {
 }
 
 .chip {
-  background-color: #FFFFFF;
-  border: 1px solid #E2E8F0;
-  color: #64748B;
+  background-color: #F9FAFB;
+  border: 1px solid #E5E7EB;
+  color: #6B7280;
   padding: 0.4rem 1rem;
   border-radius: 20px;
   font-size: 0.85rem;
@@ -447,26 +436,21 @@ const alternarStatus = (cliente) => {
 }
 
 .chip-status.active {
-  background-color: #334155;
-  border-color: #334155;
-}
-
-.chip-financeiro.active {
-  background-color: #158A8D;
-  border-color: #158A8D;
+  background-color: #1F2937;
+  border-color: #1F2937;
   color: #FFFFFF;
 }
 
 .divider {
   width: 1px;
   height: 24px;
-  background-color: #E2E8F0;
+  background-color: #E5E7EB;
 }
 
 .btn-limpar {
   background: none;
   border: none;
-  color: #EF4444;
+  color: #DC2626;
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
@@ -490,6 +474,29 @@ const alternarStatus = (cliente) => {
   margin-bottom: 2rem;
 }
 
+.stat-card {
+  background-color: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.stat-number {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1F2937;
+  margin-bottom: 0.25rem;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: #6B7280;
+  font-weight: 500;
+}
+
 .clients-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -502,13 +509,14 @@ const alternarStatus = (cliente) => {
   align-items: center;
   justify-content: center;
   padding: 4rem 2rem;
-  color: #94A3B8;
+  color: #6B7280;
+  opacity: 0.6;
   gap: 0.5rem;
+  grid-column: 1 / -1;
 }
 
 .empty-icon {
-  font-size: 2.5rem;
-  color: #CBD5E1;
+  font-size: 3rem;
   margin-bottom: 0.5rem;
 }
 
@@ -516,10 +524,10 @@ const alternarStatus = (cliente) => {
   position: fixed;
   bottom: 2rem;
   right: 2rem;
-  background: #334155;
+  background: #1F2937;
   color: #FFFFFF;
   padding: 1rem 1.5rem;
-  border-radius: 12px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -590,6 +598,13 @@ const alternarStatus = (cliente) => {
   }
   .stats-grid {
     grid-template-columns: 1fr;
+  }
+  .btn-novo {
+    justify-content: center;
+  }
+  .btn-limpar {
+    width: 100%;
+    justify-content: center;
   }
 }
 </style>
