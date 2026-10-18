@@ -2,7 +2,7 @@
   <div
     data-cy="sidebar-overlay"
     class="sidebar-overlay"
-    :class="{ 'active': !isCollapsed && isMobile }"
+    :class="{ active: !isCollapsed && isMobile }"
     @click="isCollapsed = true"
   ></div>
 
@@ -15,18 +15,13 @@
     <i class="pi pi-bars"></i>
   </button>
 
-  <aside
-    data-cy="sidebar"
-    :class="['sidebar', { 'collapsed': isCollapsed }]"
-  >
-
+  <aside data-cy="sidebar" :class="['sidebar', { collapsed: isCollapsed }]">
     <div
       data-cy="sidebar-header"
       class="sidebar-header"
       @click="isCollapsed = !isCollapsed"
       title="Clique para expandir/recolher"
     >
-
       <div v-if="isCollapsed && !isMobile" class="logo-wrapper">
         <img :src="LOGO_URL" alt="Logo" class="logo-img" />
       </div>
@@ -37,11 +32,9 @@
           <span class="logo-clinic">clinic</span>
         </div>
       </div>
-
     </div>
 
     <nav class="sidebar-nav">
-
       <router-link
         data-cy="menu-dashboard"
         to="/app/dashboard"
@@ -83,6 +76,16 @@
       </router-link>
 
       <router-link
+        data-cy="menu-pacotes-procedimentos"
+        to="/app/pacotes-procedimentos"
+        class="nav-item"
+        @click="closeOnMobile"
+      >
+        <div class="icon-wrapper"><i class="pi pi-briefcase"></i></div>
+        <span>Pacotes/Procedimentos</span>
+      </router-link>
+
+      <router-link
         v-if="usuarioRole === 'admin'"
         data-cy="menu-financeiro"
         to="/app/financeiro"
@@ -113,57 +116,49 @@
         <div class="icon-wrapper"><i class="pi pi-id-card"></i></div>
         <span>Colaboradores</span>
       </router-link>
-
     </nav>
 
     <div class="sidebar-footer">
-      <a
-        data-cy="menu-configuracoes"
-        href="#"
-        class="nav-item"
-        @click="closeOnMobile"
-      >
+      <a data-cy="menu-configuracoes" href="#" class="nav-item" @click="closeOnMobile">
         <div class="icon-wrapper"><i class="pi pi-cog"></i></div>
         <span>Configurações</span>
       </a>
     </div>
-
   </aside>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
-import { LOGO_URL } from '@/config.js'
+import { ref, onMounted, onUnmounted } from "vue";
+import { LOGO_URL } from "@/config.js";
 
-const isCollapsed = ref(true)
-const isMobile = ref(false)
-const usuarioRole = ref('')
+const isCollapsed = ref(true);
+const isMobile = ref(false);
+const usuarioRole = ref("");
 
 const checkScreenSize = () => {
-  isMobile.value = window.innerWidth <= 768
-}
+  isMobile.value = window.innerWidth <= 768;
+};
 
 const closeOnMobile = () => {
   if (isMobile.value) {
-    isCollapsed.value = true
+    isCollapsed.value = true;
   }
-}
+};
 
 onMounted(() => {
-  checkScreenSize()
-  window.addEventListener('resize', checkScreenSize)
+  checkScreenSize();
+  window.addEventListener("resize", checkScreenSize);
 
-  // Recupera role do usuário
-  const sessao = localStorage.getItem('oneclinic_user')
+  const sessao = localStorage.getItem("oneclinic_user");
   if (sessao) {
-    const dados = JSON.parse(sessao)
-    usuarioRole.value = dados.role
+    const dados = JSON.parse(sessao);
+    usuarioRole.value = dados.role;
   }
-})
+});
 
 onUnmounted(() => {
-  window.removeEventListener('resize', checkScreenSize)
-})
+  window.removeEventListener("resize", checkScreenSize);
+});
 </script>
 
 <style scoped>
@@ -172,12 +167,13 @@ onUnmounted(() => {
   top: 0;
   height: 100vh;
   width: 250px;
-  background-color: var(--cor-escura, #1F2937);
-  color: var(--branco, #FFFFFF);
+  background-color: var(--cor-escura, #1f2937);
+  color: var(--branco, #ffffff);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  transition: width 0.55s cubic-bezier(0.4, 0, 0.2, 1), transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: width 0.55s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
   z-index: 1000;
 }
@@ -241,17 +237,23 @@ onUnmounted(() => {
 .logo-one {
   font-weight: 800;
   letter-spacing: 0.5px;
-  color: var(--branco, #FFFFFF);
+  color: var(--branco, #ffffff);
 }
 
 .logo-clinic {
-  font-weight: 300; 
-  color: var(--branco, #FFFFFF);
+  font-weight: 300;
+  color: var(--branco, #ffffff);
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .sidebar-nav {
@@ -262,11 +264,11 @@ onUnmounted(() => {
   flex-grow: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  scrollbar-width: none; 
+  scrollbar-width: none;
 }
 
 .sidebar-nav::-webkit-scrollbar {
-  display: none; 
+  display: none;
 }
 
 .nav-item {
@@ -282,7 +284,7 @@ onUnmounted(() => {
 }
 
 .icon-wrapper {
-  width: 54px; 
+  width: 54px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -302,9 +304,10 @@ onUnmounted(() => {
   opacity: 1;
 }
 
-.nav-item:hover, .nav-item.router-link-active {
-  background-color: var(--cor-primaria, #1CA4A7);
-  color: var(--branco, #FFFFFF);
+.nav-item:hover,
+.nav-item.router-link-active {
+  background-color: var(--cor-primaria, #1ca4a7);
+  color: var(--branco, #ffffff);
 }
 
 .nav-item:hover .icon-wrapper i,
@@ -319,7 +322,7 @@ onUnmounted(() => {
 .sidebar-footer {
   padding: 1rem 0;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
-  background-color: var(--cor-escura, #1F2937);
+  background-color: var(--cor-escura, #1f2937);
   z-index: 10;
 }
 
@@ -338,7 +341,7 @@ onUnmounted(() => {
     top: 1rem;
     left: 1rem;
     z-index: 998;
-    background-color: var(--cor-primaria, #1CA4A7);
+    background-color: var(--cor-primaria, #1ca4a7);
     color: white;
     border: none;
     width: 44px;
@@ -348,10 +351,10 @@ onUnmounted(() => {
     align-items: center;
     font-size: 1.5rem;
     cursor: pointer;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
     transition: transform 0.2s ease;
   }
-  
+
   .mobile-toggle:active {
     transform: scale(0.95);
   }
@@ -373,7 +376,7 @@ onUnmounted(() => {
     top: 0;
     left: 0;
     height: 100vh;
-    box-shadow: 4px 0 15px rgba(0,0,0,0.3);
+    box-shadow: 4px 0 15px rgba(0, 0, 0, 0.3);
     transform: translateX(0);
   }
 

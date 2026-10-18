@@ -10,6 +10,7 @@ import Clientes from '../assets/pages/Clientes/Clientes.vue'
 import Estoque from '../assets/pages/Estoque/Estoque.vue'
 import Financeiro from '../assets/pages/Financeiro/Financeiro.vue'
 import Colaboradores from '../assets/pages/Colaboradores/Colaboradores.vue'
+import PacotesProcedimentos from '../assets/pages/PacotesProcedimentos/PacotesProcedimentos.vue'
 
 const routes = [
   {
@@ -84,6 +85,11 @@ const routes = [
         meta: {
           title: 'Colaboradores'
         }
+      },
+      {
+        path: 'pacotes-procedimentos',
+        name: 'Pacotes/Procedimentos',
+        component: PacotesProcedimentos,
       }
     ]
   }

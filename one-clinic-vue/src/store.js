@@ -1,12 +1,47 @@
 import { reactive, watch } from 'vue'
 
 const colaboradoresIniciais = [
-  { id: 1, iniciais: "CM", nome: "Carlos Mendes", cpf: "123.456.789-01", status: "ativo", cargo: "Médico Ortopedista", departamento: "Corpo Clínico", email: "carlos.mendes@email.com", telefone: "(11) 98765-4321", admissao: "15/01/2026", criadoEm: "10/01/2026 14:22 GMT-3" },
-  { id: 2, iniciais: "MC", nome: "Mariana Costa", cpf: "987.654.321-00", status: "ferias", cargo: "Recepcionista", departamento: "Atendimento", email: "mariana.costa@email.com", telefone: "(11) 97654-3210", admissao: "03/03/2026", criadoEm: "01/03/2026 09:15 GMT-3" }
+  {
+    id: "a1b2c3d4-e5f6-4a5b-8c9d-0123456789ab",
+    iniciais: "CM",
+    nome: "Carlos Mendes",
+    cpf: "123.456.789-01",
+    email: "carlos.mendes@email.com",
+    telefone: "(11) 98765-4321",
+    role: "PROFISSIONAL",
+    pode_editar_agenda: false,
+    ativo: true,
+    criadoEm: "10/01/2026 14:22 GMT-3"
+  },
+  {
+    id: "b2c3d4e5-f6a7-4b5c-8d9e-123456789abc",
+    iniciais: "MC",
+    nome: "Mariana Costa",
+    cpf: "987.654.321-00",
+    email: "mariana.costa@email.com",
+    telefone: "(11) 97654-3210",
+    role: "SECRETARIO",
+    pode_editar_agenda: true,
+    ativo: true,
+    criadoEm: "01/03/2026 09:15 GMT-3"
+  }
 ]
 
 const clientesIniciais = [
-  { id: 1, profissionalId: 1, iniciais: 'AS', nome: 'Ana Silva', cpf: '123.456.789-01', status: 'ativo', email: 'ana.silva@email.com', telefone: '(11) 98765-4321', endereco: 'Av. Paulista, 1000 - São Paulo SP', criadoEm: '30/05/2026 14:22 GMT-3', ultimaVisita: '02/05/2026', totalVisitas: 15 }
+  {
+    id: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+    iniciais: "AS",
+    nome: "Ana Silva",
+    cpf: "123.456.789-01",
+    email: "ana.silva@email.com",
+    telefone: "(11) 98765-4321",
+    cep: "01310-100",
+    numero: "1000",
+    status_cadastro: "ATIVO",
+    criadoEm: "30/05/2026 14:22 GMT-3",
+    ultimaVisita: "02/05/2026",
+    totalVisitas: 15
+  }
 ]
 
 export const store = reactive({

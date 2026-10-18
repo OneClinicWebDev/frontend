@@ -1,6 +1,6 @@
 <script setup>
-import { Button } from '../Home.js'
-defineEmits(['open-login'])
+import { Button } from "../Home.js";
+defineEmits(["open-colaborador", "open-cliente"]);
 </script>
 
 <template>
@@ -10,18 +10,27 @@ defineEmits(['open-login'])
       <div class="hero-circle hero-circle-2"></div>
     </div>
     <div class="container hero-content">
-      <span class="hero-tag">Novo</span>
+      <span class="hero-tag">Acesso ao Portal</span>
       <h1 class="hero-title">
-        Gestão completa para sua
-        <span class="hero-highlight">clínica de estética</span>
+        Bem-vindo à
+        <span class="hero-highlight">OneClinic</span>
       </h1>
       <p class="hero-description">
-        Simplifique o dia a dia da sua clínica com agendamentos inteligentes,
-        controle financeiro, gestão de clientes e muito mais.
+        Selecione o seu perfil abaixo para acessar o sistema. Gestão inteligente para
+        colaboradores e acompanhamento completo para clientes.
       </p>
       <div class="hero-actions">
-        <Button label="Começar Teste Grátis" class="btn-primary btn-large" />
-        <Button label="Entrar" outlined class="btn-outline btn-large" @click="$emit('open-login')" />
+        <Button
+          label="Sou Colaborador"
+          class="btn-primary btn-large"
+          @click="$emit('open-colaborador')"
+        />
+        <Button
+          label="Sou Cliente"
+          outlined
+          class="btn-outline btn-large"
+          @click="$emit('open-cliente')"
+        />
       </div>
       <div class="hero-stats">
         <div class="stat">
@@ -48,7 +57,7 @@ defineEmits(['open-login'])
   position: relative;
   overflow: hidden;
   padding: 9rem 0 6rem;
-  background: linear-gradient(180deg, #FFFFFF 0%, #F3F4F6 100%);
+  background: linear-gradient(180deg, #ffffff 0%, #f3f4f6 100%);
 }
 .hero-bg {
   position: absolute;
@@ -109,7 +118,7 @@ defineEmits(['open-login'])
   max-width: 700px;
   margin: 0 auto 2rem;
   line-height: 1.7;
-  color: #4B5563;
+  color: #4b5563;
   font-size: 1.1rem;
 }
 .hero-actions {
@@ -138,14 +147,13 @@ defineEmits(['open-login'])
   font-weight: 700;
 }
 .stat-label {
-  color: #6B7280;
+  color: #6b7280;
 }
 .stat-divider {
   width: 1px;
   height: 40px;
-  background: #D1D5DB;
+  background: #d1d5db;
 }
-
 @media (max-width: 768px) {
   .hero-title {
     font-size: 2.5rem;

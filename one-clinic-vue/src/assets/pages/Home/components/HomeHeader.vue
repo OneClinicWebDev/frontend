@@ -1,8 +1,8 @@
 <script setup>
-import { Button } from '../Home.js'
-import { LOGO_URL } from '../../../../config.js'
+import { Button } from "../Home.js";
+import { LOGO_URL } from "../../../../config.js";
 
-defineEmits(['open-login'])
+defineEmits(["open-colaborador", "open-cliente"]);
 </script>
 
 <template>
@@ -21,8 +21,17 @@ defineEmits(['open-login'])
         <a href="#contato" class="nav-link">Contato</a>
       </nav>
       <div class="header-actions">
-        <Button label="Entrar" text class="btn-text" @click="$emit('open-login')" />
-        <Button label="Começar Grátis" class="btn-primary" />
+        <Button
+          label="Área do Cliente"
+          text
+          class="btn-text"
+          @click="$emit('open-cliente')"
+        />
+        <Button
+          label="Entrar como Colaborador"
+          class="btn-primary"
+          @click="$emit('open-colaborador')"
+        />
       </div>
     </div>
   </header>
@@ -36,7 +45,7 @@ defineEmits(['open-login'])
   z-index: 1000;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(12px);
-  border-bottom: 1px solid #E5E7EB;
+  border-bottom: 1px solid #e5e7eb;
   transition: all 0.3s ease-in-out;
 }
 .header-content {
@@ -63,7 +72,6 @@ defineEmits(['open-login'])
   display: flex;
   gap: 0.75rem;
 }
-
 @media (max-width: 1024px) {
   .nav-desktop {
     display: none;
