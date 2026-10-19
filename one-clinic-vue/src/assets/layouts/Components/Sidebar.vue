@@ -66,6 +66,16 @@
       </router-link>
 
       <router-link
+        data-cy="menu-colaboradores"
+        to="/app/colaboradores"
+        class="nav-item"
+        @click="closeOnMobile"
+      >
+        <div class="icon-wrapper"><i class="pi pi-id-card"></i></div>
+        <span>Colaboradores</span>
+      </router-link>
+
+      <router-link
         data-cy="menu-atendimentos"
         to="/app/atendimentos"
         class="nav-item"
@@ -119,10 +129,15 @@
     </nav>
 
     <div class="sidebar-footer">
-      <a data-cy="menu-configuracoes" href="#" class="nav-item" @click="closeOnMobile">
+      <router-link
+        data-cy="configuracoes-clinica"
+        to="/app/configuracoes-clinica"
+        class="nav-item"
+        @click="closeOnMobile"
+      >
         <div class="icon-wrapper"><i class="pi pi-cog"></i></div>
         <span>Configurações</span>
-      </a>
+      </router-link>
     </div>
   </aside>
 </template>

@@ -1,8 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
-
 import Home from '../assets/pages/Home/Home.vue'
 import SystemLayout from '../assets/layouts/SystemLayout.vue'
-
 import Dashboard from '../assets/pages/Dashboard/Dashboard.vue'
 import Agenda from '../assets/pages/Agenda/Agenda.vue'
 import Atendimentos from '../assets/pages/Atendimentos/Atendimentos.vue'
@@ -11,6 +9,8 @@ import Estoque from '../assets/pages/Estoque/Estoque.vue'
 import Financeiro from '../assets/pages/Financeiro/Financeiro.vue'
 import Colaboradores from '../assets/pages/Colaboradores/Colaboradores.vue'
 import PacotesProcedimentos from '../assets/pages/PacotesProcedimentos/PacotesProcedimentos.vue'
+import ConfiguracoesClinica from '../assets/pages/Configuracoes/ConfiguracoesClinica.vue'
+import MeuPerfil from '../assets/pages/Perfil/MeuPerfil.vue'
 
 const routes = [
   {
@@ -18,11 +18,9 @@ const routes = [
     name: 'Home',
     component: Home
   },
-
   {
     path: '/app',
     component: SystemLayout,
-
     children: [
       {
         path: 'dashboard',
@@ -32,7 +30,6 @@ const routes = [
           title: 'Dashboard'
         }
       },
-
       {
         path: 'agenda',
         name: 'Agenda',
@@ -41,7 +38,6 @@ const routes = [
           title: 'Agenda'
         }
       },
-
       {
         path: 'atendimentos',
         name: 'Atendimentos',
@@ -50,7 +46,6 @@ const routes = [
           title: 'Atendimentos'
         }
       },
-
       {
         path: 'clientes',
         name: 'Clientes',
@@ -59,7 +54,6 @@ const routes = [
           title: 'Clientes'
         }
       },
-
       {
         path: 'estoque',
         name: 'Estoque',
@@ -68,7 +62,6 @@ const routes = [
           title: 'Estoque'
         }
       },
-
       {
         path: 'financeiro',
         name: 'Financeiro',
@@ -77,7 +70,6 @@ const routes = [
           title: 'Financeiro'
         }
       },
-
       {
         path: 'colaboradores',
         name: 'Colaboradores',
@@ -90,6 +82,25 @@ const routes = [
         path: 'pacotes-procedimentos',
         name: 'Pacotes/Procedimentos',
         component: PacotesProcedimentos,
+        meta: {
+          title: 'Pacotes/Procedimentos'
+        }
+      },
+      {
+        path: 'configuracoes-clinica',
+        name: 'Configurações da Clínica',
+        component: ConfiguracoesClinica,
+        meta: {
+          title: 'Configurações da Clínica'
+        }
+      },
+      {
+        path: 'meu-perfil',
+        name: 'Meu Perfil',
+        component: MeuPerfil,
+        meta: {
+          title: 'Meu Perfil'
+        }
       }
     ]
   }

@@ -5,7 +5,6 @@
     </div>
 
     <div class="header-right">
-
       <div class="datetime-wrapper" data-cy="datetime-wrapper">
         <div class="datetime-block" data-cy="date-block">
           <i class="pi pi-calendar"></i>
@@ -20,11 +19,7 @@
         </div>
       </div>
 
-      <div
-        class="user-menu"
-        ref="menuRef"
-        data-cy="user-menu"
-      >
+      <div class="user-menu" ref="menuRef" data-cy="user-menu">
         <button
           class="user-button"
           data-cy="user-button"
@@ -48,166 +43,160 @@
           <i
             class="pi pi-chevron-down toggle-icon"
             data-cy="toggle-icon"
-            :class="{ 'rotate': menuOpen }"
+            :class="{ rotate: menuOpen }"
           ></i>
         </button>
 
         <Transition name="dropdown">
-          <div
-            v-if="menuOpen"
-            class="dropdown-menu"
-            data-cy="dropdown-menu"
-          >
-
-            <div
-              class="dropdown-header-mobile"
-              data-cy="dropdown-mobile-header"
-            >
-              <span
-                class="mobile-name"
-                data-cy="mobile-user-name"
-              >
+          <div v-if="menuOpen" class="dropdown-menu" data-cy="dropdown-menu">
+            <div class="dropdown-header-mobile" data-cy="dropdown-mobile-header">
+              <span class="mobile-name" data-cy="mobile-user-name">
                 {{ userName }}
               </span>
 
-              <span
-                class="mobile-role"
-                data-cy="mobile-user-role"
-              >
+              <span class="mobile-role" data-cy="mobile-user-role">
                 {{ userRole }}
               </span>
             </div>
 
-            <button
-              class="dropdown-item"
-              data-cy="menu-profile"
-            >
+            <button class="dropdown-item" data-cy="menu-profile" @click="goToProfile">
               <i class="pi pi-user"></i>
               <span>Meu Perfil</span>
             </button>
 
             <button
+              v-if="isAdmin"
               class="dropdown-item"
               data-cy="menu-settings"
+              @click="goToClinica"
             >
-              <i class="pi pi-cog"></i>
-              <span>Configurações</span>
+              <i class="pi pi-building"></i>
+              <span>Configurações da Clínica</span>
             </button>
 
-            <div
-              class="dropdown-divider"
-              data-cy="dropdown-divider"
-            ></div>
+            <div class="dropdown-divider" data-cy="dropdown-divider"></div>
 
-            <button
-              class="dropdown-item logout"
-              data-cy="menu-logout"
-              @click="logout"
-            >
+            <button class="dropdown-item" @click="switchAccount">
+              <i class="pi pi-users"></i>
+              <span>Trocar de Conta</span>
+            </button>
+
+            <button class="dropdown-item logout" data-cy="menu-logout" @click="logout">
               <i class="pi pi-sign-out"></i>
               <span>Sair do Sistema</span>
             </button>
-
           </div>
         </Transition>
-
       </div>
-
     </div>
   </header>
 </template>
 
 <script setup>
-import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { computed, ref, onMounted, onBeforeUnmount } from "vue";
+import { useRoute, useRouter } from "vue-router";
 
-const route = useRoute()
-const router = useRouter()
+const route = useRoute();
+const router = useRouter();
 
-const menuOpen = ref(false)
-const menuRef = ref(null)
+const menuOpen = ref(false);
+const menuRef = ref(null);
 
-const userName = ref('Carregando...')
-const userRole = ref('')
+const userName = ref("Carregando...");
+const userRole = ref("");
+const isAdmin = ref(false);
 
-const currentTime = ref('')
-const currentDate = ref('')
-let timerInterval = null
+const currentTime = ref("");
+const currentDate = ref("");
+let timerInterval = null;
 
 const initials = computed(() => {
-  if (!userName.value || userName.value === 'Carregando...') return ''
+  if (!userName.value || userName.value === "Carregando...") return "";
   return userName.value
-    .split(' ')
+    .split(" ")
     .slice(0, 2)
-    .map(nome => nome[0])
-    .join('')
-    .toUpperCase()
-})
+    .map((nome) => nome[0])
+    .join("")
+    .toUpperCase();
+});
 
 const pageTitle = computed(() => {
-  return route.name || 'Dashboard'
-})
+  return route.name || "Dashboard";
+});
 
 const updateDateTime = () => {
-  const now = new Date()
-  
-  currentTime.value = now.toLocaleTimeString('pt-BR', {
-    hour: '2-digit',
-    minute: '2-digit'
-  })
-  
-  const dateStr = now.toLocaleDateString('pt-BR', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric'
-  })
-  
-  currentDate.value = dateStr
-}
+  const now = new Date();
+
+  currentTime.value = now.toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  const dateStr = now.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+
+  currentDate.value = dateStr;
+};
 
 const toggleMenu = () => {
-  menuOpen.value = !menuOpen.value
-}
+  menuOpen.value = !menuOpen.value;
+};
+
+const goToProfile = () => {
+  menuOpen.value = false;
+  router.push("/app/meu-perfil");
+};
+
+const goToClinica = () => {
+  menuOpen.value = false;
+  router.push("/app/configuracoes-clinica");
+};
+
+const switchAccount = () => {
+  localStorage.removeItem("oneclinic_user");
+  sessionStorage.clear();
+  menuOpen.value = false;
+  router.replace("/?switch=true");
+};
 
 const logout = () => {
-  localStorage.removeItem('oneclinic_user')
-  sessionStorage.clear()
-  menuOpen.value = false
-  router.replace('/')
-}
+  localStorage.removeItem("oneclinic_user");
+  sessionStorage.clear();
+  menuOpen.value = false;
+  router.replace("/");
+};
 
 const handleClickOutside = (event) => {
-  if (
-    menuRef.value &&
-    !menuRef.value.contains(event.target)
-  ) {
-    menuOpen.value = false
+  if (menuRef.value && !menuRef.value.contains(event.target)) {
+    menuOpen.value = false;
   }
-}
+};
 
 onMounted(() => {
-  document.addEventListener('click', handleClickOutside)
-  updateDateTime()
-  timerInterval = setInterval(updateDateTime, 1000)
+  document.addEventListener("click", handleClickOutside);
+  updateDateTime();
+  timerInterval = setInterval(updateDateTime, 1000);
 
-  // Recupera usuário logado
-  const sessao = localStorage.getItem('oneclinic_user')
+  const sessao = localStorage.getItem("oneclinic_user");
   if (sessao) {
-    const dados = JSON.parse(sessao)
-    userName.value = dados.nome
-    userRole.value = dados.cargo
+    const dados = JSON.parse(sessao);
+    userName.value = dados.nome;
+    userRole.value = dados.cargo || dados.role;
+    isAdmin.value = dados.cargo === "admin" || dados.role === "admin";
   } else {
-    // Se não houver sessão, joga de volta pro login
-    router.replace('/')
+    router.replace("/");
   }
-})
+});
 
 onBeforeUnmount(() => {
-  document.removeEventListener('click', handleClickOutside)
+  document.removeEventListener("click", handleClickOutside);
   if (timerInterval) {
-    clearInterval(timerInterval)
+    clearInterval(timerInterval);
   }
-})
+});
 </script>
 
 <style scoped>
@@ -243,7 +232,7 @@ onBeforeUnmount(() => {
 }
 
 .header-left h1::after {
-  content: '';
+  content: "";
   position: absolute;
   bottom: -4px;
   left: 0;
