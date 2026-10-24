@@ -1,530 +1,994 @@
 <template>
   <Transition name="fade">
-    <div class="modal-overlay" v-if="isOpen" @click.self="fechar">
-      <Transition name="scale">
-        <div class="modal-container" v-if="isOpen">
+    <div v-if="isOpen" class="modal-overlay" @click.self="fechar">
+      <Transition name="scale" appear>
+        <section
+          v-if="isOpen"
+          class="modal-container"
+          role="dialog"
+          aria-modal="true"
+          :aria-label="tituloModal"
+        >
           <header class="modal-header">
-            <h3>{{ tituloModal }}</h3>
-            <button class="btn-close" @click="fechar">
+            <div class="modal-heading">
+              <span class="modal-eyebrow">GESTÃO DA EQUIPE</span>
+              <h3>{{ tituloModal }}</h3>
+              <p>{{ subtituloModal }}</p>
+            </div>
+            <button class="btn-close" type="button" aria-label="Fechar modal" @click="fechar">
               <i class="pi pi-times"></i>
             </button>
           </header>
-
-          <form @submit.prevent="salvar" class="modal-form">
-            <div class="form-row">
-              <div class="form-group flex-1">
-                <label>Nome Completo</label>
-                <input 
-                  type="text" 
-                  v-model="form.nome" 
-                  required 
-                  minlength="3"
-                  :disabled="isDetalhes"
-                  placeholder="Ex: Carlos Mendes" 
-                />
-              </div>
-              
-              <div class="form-group flex-1">
-                <label>CPF</label>
-                <input 
-                  type="text" 
-                  v-model="exibicaoCpf" 
-                  @input="processarCpf"
-                  required 
-                  maxlength="14"
-                  :disabled="isDetalhes"
-                  placeholder="000.000.000-00" 
-                />
+          <form class="modal-form" @submit.prevent="salvar">
+            <div class="section-heading">
+              <span class="section-icon">
+                <i class="pi pi-user"></i>
+              </span>
+              <div>
+                <h4>Dados do colaborador</h4>
+                <p>Identificação e vínculo com a clínica</p>
               </div>
             </div>
-
-            <div class="form-row">
-              <div class="form-group flex-1">
-                <label>E-mail Corporativo</label>
-                <input 
-                  type="email" 
-                  v-model="form.email" 
-                  required 
-                  :disabled="isDetalhes"
-                  placeholder="Ex: carlos@empresa.com" 
-                />
-              </div>
-
-              <div class="form-group flex-1">
-                <label>Telefone</label>
-                <input 
-                  type="text" 
-                  v-model="exibicaoTelefone"
-                  @input="processarTelefone"
-                  required 
-                  maxlength="15"
-                  :disabled="isDetalhes"
-                  placeholder="(00) 00000-0000" 
-                />
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group flex-1">
-                <label>Função</label>
-                <select v-model="form.funcao" required :disabled="isDetalhes">
-                  <option value="" disabled>Selecione uma função</option>
-                  <option value="Admin">Administrador</option>
-                  <option value="Secretário">Secretário(a)</option>
-                  <option value="Profissional">Profissional Especializado</option>
-                </select>
-              </div>
-
-              <div class="form-group flex-1" v-if="form.funcao === 'Profissional'">
-                <label>Especialidade</label>
-                <select v-model="especialidadeSelecionada" required :disabled="isDetalhes">
-                  <option value="" disabled>Selecione...</option>
-                  <option v-for="esp in especialidadesDisponiveis" :key="esp" :value="esp">
-                    {{ esp }}
-                  </option>
-                  <option value="Outra">Nova Especialidade...</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="form-row" v-if="form.funcao === 'Profissional' && especialidadeSelecionada === 'Outra'">
-              <div class="form-group flex-1">
-                <label>Nova Especialidade</label>
-                <input 
-                  type="text" 
-                  v-model="novaEspecialidade" 
-                  required 
-                  :disabled="isDetalhes"
-                  placeholder="Digite a nova especialidade" 
-                />
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group flex-1">
-                <label>Status</label>
-                <select v-model="form.status" :disabled="isDetalhes">
-                  <option value="ativo">Ativo</option>
-                  <option value="inativo">Inativo</option>
-                  <option value="ferias">Em Férias</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="form-row" v-if="form.status === 'ferias'">
-              <div class="form-group flex-1">
-                <label>Início das Férias</label>
-                <input 
-                  type="date" 
-                  v-model="form.inicioFerias" 
-                  required 
-                  :disabled="isDetalhes"
-                />
-              </div>
-              <div class="form-group flex-1">
-                <label>Fim das Férias</label>
-                <input 
-                  type="date" 
-                  v-model="form.fimFerias" 
-                  required 
-                  :disabled="isDetalhes"
-                />
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group flex-1">
-                <label>Data de Admissão</label>
-                <input 
-                  type="date" 
-                  v-model="form.admissao" 
-                  required 
-                  :disabled="isDetalhes"
-                />
-              </div>
-
-              <div class="form-group flex-1">
-                <label>Data de Demissão (Opcional)</label>
-                <input 
-                  type="date" 
-                  v-model="form.demissao" 
-                  :disabled="isDetalhes || form.status === 'ativo'"
-                />
-              </div>
-            </div>
-
-            <div class="form-group" v-if="mode !== 'criar'">
-              <label>Registro no Sistema</label>
-              <input 
-                type="text" 
-                v-model="form.criadoEm" 
-                disabled 
-                class="bg-gray"
+            <div class="form-group">
+              <label for="colaborador-nome">Nome completo</label>
+              <input
+                id="colaborador-nome"
+                v-model.trim="form.nome"
+                type="text"
+                required
+                minlength="3"
+                maxlength="255"
+                autocomplete="name"
+                :disabled="isDetalhes || isEdicao || usuarioExistente"
+                placeholder="Ex.: Carlos Mendes"
               />
+              <span v-if="isEdicao" class="field-hint">
+                O nome pertence à identidade global do usuário e não é alterado nesta tela.
+              </span>
             </div>
-
+            <div v-if="isCriacao" class="form-group">
+              <label for="colaborador-cpf">CPF</label>
+              <input
+                id="colaborador-cpf"
+                :value="exibicaoCpf"
+                type="text"
+                inputmode="numeric"
+                autocomplete="off"
+                required
+                maxlength="14"
+                :disabled="isDetalhes"
+                placeholder="000.000.000-00"
+                @input="processarCpf"
+              />
+              <span class="field-hint">
+                Se o CPF já existir, será utilizado o usuário correspondente.
+              </span>
+            </div>
+            <div v-if="isEdicao || isDetalhes" class="identity-notice">
+              <i class="pi pi-lock"></i>
+              <p>
+                CPF e demais dados pessoais não são retornados pelo endpoint de colaboradores.
+                A identidade global não pode ser alterada por este formulário.
+              </p>
+            </div>
+            <div class="section-divider"></div>
+            <div class="section-heading">
+              <span class="section-icon">
+                <i class="pi pi-shield"></i>
+              </span>
+              <div>
+                <h4>Função e permissões</h4>
+                <p>Defina o papel deste vínculo na clínica</p>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="colaborador-funcao">Função</label>
+              <select
+                id="colaborador-funcao"
+                v-model="form.roleId"
+                required
+                :disabled="isDetalhes"
+              >
+                <option value="" disabled>Selecione uma função</option>
+                <option :value="String(ROLES.ADMIN)">Administrador</option>
+                <option :value="String(ROLES.SECRETARIO)">Secretário(a)</option>
+                <option :value="String(ROLES.PROFISSIONAL)">Profissional</option>
+              </select>
+            </div>
+            <Transition name="field">
+              <div v-if="isProfissional" class="form-group">
+                <label>Especialidades</label>
+                <div class="tags-builder-container">
+                  <div class="tags-list" v-if="form.especialidades.length > 0">
+                    <span
+                      v-for="(esp, index) in form.especialidades"
+                      :key="index"
+                      class="tag-pill"
+                    >
+                      {{ esp }}
+                      <button
+                        v-if="!isDetalhes"
+                        type="button"
+                        class="tag-remove"
+                        @click="removerEspecialidade(index)"
+                      >
+                        <i class="pi pi-times"></i>
+                      </button>
+                    </span>
+                  </div>
+                  <div v-if="isDetalhes && form.especialidades.length === 0" class="no-tags">
+                    Nenhuma especialidade associada.
+                  </div>
+                  <div v-if="!isDetalhes" class="tag-input-row">
+                    <input
+                      v-model="novaEspecialidade"
+                      type="text"
+                      list="tags-suggestions"
+                      placeholder="Ex: Massoterapeuta..."
+                      @keydown.enter.prevent="adicionarEspecialidade"
+                    />
+                    <datalist id="tags-suggestions">
+                      <option v-for="tag in tagsDisponiveisFiltradas" :key="tag" :value="tag"></option>
+                    </datalist>
+                    <button type="button" class="btn-add-tag" @click="adicionarEspecialidade">
+                      <i class="pi pi-plus"></i> Adicionar
+                    </button>
+                  </div>
+                  <div v-if="!isDetalhes && tagsDisponiveisFiltradas.length > 0" class="quick-tags">
+                    <span class="hint">Adicionar rápido:</span>
+                    <button 
+                      v-for="tag in tagsDisponiveisFiltradas" 
+                      :key="tag" 
+                      type="button" 
+                      class="quick-tag-btn" 
+                      @click="adicionarEspecialidadePronta(tag)"
+                    >
+                      + {{ tag }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </Transition>
+            <Transition name="field">
+              <div v-if="isProfissional" class="permission-card">
+                <div class="permission-icon">
+                  <i class="pi pi-calendar"></i>
+                </div>
+                <div class="permission-content">
+                  <strong>Editar agenda</strong>
+                  <p>
+                    Permite editar a agenda conforme as regras de autonomia configuradas pela clínica.
+                  </p>
+                </div>
+                <label class="switch" aria-label="Permitir edição da agenda">
+                  <input
+                    v-model="form.pode_editar_agenda"
+                    type="checkbox"
+                    :disabled="isDetalhes"
+                  />
+                  <span class="switch-track"></span>
+                </label>
+              </div>
+            </Transition>
+            <div v-if="!isCriacao" class="status-panel">
+              <div class="status-panel-icon">
+                <i :class="ativo ? 'pi pi-check-circle' : 'pi pi-pause-circle'"></i>
+              </div>
+              <div class="status-panel-content">
+                <strong>Estado do vínculo</strong>
+                <p>
+                  {{ ativo
+                    ? 'Este colaborador está ativo nesta clínica.'
+                    : 'Este colaborador está inativo nesta clínica.' }}
+                </p>
+              </div>
+              <span :class="['status-pill', ativo ? 'status-active' : 'status-inactive']">
+                {{ ativo ? 'Ativo' : 'Inativo' }}
+              </span>
+            </div>
+            <div v-if="isDetalhes" class="details-summary">
+              <div class="summary-item">
+                <span>Função</span>
+                <strong>{{ funcaoAtual }}</strong>
+              </div>
+              <div class="summary-item">
+                <span>Edição de agenda</span>
+                <strong>{{ form.pode_editar_agenda ? 'Habilitada' : 'Não habilitada' }}</strong>
+              </div>
+              <div class="summary-item">
+                <span>Identificador do vínculo</span>
+                <strong class="identifier-value">{{ colaboradorEdicao?.id || 'Indisponível' }}</strong>
+              </div>
+            </div>
             <footer class="modal-footer">
-              <button type="button" class="btn-cancelar" @click="fechar">
+              <button class="btn-cancelar" type="button" @click="fechar">
                 {{ isDetalhes ? 'Fechar' : 'Cancelar' }}
               </button>
-              <button type="submit" class="btn-salvar" v-if="!isDetalhes">
-                Confirmar
+              <button v-if="!isDetalhes" class="btn-salvar" type="submit">
+                <i :class="isEdicao ? 'pi pi-check' : 'pi pi-plus'"></i>
+                {{ isEdicao ? 'Salvar alterações' : 'Cadastrar colaborador' }}
               </button>
             </footer>
           </form>
-        </div>
+        </section>
       </Transition>
     </div>
   </Transition>
 </template>
 
 <script setup>
-import { ref, watch, computed } from 'vue'
+import { ref, computed, watch } from "vue";
+import api from "@/services/api.js";
+
+const ROLES = {
+  ADMIN: 1,
+  SECRETARIO: 2,
+  PROFISSIONAL: 3,
+};
 
 const props = defineProps({
-  isOpen: Boolean,
-  mode: String,
-  colaboradorEdicao: Object
-})
+  isOpen: {
+    type: Boolean,
+    default: false,
+  },
+  mode: {
+    type: String,
+    default: "criar",
+  },
+  colaboradorEdicao: {
+    type: Object,
+    default: null,
+  },
+  tagsDisponiveis: {
+    type: Array,
+    default: () => []
+  }
+});
 
-const emit = defineEmits(['close', 'save'])
-
-const especialidadesDisponiveis = ref(['Massoterapeuta', 'Podólogo', 'Esteticista', 'Fisioterapeuta'])
+const emit = defineEmits(["close", "save"]);
 
 const form = ref({
-  nome: '',
-  cpf: '',
-  email: '',
-  telefone: '',
-  funcao: '',
-  especialidade: '',
-  admissao: '',
-  demissao: '',
-  status: 'ativo',
-  inicioFerias: '',
-  fimFerias: '',
-  criadoEm: ''
-})
+  id: null,
+  nome: "",
+  cpf: "",
+  roleId: "",
+  pode_editar_agenda: false,
+  especialidades: []
+});
 
-const exibicaoCpf = ref('')
-const exibicaoTelefone = ref('')
-const especialidadeSelecionada = ref('')
-const novaEspecialidade = ref('')
+const exibicaoCpf = ref("");
+const novaEspecialidade = ref("");
+const usuarioExistente = ref(false);
+
+const isDetalhes = computed(() => props.mode === "detalhes");
+const isEdicao = computed(() => props.mode === "editar");
+const isCriacao = computed(() => props.mode === "criar");
+
+const isProfissional = computed(
+  () => Number(form.value.roleId) === ROLES.PROFISSIONAL,
+);
+
+const ativo = computed(() => Boolean(props.colaboradorEdicao?.ativo));
+
+const tagsDisponiveisFiltradas = computed(() => {
+  const currentTags = form.value.especialidades || [];
+  return props.tagsDisponiveis.filter(tag => !currentTags.includes(tag));
+});
+
+const funcaoAtual = computed(() => {
+  const funcoes = {
+    [ROLES.ADMIN]: "Administrador",
+    [ROLES.SECRETARIO]: "Secretário(a)",
+    [ROLES.PROFISSIONAL]: "Profissional",
+  };
+  return funcoes[Number(form.value.roleId)] || "Não definida";
+});
 
 const tituloModal = computed(() => {
-  if (props.mode === 'detalhes') return 'Detalhes do Colaborador'
-  if (props.mode === 'editar') return 'Editar Colaborador'
-  return 'Novo Colaborador'
-})
+  if (isDetalhes.value) return "Detalhes do colaborador";
+  if (isEdicao.value) return "Editar colaborador";
+  return "Novo colaborador";
+});
 
-const isDetalhes = computed(() => props.mode === 'detalhes')
+const subtituloModal = computed(() => {
+  if (isDetalhes.value) return "Consulte as informações deste vínculo.";
+  if (isEdicao.value) return "Atualize a função e as permissões disponíveis.";
+  return "Cadastre uma pessoa para integrar a equipe da clínica.";
+});
 
-const aplicarMascaraCpf = (v) => {
-  v = v.replace(/\D/g, '')
-  if (v.length <= 11) {
-    v = v.replace(/(\d{3})(\d)/, '$1.$2')
-    v = v.replace(/(\d{3})(\d)/, '$1.$2')
-    v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2')
+function aplicarMascaraCpf(valor) {
+  const numeros = String(valor || "").replace(/\D/g, "").slice(0, 11);
+  return numeros
+    .replace(/^(\d{3})(\d)/, "$1.$2")
+    .replace(/^(\d{3})\.(\d{3})(\d)/, "$1.$2.$3")
+    .replace(/\.(\d{3})(\d{1,2})$/, ".$1-$2");
+}
+
+async function verificarCpfUsuario(cpfLimpo) {
+  if (cpfLimpo.length !== 11) {
+    usuarioExistente.value = false;
+    return;
   }
-  return v
-}
-
-const aplicarMascaraTelefone = (v) => {
-  v = v.replace(/\D/g, '')
-  if (v.length <= 11) {
-    v = v.replace(/^(\d{2})(\d)/g, '($1) $2')
-    v = v.replace(/(\d)(\d{4})$/, '$1-$2')
-  }
-  return v
-}
-
-const processarCpf = (event) => {
-  let num = event.target.value.replace(/\D/g, '').slice(0, 11)
-  exibicaoCpf.value = aplicarMascaraCpf(num)
-  form.value.cpf = exibicaoCpf.value
-}
-
-const processarTelefone = (event) => {
-  let num = event.target.value.replace(/\D/g, '').slice(0, 11)
-  exibicaoTelefone.value = aplicarMascaraTelefone(num)
-  form.value.telefone = exibicaoTelefone.value
-}
-
-const formatarDataInput = (dataStr) => {
-  if (!dataStr) return ''
-  if (dataStr.includes('/')) {
-    const [dia, mes, ano] = dataStr.split('/')
-    return `${ano}-${mes}-${dia}`
-  }
-  return dataStr
-}
-
-const formatarDataVisualizacao = (dataStr) => {
-  if (!dataStr) return ''
-  if (dataStr.includes('-')) {
-    const [ano, mes, dia] = dataStr.split('-')
-    return `${dia}/${mes}/${ano}`
-  }
-  return dataStr
-}
-
-watch(() => props.isOpen, (aberto) => {
-  if (aberto) {
-    if (props.colaboradorEdicao && props.mode !== 'criar') {
-      form.value = { 
-        ...props.colaboradorEdicao, 
-        admissao: formatarDataInput(props.colaboradorEdicao.admissao),
-        demissao: formatarDataInput(props.colaboradorEdicao.demissao),
-        inicioFerias: formatarDataInput(props.colaboradorEdicao.inicioFerias),
-        fimFerias: formatarDataInput(props.colaboradorEdicao.fimFerias)
-      }
-      exibicaoCpf.value = props.colaboradorEdicao.cpf
-      exibicaoTelefone.value = props.colaboradorEdicao.telefone
-
-      if (form.value.funcao === 'Profissional') {
-        if (especialidadesDisponiveis.value.includes(form.value.especialidade)) {
-          especialidadeSelecionada.value = form.value.especialidade
-        } else if (form.value.especialidade) {
-          especialidadeSelecionada.value = 'Outra'
-          novaEspecialidade.value = form.value.especialidade
-        } else {
-          especialidadeSelecionada.value = ''
-        }
-      }
+  try {
+    const res = await api.get(`/api/usuarios/buscar/?cpf=${cpfLimpo}`);
+    if (res.data && res.data.id) {
+      usuarioExistente.value = true;
+      form.value.nome = res.data.nome_completo;
     } else {
-      form.value = { nome: '', cpf: '', email: '', telefone: '', funcao: '', especialidade: '', admissao: '', demissao: '', status: 'ativo', inicioFerias: '', fimFerias: '', criadoEm: '' }
-      exibicaoCpf.value = ''
-      exibicaoTelefone.value = ''
-      especialidadeSelecionada.value = ''
-      novaEspecialidade.value = ''
+      usuarioExistente.value = false;
     }
+  } catch {
+    usuarioExistente.value = false;
   }
-})
-
-const fechar = () => {
-  emit('close')
 }
 
-const salvar = () => {
-  if (isDetalhes.value) return
+function processarCpf(event) {
+  exibicaoCpf.value = aplicarMascaraCpf(event.target.value);
+  form.value.cpf = exibicaoCpf.value.replace(/\D/g, "");
+  if (form.value.cpf.length === 11) {
+    verificarCpfUsuario(form.value.cpf);
+  }
+}
 
-  let especialidadeFinal = ''
-  if (form.value.funcao === 'Profissional') {
-    if (especialidadeSelecionada.value === 'Outra') {
-      especialidadeFinal = novaEspecialidade.value
-      if (!especialidadesDisponiveis.value.includes(especialidadeFinal)) {
-        especialidadesDisponiveis.value.push(especialidadeFinal)
-      }
-    } else {
-      especialidadeFinal = especialidadeSelecionada.value
+function adicionarEspecialidade() {
+  const tag = novaEspecialidade.value.trim();
+  if (tag && !form.value.especialidades.includes(tag)) {
+    form.value.especialidades.push(tag);
+  }
+  novaEspecialidade.value = "";
+}
+
+function adicionarEspecialidadePronta(tag) {
+  if (tag && !form.value.especialidades.includes(tag)) {
+    form.value.especialidades.push(tag);
+  }
+}
+
+function removerEspecialidade(index) {
+  form.value.especialidades.splice(index, 1);
+}
+
+function carregarFormulario() {
+  const colaborador = props.colaboradorEdicao;
+  if (colaborador && !isCriacao.value) {
+    form.value = {
+      id: colaborador.id || null,
+      nome: colaborador.nome || "",
+      cpf: "",
+      roleId: String(colaborador.roleId || ""),
+      pode_editar_agenda: Boolean(colaborador.pode_editar_agenda),
+      especialidades: Array.isArray(colaborador.especialidades) ? [...colaborador.especialidades] : []
+    };
+    exibicaoCpf.value = "";
+    novaEspecialidade.value = "";
+    return;
+  }
+  form.value = {
+    id: null,
+    nome: "",
+    cpf: "",
+    roleId: "",
+    pode_editar_agenda: false,
+    especialidades: []
+  };
+  exibicaoCpf.value = "";
+  novaEspecialidade.value = "";
+  usuarioExistente.value = false;
+}
+
+watch(
+  () => [props.isOpen, props.mode, props.colaboradorEdicao],
+  ([aberto]) => {
+    if (aberto) carregarFormulario();
+  },
+  { immediate: true },
+);
+
+watch(
+  () => form.value.roleId,
+  (roleId) => {
+    if (Number(roleId) !== ROLES.PROFISSIONAL) {
+      form.value.pode_editar_agenda = false;
+      form.value.especialidades = [];
     }
-  }
+  },
+);
 
-  const dadosSalvos = {
-    ...form.value,
-    especialidade: especialidadeFinal,
-    admissao: formatarDataVisualizacao(form.value.admissao),
-    demissao: formatarDataVisualizacao(form.value.demissao),
-    inicioFerias: form.value.status === 'ferias' ? formatarDataVisualizacao(form.value.inicioFerias) : '',
-    fimFerias: form.value.status === 'ferias' ? formatarDataVisualizacao(form.value.fimFerias) : ''
+function fechar() {
+  emit("close");
+}
+
+function salvar() {
+  if (isDetalhes.value) return;
+  const nome = form.value.nome.trim();
+  if (nome.length < 3) return;
+  const roleId = Number(form.value.roleId);
+  if (![ROLES.ADMIN, ROLES.SECRETARIO, ROLES.PROFISSIONAL].includes(roleId)) return;
+  if (isCriacao.value && form.value.cpf.replace(/\D/g, "").length !== 11) return;
+  
+  const especialidadesPayload = roleId === ROLES.PROFISSIONAL ? form.value.especialidades : [];
+
+  if (isCriacao.value) {
+    emit("save", {
+      nome,
+      cpf: form.value.cpf.replace(/\D/g, ""),
+      roleId,
+      pode_editar_agenda: roleId === ROLES.PROFISSIONAL && form.value.pode_editar_agenda,
+      especialidades: especialidadesPayload
+    });
+    return;
   }
-  emit('save', dadosSalvos)
-  fechar()
+  emit("save", {
+    id: form.value.id,
+    nome,
+    roleId,
+    pode_editar_agenda: roleId === ROLES.PROFISSIONAL && form.value.pode_editar_agenda,
+    especialidades: especialidadesPayload
+  });
 }
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 
 .modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: rgba(15, 23, 42, 0.4);
-  backdrop-filter: blur(4px);
+  inset: 0;
+  padding: 1rem;
+  background-color: rgb(15 23 42 / 45%);
+  backdrop-filter: blur(5px);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 2000;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
 }
-
 .modal-container {
-  background-color: #FFFFFF;
-  border-radius: 16px;
+  background-color: #fff;
+  border: 1px solid rgb(226 232 240 / 85%);
+  border-radius: 18px;
   width: 100%;
   max-width: 650px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 25px 60px -15px rgb(15 23 42 / 30%);
   overflow: hidden;
-  max-height: 90vh;
+  max-height: min(90vh, 900px);
   display: flex;
   flex-direction: column;
 }
-
 .modal-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  padding: 1.25rem 1.5rem;
-  background-color: #F8FAFC;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.5rem 1.6rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #f0fdfa 100%);
   color: #334155;
-  border-bottom: 1px solid #E2E8F0;
+  border-bottom: 1px solid #e2e8f0;
 }
-
+.modal-heading {
+  min-width: 0;
+}
+.modal-eyebrow {
+  display: block;
+  margin-bottom: 0.45rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #0f999b;
+}
 .modal-header h3 {
   margin: 0;
   font-size: 1.25rem;
+  line-height: 1.4;
   font-weight: 700;
+  color: #1e293b;
 }
-
+.modal-header p {
+  margin: 0.4rem 0 0;
+  font-size: 0.84rem;
+  line-height: 1.5;
+  color: #64748b;
+}
 .btn-close {
-  background: #E2E8F0;
-  border: none;
-  color: #64748B;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 1rem;
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
 }
-
 .btn-close:hover {
-  background: #CBD5E1;
-  color: #0F172A;
+  background: #f1f5f9;
+  color: #0f172a;
+  transform: rotate(4deg);
 }
-
 .modal-form {
-  padding: 1.5rem;
+  padding: 1.5rem 1.6rem;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1.1rem;
   overflow-y: auto;
 }
-
-.form-row {
+.section-heading {
   display: flex;
-  gap: 1rem;
+  align-items: center;
+  gap: 0.8rem;
 }
-
-@media (max-width: 600px) {
-  .form-row {
-    flex-direction: column;
-  }
+.section-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  background: #f0fdfa;
+  color: #0f999b;
+  border: 1px solid #ccfbf1;
 }
-
-.flex-1 {
-  flex: 1;
+.section-heading h4 {
+  margin: 0;
+  color: #334155;
+  font-size: 0.93rem;
+  font-weight: 700;
 }
-
+.section-heading p {
+  margin: 0.25rem 0 0;
+  color: #94a3b8;
+  font-size: 0.77rem;
+  line-height: 1.45;
+}
 .form-group {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
-
 .form-group label {
-  font-size: 0.85rem;
+  font-size: 0.83rem;
   font-weight: 600;
-  color: #64748B;
+  color: #475569;
 }
-
-.form-group input,
+.form-group input:not([type="checkbox"]),
 .form-group select {
-  padding: 0.85rem 1rem;
-  border: 1px solid #E2E8F0;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid #e2e8f0;
   border-radius: 10px;
   outline: none;
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   color: #334155;
-  transition: all 0.2s ease;
-  background-color: #F8FAFC;
+  transition: border-color 0.22s ease, background-color 0.22s ease, box-shadow 0.22s ease;
+  background-color: #f8fafc;
   font-family: inherit;
 }
-
-.form-group input:focus,
+.form-group input:focus:not([type="checkbox"]),
 .form-group select:focus {
-  border-color: #1CA4A7;
-  background-color: #FFFFFF;
-  box-shadow: 0 0 0 3px rgba(28, 164, 167, 0.1);
+  border-color: #1ca4a7;
+  background-color: #fff;
+  box-shadow: 0 0 0 3px rgb(28 164 167 / 11%);
 }
-
 .form-group input:disabled,
-.form-group select:disabled,
-.bg-gray {
-  background-color: #F1F5F9;
-  color: #94A3B8;
+.form-group select:disabled {
+  background-color: #f1f5f9;
+  color: #64748b;
   cursor: not-allowed;
-  border-color: #E2E8F0;
+  border-color: #e2e8f0;
 }
-
+.field-hint {
+  color: #94a3b8;
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+.identity-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+  color: #64748b;
+}
+.identity-notice i {
+  color: #0f999b;
+  margin-top: 0.1rem;
+}
+.identity-notice p {
+  margin: 0;
+  font-size: 0.79rem;
+  line-height: 1.55;
+}
+.section-divider {
+  width: 100%;
+  height: 1px;
+  background: #e2e8f0;
+  margin: 0.25rem 0;
+}
+.tags-builder-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background-color: #f8fafc;
+}
+.tags-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.tag-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background-color: #1ca4a7;
+  color: #fff;
+  padding: 0.35rem 0.7rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgb(28 164 167 / 20%);
+}
+.tag-remove {
+  background: transparent;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+  width: 16px;
+  height: 16px;
+}
+.tag-remove:hover {
+  opacity: 1;
+}
+.no-tags {
+  font-size: 0.8rem;
+  color: #64748b;
+  font-style: italic;
+}
+.tag-input-row {
+  display: flex;
+  gap: 0.5rem;
+}
+.tag-input-row input {
+  flex: 1;
+  padding: 0.7rem 0.9rem !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 8px !important;
+  background: #fff !important;
+}
+.btn-add-tag {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0 1rem;
+  background: #0f999b;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-add-tag:hover {
+  background: #0d8385;
+}
+.quick-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+.quick-tags .hint {
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 600;
+  margin-right: 0.2rem;
+}
+.quick-tag-btn {
+  background-color: #fff;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.quick-tag-btn:hover {
+  background-color: #f1f5f9;
+  border-color: #94a3b8;
+  color: #0f999b;
+}
+.permission-card {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 1rem;
+  background: linear-gradient(120deg, #f0fdfa 0%, #f8fafc 100%);
+  border: 1px solid #ccfbf1;
+  border-radius: 12px;
+}
+.permission-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  color: #0f999b;
+  background: #fff;
+  border: 1px solid #d1fae5;
+}
+.permission-content {
+  flex: 1;
+  min-width: 0;
+}
+.permission-content strong {
+  color: #334155;
+  font-size: 0.84rem;
+}
+.permission-content p {
+  margin: 0.3rem 0 0;
+  color: #64748b;
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+.switch {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.switch input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+.switch-track {
+  width: 44px;
+  height: 25px;
+  border-radius: 30px;
+  background: #cbd5e1;
+  transition: background-color 0.22s ease, box-shadow 0.22s ease;
+}
+.switch-track::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 15%);
+  transition: transform 0.22s ease;
+}
+.switch input:checked + .switch-track {
+  background: #1ca4a7;
+}
+.switch input:checked + .switch-track::after {
+  transform: translateX(19px);
+}
+.switch input:focus-visible + .switch-track {
+  box-shadow: 0 0 0 3px rgb(28 164 167 / 20%);
+}
+.switch input:disabled + .switch-track {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.status-panel {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.95rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+.status-panel-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+}
+.status-panel-content {
+  flex: 1;
+  min-width: 0;
+}
+.status-panel-content strong {
+  color: #334155;
+  font-size: 0.83rem;
+}
+.status-panel-content p {
+  margin: 0.25rem 0 0;
+  color: #64748b;
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+.status-pill {
+  padding: 0.3rem 0.65rem;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.status-active {
+  background: #dcfce7;
+  color: #15803d;
+}
+.status-inactive {
+  background: #e2e8f0;
+  color: #475569;
+}
+.details-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  padding: 1rem;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.summary-item span {
+  color: #94a3b8;
+  font-size: 0.73rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.summary-item strong {
+  color: #334155;
+  font-size: 0.83rem;
+  font-weight: 600;
+}
+.identifier-value {
+  overflow-wrap: anywhere;
+  font-size: 0.75rem !important;
+  font-weight: 500 !important;
+  color: #64748b !important;
+}
 .modal-footer {
   display: flex;
   justify-content: flex-end;
-  gap: 1rem;
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid #E2E8F0;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.35rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid #e2e8f0;
 }
-
-.btn-cancelar {
-  background: #FFFFFF;
-  border: 1px solid #E2E8F0;
-  color: #64748B;
-  padding: 0.85rem 1.5rem;
-  border-radius: 10px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: all 0.2s ease;
-  font-family: inherit;
-}
-
-.btn-cancelar:hover {
-  background-color: #F8FAFC;
-  color: #334155;
-  border-color: #CBD5E1;
-}
-
+.btn-cancelar,
 .btn-salvar {
-  background-color: #1CA4A7;
-  color: #FFFFFF;
-  border: none;
-  padding: 0.85rem 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.8rem 1.15rem;
   border-radius: 10px;
   cursor: pointer;
+  font-size: 0.86rem;
   font-weight: 600;
-  transition: all 0.2s ease;
+  transition: background-color 0.22s ease, color 0.22s ease, border-color 0.22s ease, transform 0.22s ease, box-shadow 0.22s ease;
   font-family: inherit;
 }
-
-.btn-salvar:hover {
-  background-color: #158A8D;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(28, 164, 167, 0.2);
+.btn-cancelar {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
 }
-
+.btn-cancelar:hover {
+  background: #f8fafc;
+  color: #334155;
+  border-color: #cbd5e1;
+}
+.btn-salvar {
+  background-color: #1ca4a7;
+  color: #fff;
+  border: 1px solid #1ca4a7;
+}
+.btn-salvar:hover {
+  background-color: #158a8d;
+  border-color: #158a8d;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgb(28 164 167 / 20%);
+}
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.3s ease;
+  transition: opacity 0.25s ease;
 }
-
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
 }
-
 .scale-enter-active,
 .scale-leave-active {
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-
 .scale-enter-from,
 .scale-leave-to {
-  transform: scale(0.95);
+  opacity: 0;
+  transform: scale(0.97) translateY(8px);
+}
+.field-enter-active,
+.field-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.field-enter-from,
+.field-leave-to {
+  opacity: 0;
+  transform: translateY(-5px);
+}
+@media (max-width: 600px) {
+  .modal-overlay {
+    padding: 0.6rem;
+    align-items: center;
+  }
+  .modal-container {
+    max-height: 94vh;
+    border-radius: 15px;
+  }
+  .modal-header {
+    padding: 1.2rem;
+  }
+  .modal-form {
+    padding: 1.2rem;
+    gap: 1rem;
+  }
+  .permission-card {
+    gap: 0.65rem;
+    padding: 0.8rem;
+  }
+  .permission-icon {
+    width: 34px;
+    height: 34px;
+  }
+  .modal-footer {
+    flex-direction: column-reverse;
+  }
+  .btn-cancelar,
+  .btn-salvar {
+    width: 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fade-enter-active,
+  .fade-leave-active,
+  .scale-enter-active,
+  .scale-leave-active,
+  .field-enter-active,
+  .field-leave-active,
+  .btn-close,
+  .btn-cancelar,
+  .btn-salvar {
+    transition-duration: 0.01ms;
+  }
 }
 </style>
