@@ -1,4 +1,5 @@
 import { reactive, watch } from 'vue'
+export { useAuthStore } from '@/store/auth'
 
 const colaboradoresIniciais = [
   {
