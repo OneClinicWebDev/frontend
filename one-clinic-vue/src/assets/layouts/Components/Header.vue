@@ -1,3 +1,4 @@
+
 <template>
   <header class="system-header" data-cy="header">
     <div class="header-left">
@@ -23,8 +24,11 @@
         <button
           class="user-button"
           data-cy="user-button"
-          @click="toggleMenu"
+          type="button"
           :class="{ 'is-active': menuOpen }"
+          :aria-expanded="menuOpen"
+          aria-haspopup="true"
+          @click="toggleMenu"
         >
           <div class="avatar" data-cy="avatar">
             {{ initials }}
@@ -32,11 +36,11 @@
 
           <div class="user-info">
             <span class="user-name" data-cy="user-name">
-              {{ userName }}
+              {{ clinicaAtivaNome }}
             </span>
 
             <span class="user-role" data-cy="user-role">
-              {{ userRole }}
+              {{ userRoleLabel }}
             </span>
           </div>
 
@@ -48,43 +52,145 @@
         </button>
 
         <Transition name="dropdown">
-          <div v-if="menuOpen" class="dropdown-menu" data-cy="dropdown-menu">
+          <div
+            v-if="menuOpen"
+            class="dropdown-menu"
+            data-cy="dropdown-menu"
+            role="menu"
+          >
             <div class="dropdown-header-mobile" data-cy="dropdown-mobile-header">
               <span class="mobile-name" data-cy="mobile-user-name">
-                {{ userName }}
+                {{ clinicaAtivaNome }}
               </span>
 
               <span class="mobile-role" data-cy="mobile-user-role">
-                {{ userRole }}
+                {{ userRoleLabel }}
+              </span>
+
+              <span v-if="usuarioNome" class="mobile-account">
+                {{ usuarioNome }}
               </span>
             </div>
 
-            <button class="dropdown-item" data-cy="menu-profile" @click="goToProfile">
+            <div class="account-summary">
+              <div class="account-summary-avatar">
+                {{ usuarioIniciais }}
+              </div>
+
+              <div class="account-summary-info">
+                <span class="account-summary-name">
+                  {{ usuarioNome || 'Minha conta' }}
+                </span>
+                <span class="account-summary-label">
+                  Conta conectada
+                </span>
+              </div>
+            </div>
+
+            <button
+              class="dropdown-item"
+              data-cy="menu-profile"
+              type="button"
+              role="menuitem"
+              @click="goToProfile"
+            >
               <i class="pi pi-user"></i>
               <span>Meu Perfil</span>
+              <i class="pi pi-angle-right item-arrow"></i>
             </button>
 
             <button
               v-if="isAdmin"
               class="dropdown-item"
               data-cy="menu-settings"
+              type="button"
+              role="menuitem"
               @click="goToClinica"
             >
               <i class="pi pi-building"></i>
               <span>Configurações da Clínica</span>
+              <i class="pi pi-angle-right item-arrow"></i>
             </button>
 
-            <div class="dropdown-divider" data-cy="dropdown-divider"></div>
+            <div
+              v-if="vinculos.length > 1"
+              class="clinic-switcher"
+            >
+              <div class="section-heading">
+                <i class="pi pi-sitemap"></i>
+                <span>Minhas clínicas</span>
+              </div>
 
-            <button class="dropdown-item" @click="switchAccount">
+              <button
+                v-for="vinculo in vinculos"
+                :key="vinculo.clinica_id"
+                type="button"
+                class="clinic-option"
+                :class="{
+                  'clinic-option-active':
+                    String(vinculo.clinica_id) === String(clinicaAtivaId),
+                }"
+                :disabled="
+                  trocandoClinica ||
+                  String(vinculo.clinica_id) === String(clinicaAtivaId)
+                "
+                @click="switchClinic(vinculo.clinica_id)"
+              >
+                <span class="clinic-option-icon">
+                  <i class="pi pi-building"></i>
+                </span>
+
+                <span class="clinic-option-info">
+                  <span class="clinic-option-name">
+                    {{ vinculo.clinica_nome }}
+                  </span>
+                  <span class="clinic-option-role">
+                    {{ formatRole(vinculo.role) }}
+                  </span>
+                </span>
+
+                <i
+                  v-if="String(vinculo.clinica_id) === String(clinicaAtivaId)"
+                  class="pi pi-check clinic-check"
+                ></i>
+
+                <i
+                  v-else
+                  class="pi pi-arrow-right clinic-arrow"
+                ></i>
+              </button>
+            </div>
+
+            <div class="dropdown-divider"></div>
+
+            <button
+              class="dropdown-item"
+              data-cy="menu-switch-account"
+              type="button"
+              role="menuitem"
+              :disabled="encerrandoSessao"
+              @click="switchAccount"
+            >
               <i class="pi pi-users"></i>
               <span>Trocar de Conta</span>
+              <i class="pi pi-angle-right item-arrow"></i>
             </button>
 
-            <button class="dropdown-item logout" data-cy="menu-logout" @click="logout">
-              <i class="pi pi-sign-out"></i>
-              <span>Sair do Sistema</span>
+            <button
+              class="dropdown-item logout-item"
+              data-cy="menu-logout"
+              type="button"
+              role="menuitem"
+              :disabled="encerrandoSessao"
+              @click="handleLogout"
+            >
+              <i :class="encerrandoSessao ? 'pi pi-spin pi-spinner' : 'pi pi-sign-out'"></i>
+              <span>{{ encerrandoSessao ? 'Encerrando sessão...' : 'Sair do Sistema' }}</span>
             </button>
+
+            <p v-if="erroMenu" class="menu-error" role="alert">
+              {{ erroMenu }}
+            </p>
           </div>
         </Transition>
       </div>
@@ -93,175 +199,261 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted, onBeforeUnmount } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useAuthStore } from '../../../store/auth'
 
-const route = useRoute();
-const router = useRouter();
+const route = useRoute()
+const router = useRouter()
+const authStore = useAuthStore()
 
-const menuOpen = ref(false);
-const menuRef = ref(null);
-
-const userName = ref("Carregando...");
-const userRole = ref("");
-const isAdmin = ref(false);
-
-const currentTime = ref("");
-const currentDate = ref("");
-let timerInterval = null;
-
-const initials = computed(() => {
-  if (!userName.value || userName.value === "Carregando...") return "";
-  return userName.value
-    .split(" ")
-    .slice(0, 2)
-    .map((nome) => nome[0])
-    .join("")
-    .toUpperCase();
-});
-
-const pageTitle = computed(() => {
-  return route.name || "Dashboard";
-});
+const menuOpen = ref(false)
+const menuRef = ref(null)
+const currentTime = ref('')
+const currentDate = ref('')
+const trocandoClinica = ref(false)
+const encerrandoSessao = ref(false)
+const erroMenu = ref('')
+let timer = null
 
 const updateDateTime = () => {
-  const now = new Date();
+  const now = new Date()
 
-  currentTime.value = now.toLocaleTimeString("pt-BR", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  currentTime.value = now.toLocaleTimeString('pt-BR', {
+    hour: '2-digit',
+    minute: '2-digit',
+  })
 
-  const dateStr = now.toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
+  currentDate.value = now.toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  })
+}
 
-  currentDate.value = dateStr;
-};
+const pageTitle = computed(() => route.meta.title || 'Sistema')
 
-const toggleMenu = () => {
-  menuOpen.value = !menuOpen.value;
-};
+const clinicaAtiva = computed(() => authStore.clinicaAtiva)
 
-const goToProfile = () => {
-  menuOpen.value = false;
-  router.push("/app/meu-perfil");
-};
+const clinicaAtivaId = computed(() => authStore.clinicaAtivaId)
 
-const goToClinica = () => {
-  menuOpen.value = false;
-  router.push("/app/configuracoes-clinica");
-};
+const clinicaAtivaNome = computed(
+  () => clinicaAtiva.value?.clinica_nome || 'Selecione uma clínica',
+)
 
-const switchAccount = () => {
-  localStorage.removeItem("oneclinic_user");
-  sessionStorage.clear();
-  menuOpen.value = false;
-  router.replace("/?switch=true");
-};
+const userRole = computed(() => clinicaAtiva.value?.role || '')
 
-const logout = () => {
-  localStorage.removeItem("oneclinic_user");
-  sessionStorage.clear();
-  menuOpen.value = false;
-  router.replace("/");
-};
+const userRoleLabel = computed(() => formatRole(userRole.value))
 
-const handleClickOutside = (event) => {
-  if (menuRef.value && !menuRef.value.contains(event.target)) {
-    menuOpen.value = false;
+const vinculos = computed(() => authStore.vinculos || [])
+
+const usuarioNome = computed(
+  () => authStore.usuario?.nome || authStore.usuario?.nome_completo || '',
+)
+
+const initials = computed(() => {
+  const nome = clinicaAtivaNome.value.trim()
+
+  if (!nome || nome === 'Selecione uma clínica') {
+    return 'OC'
   }
-};
+
+  const palavras = nome.split(/\s+/)
+
+  return palavras.length > 1
+    ? `${palavras[0][0]}${palavras[1][0]}`.toUpperCase()
+    : nome.substring(0, 2).toUpperCase()
+})
+
+const usuarioIniciais = computed(() => {
+  const nome = usuarioNome.value.trim()
+
+  if (!nome) {
+    return 'US'
+  }
+
+  const palavras = nome.split(/\s+/)
+
+  return palavras.length > 1
+    ? `${palavras[0][0]}${palavras[palavras.length - 1][0]}`.toUpperCase()
+    : nome.substring(0, 2).toUpperCase()
+})
+
+const isAdmin = computed(() => userRole.value === 'ADMIN')
+
+function formatRole(role) {
+  const roles = {
+    ADMIN: 'Administrador',
+    SECRETARIO: 'Secretário',
+    PROFISSIONAL: 'Profissional',
+  }
+
+  return roles[role] || role || 'Usuário'
+}
+
+function toggleMenu() {
+  menuOpen.value = !menuOpen.value
+  erroMenu.value = ''
+}
+
+function closeMenu(event) {
+  if (menuRef.value && !menuRef.value.contains(event.target)) {
+    menuOpen.value = false
+    erroMenu.value = ''
+  }
+}
+
+function goToProfile() {
+  menuOpen.value = false
+  router.push('/app/meu-perfil')
+}
+
+function goToClinica() {
+  menuOpen.value = false
+  router.push('/app/configuracoes-clinica')
+}
+
+async function switchClinic(clinicaId) {
+  if (
+    trocandoClinica.value ||
+    String(clinicaId) === String(authStore.clinicaAtivaId)
+  ) {
+    return
+  }
+
+  trocandoClinica.value = true
+  erroMenu.value = ''
+
+  try {
+    authStore.setClinicaAtiva(clinicaId)
+    menuOpen.value = false
+    await router.replace('/app/dashboard')
+  } catch (error) {
+    erroMenu.value =
+      error.message || 'Não foi possível trocar de clínica.'
+  } finally {
+    trocandoClinica.value = false
+  }
+}
+
+async function switchAccount() {
+  if (encerrandoSessao.value) {
+    return
+  }
+
+  encerrandoSessao.value = true
+  erroMenu.value = ''
+  menuOpen.value = false
+
+  try {
+    await authStore.logout()
+    await router.replace('/')
+  } catch {
+    authStore.limparSessao()
+    await router.replace('/')
+  } finally {
+    encerrandoSessao.value = false
+  }
+}
+
+async function handleLogout() {
+  if (encerrandoSessao.value) {
+    return
+  }
+
+  encerrandoSessao.value = true
+  erroMenu.value = ''
+  menuOpen.value = false
+
+  try {
+    await authStore.logout()
+    await router.replace('/')
+  } catch {
+    authStore.limparSessao()
+    await router.replace('/')
+  } finally {
+    encerrandoSessao.value = false
+  }
+}
 
 onMounted(() => {
-  document.addEventListener("click", handleClickOutside);
-  updateDateTime();
-  timerInterval = setInterval(updateDateTime, 1000);
+  updateDateTime()
+  timer = setInterval(updateDateTime, 60000)
+  document.addEventListener('click', closeMenu)
+})
 
-  const sessao = localStorage.getItem("oneclinic_user");
-  if (sessao) {
-    const dados = JSON.parse(sessao);
-    userName.value = dados.nome;
-    userRole.value = dados.cargo || dados.role;
-    isAdmin.value = dados.cargo === "admin" || dados.role === "admin";
-  } else {
-    router.replace("/");
+onUnmounted(() => {
+  if (timer) {
+    clearInterval(timer)
   }
-});
 
-onBeforeUnmount(() => {
-  document.removeEventListener("click", handleClickOutside);
-  if (timerInterval) {
-    clearInterval(timerInterval);
-  }
-});
+  document.removeEventListener('click', closeMenu)
+})
 </script>
 
 <style scoped>
 .system-header {
-  height: 72px;
-  min-height: 72px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 2rem;
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
   position: sticky;
   top: 0;
   z-index: 100;
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.02);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 72px;
+  padding: 0 2rem;
+  background: rgba(255, 255, 255, 0.88);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  box-shadow: 0 4px 24px rgba(15, 23, 42, 0.025);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 
 .header-left {
   display: flex;
   align-items: center;
+  min-width: 0;
 }
 
 .header-left h1 {
+  position: relative;
   margin: 0;
   color: var(--cor-escura);
   font-size: 1.5rem;
   font-weight: 700;
-  letter-spacing: -0.03em;
-  position: relative;
+  letter-spacing: -0.035em;
 }
 
 .header-left h1::after {
-  content: "";
   position: absolute;
-  bottom: -4px;
+  bottom: -7px;
   left: 0;
-  width: 24px;
+  width: 28px;
   height: 3px;
+  border-radius: 10px;
   background: var(--cor-primaria);
-  border-radius: 4px;
+  content: '';
 }
 
 .header-right {
   display: flex;
   align-items: center;
-  gap: 2rem;
+  gap: 1.75rem;
 }
 
 .datetime-wrapper {
   display: flex;
   align-items: center;
-  gap: 1.25rem;
-  padding-right: 2rem;
-  border-right: 1px solid rgba(0, 0, 0, 0.08);
+  gap: 1.15rem;
+  padding-right: 1.75rem;
+  border-right: 1px solid rgba(15, 23, 42, 0.08);
 }
 
 .datetime-block {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.55rem;
   color: var(--cor-secundaria);
-  font-size: 0.85rem;
+  font-size: 0.84rem;
   font-weight: 500;
   transition: color 0.2s ease;
 }
@@ -272,16 +464,15 @@ onBeforeUnmount(() => {
 
 .datetime-block i {
   color: var(--cor-primaria);
-  font-size: 1.05rem;
-  opacity: 0.85;
+  font-size: 1rem;
 }
 
 .divider {
   width: 4px;
   height: 4px;
-  background: var(--cor-secundaria);
   border-radius: 50%;
-  opacity: 0.3;
+  background: var(--cor-secundaria);
+  opacity: 0.35;
 }
 
 .user-menu {
@@ -291,40 +482,49 @@ onBeforeUnmount(() => {
 .user-button {
   display: flex;
   align-items: center;
-  gap: 0.875rem;
-  background: var(--branco);
-  border: 1px solid rgba(0, 0, 0, 0.04);
+  gap: 0.8rem;
+  padding: 0.4rem 0.85rem 0.4rem 0.4rem;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.025);
   cursor: pointer;
-  padding: 0.4rem 0.875rem 0.4rem 0.4rem;
-  border-radius: 50px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+  transition:
+    border-color 0.25s ease,
+    background 0.25s ease,
+    box-shadow 0.25s ease,
+    transform 0.25s ease;
 }
 
 .user-button:hover,
 .user-button.is-active {
-  border-color: rgba(28, 164, 167, 0.2);
-  background: rgba(28, 164, 167, 0.02);
-  box-shadow: 0 4px 12px rgba(28, 164, 167, 0.08);
+  border-color: rgba(28, 164, 167, 0.25);
+  background: rgba(28, 164, 167, 0.035);
+  box-shadow: 0 5px 18px rgba(28, 164, 167, 0.09);
+}
+
+.user-button:active {
+  transform: scale(0.98);
 }
 
 .avatar {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: var(--branco);
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  border-radius: 50%;
   background: linear-gradient(135deg, var(--cor-primaria), #158284);
-  box-shadow: 0 0 0 2px var(--branco), 0 0 0 4px rgba(28, 164, 167, 0.15);
-  transition: transform 0.3s ease;
+  box-shadow: 0 0 0 3px rgba(28, 164, 167, 0.1);
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 700;
+  transition: transform 0.25s ease;
 }
 
 .user-button:hover .avatar {
-  transform: scale(1.05);
+  transform: scale(1.04);
 }
 
 .user-info {
@@ -332,31 +532,38 @@ onBeforeUnmount(() => {
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
+  max-width: 180px;
+  gap: 0.2rem;
 }
 
 .user-name {
+  overflow: hidden;
+  max-width: 100%;
   color: var(--cor-escura);
-  font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
+  font-weight: 650;
   line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .user-role {
-  font-size: 0.75rem;
   color: var(--cor-secundaria);
+  font-size: 0.73rem;
   font-weight: 500;
-  opacity: 0.8;
 }
 
 .toggle-icon {
-  font-size: 0.7rem;
+  margin-left: 0.2rem;
   color: var(--cor-secundaria);
-  margin-left: 0.25rem;
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 0.7rem;
+  transition:
+    transform 0.25s ease,
+    color 0.25s ease;
 }
 
 .toggle-icon.rotate {
-  transform: rotate(-180deg);
+  transform: rotate(180deg);
   color: var(--cor-primaria);
 }
 
@@ -364,134 +571,329 @@ onBeforeUnmount(() => {
   position: absolute;
   top: calc(100% + 12px);
   right: 0;
-  width: 260px;
-  background: var(--branco);
-  border-radius: 16px;
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  box-shadow: 0 12px 40px -8px rgba(0, 0, 0, 0.12), 0 4px 12px -4px rgba(0, 0, 0, 0.04);
-  padding: 0.5rem;
   z-index: 999;
+  width: 310px;
+  max-height: min(78vh, 650px);
+  overflow-y: auto;
+  padding: 0.55rem;
+  border: 1px solid rgba(15, 23, 42, 0.07);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow:
+    0 20px 55px rgba(15, 23, 42, 0.13),
+    0 4px 14px rgba(15, 23, 42, 0.04);
   transform-origin: top right;
+}
+
+.account-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.85rem 0.75rem 1rem;
+  margin-bottom: 0.4rem;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.07);
+}
+
+.account-summary-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border: 1px solid rgba(28, 164, 167, 0.14);
+  border-radius: 13px;
+  background: rgba(28, 164, 167, 0.09);
+  color: var(--cor-primaria);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.account-summary-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 0.25rem;
+}
+
+.account-summary-name {
+  overflow: hidden;
+  color: var(--cor-escura);
+  font-size: 0.88rem;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-summary-label {
+  color: var(--cor-secundaria);
+  font-size: 0.74rem;
 }
 
 .dropdown-header-mobile {
   display: none;
   padding: 1rem 0.75rem;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.45rem;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.07);
 }
 
 .mobile-name {
   display: block;
-  font-weight: 600;
   color: var(--cor-escura);
   font-size: 0.95rem;
+  font-weight: 650;
 }
 
-.mobile-role {
+.mobile-role,
+.mobile-account {
   display: block;
-  font-size: 0.8rem;
+  margin-top: 0.25rem;
   color: var(--cor-secundaria);
-  margin-top: 0.15rem;
+  font-size: 0.78rem;
 }
 
 .dropdown-item {
-  width: 100%;
   display: flex;
   align-items: center;
+  width: 100%;
+  min-height: 44px;
   gap: 0.75rem;
+  padding: 0.75rem 0.85rem;
+  border: 0;
+  border-radius: 11px;
   background: transparent;
-  border: none;
-  padding: 0.875rem 1rem;
-  border-radius: 10px;
-  cursor: pointer;
   color: var(--cor-escura);
-  font-size: 0.95rem;
-  font-weight: 500;
-  transition: all 0.2s ease;
+  cursor: pointer;
+  font-size: 0.87rem;
+  font-weight: 550;
+  text-align: left;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
 }
 
-.dropdown-item i {
-  font-size: 1.1rem;
+.dropdown-item > i:first-child {
+  width: 18px;
   color: var(--cor-secundaria);
+  font-size: 1rem;
   transition: color 0.2s ease;
 }
 
-.dropdown-item:hover {
-  background: rgba(28, 164, 167, 0.06);
+.dropdown-item:hover:not(:disabled) {
+  transform: translateX(2px);
+  background: rgba(28, 164, 167, 0.07);
   color: var(--cor-primaria);
-  transform: translateX(4px);
 }
 
-.dropdown-item:hover i {
+.dropdown-item:hover:not(:disabled) > i:first-child {
+  color: var(--cor-primaria);
+}
+
+.dropdown-item:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.item-arrow {
+  margin-left: auto;
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
+.clinic-switcher {
+  padding: 0.8rem 0.25rem 0.35rem;
+  margin-top: 0.35rem;
+  border-top: 1px solid rgba(15, 23, 42, 0.07);
+}
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.3rem 0.55rem 0.65rem;
+  color: var(--cor-secundaria);
+  font-size: 0.73rem;
+  font-weight: 700;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+
+.section-heading i {
+  color: var(--cor-primaria);
+  font-size: 0.9rem;
+}
+
+.clinic-option {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 0.65rem;
+  padding: 0.65rem 0.55rem;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.clinic-option:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: rgba(28, 164, 167, 0.05);
+}
+
+.clinic-option-active {
+  border-color: rgba(28, 164, 167, 0.17);
+  background: rgba(28, 164, 167, 0.07);
+}
+
+.clinic-option:disabled {
+  cursor: default;
+}
+
+.clinic-option-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.clinic-option-active .clinic-option-icon {
+  background: rgba(28, 164, 167, 0.13);
+  color: var(--cor-primaria);
+}
+
+.clinic-option-info {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  gap: 0.2rem;
+}
+
+.clinic-option-name {
+  overflow: hidden;
+  color: var(--cor-escura);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.clinic-option-role {
+  color: var(--cor-secundaria);
+  font-size: 0.72rem;
+}
+
+.clinic-check {
+  color: var(--cor-primaria);
+  font-size: 0.9rem;
+}
+
+.clinic-arrow {
+  color: #94a3b8;
+  font-size: 0.8rem;
+  transition:
+    color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.clinic-option:hover:not(:disabled) .clinic-arrow {
+  transform: translateX(2px);
   color: var(--cor-primaria);
 }
 
 .dropdown-divider {
   height: 1px;
-  background: rgba(0, 0, 0, 0.06);
-  margin: 0.5rem 0;
+  margin: 0.45rem 0;
+  background: rgba(15, 23, 42, 0.07);
 }
 
-.logout {
-  color: #ef4444;
+.logout-item {
+  color: #dc4545;
 }
 
-.logout i {
-  color: #ef4444;
+.logout-item > i:first-child {
+  color: #dc4545;
 }
 
-.logout:hover {
-  background: #fef2f2;
-  color: #dc2626;
+.logout-item:hover:not(:disabled) {
+  background: #fff1f1;
+  color: #c92e2e;
 }
 
-.logout:hover i {
-  color: #dc2626;
+.logout-item:hover:not(:disabled) > i:first-child {
+  color: #c92e2e;
+}
+
+.menu-error {
+  padding: 0.55rem 0.7rem;
+  margin: 0.4rem 0.15rem 0.2rem;
+  border-radius: 9px;
+  background: #fff1f1;
+  color: #c92e2e;
+  font-size: 0.78rem;
+  line-height: 1.45;
 }
 
 .dropdown-enter-active {
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition:
+    opacity 0.22s ease,
+    transform 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .dropdown-leave-active {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition:
+    opacity 0.16s ease,
+    transform 0.16s ease;
 }
 
 .dropdown-enter-from,
 .dropdown-leave-to {
+  transform: translateY(-7px) scale(0.98);
   opacity: 0;
-  transform: scale(0.95) translateY(-10px);
 }
 
 @media (max-width: 1024px) {
   .datetime-wrapper {
-    display: none;
+    gap: 0.8rem;
+    padding-right: 1.1rem;
+  }
+
+  .header-right {
+    gap: 1rem;
   }
 }
 
 @media (max-width: 768px) {
   .system-header {
-    padding: 0 1.25rem;
-    height: 64px;
     min-height: 64px;
+    padding: 0 1.25rem;
   }
 
   .header-left h1 {
     font-size: 1.25rem;
   }
 
-  .user-info {
+  .datetime-wrapper,
+  .user-info,
+  .toggle-icon {
     display: none;
   }
 
   .user-button {
     padding: 0.35rem;
     border-radius: 50%;
-  }
-
-  .toggle-icon {
-    display: none;
   }
 
   .avatar {
@@ -501,24 +903,42 @@ onBeforeUnmount(() => {
   }
 
   .dropdown-menu {
-    width: 240px;
-    top: calc(100% + 8px);
+    top: calc(100% + 9px);
+    width: min(310px, calc(100vw - 2rem));
   }
 
   .dropdown-header-mobile {
     display: block;
   }
+
+  .account-summary {
+    display: none;
+  }
 }
 
 @media (max-width: 480px) {
   .system-header {
-    height: 60px;
     min-height: 60px;
     padding: 0 1rem;
   }
 
   .header-left h1 {
-    font-size: 1.15rem;
+    font-size: 1.1rem;
+  }
+
+  .dropdown-menu {
+    right: -0.35rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .system-header *,
+  .system-header *::before,
+  .system-header *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 </style>
