@@ -12,7 +12,7 @@
               class="search-input"
             />
           </div>
-          <button class="btn-novo" @click="abrirModalCriacao">
+          <button class="btn-novo" @click="abrirModalCriacao" :disabled="carregando">
             <i class="pi pi-plus"></i> Novo Cliente
           </button>
         </div>
@@ -69,7 +69,12 @@
         </div>
       </div>
 
-      <TransitionGroup name="list" tag="div" class="clients-grid">
+      <div v-if="carregando" class="empty-state">
+        <i class="pi pi-spin pi-spinner empty-icon"></i>
+        <p>Carregando clientes...</p>
+      </div>
+
+      <TransitionGroup v-else name="list" tag="div" class="clients-grid">
         <ClientCard
           v-for="cliente in clientesFiltrados"
           :key="cliente.id"
@@ -80,7 +85,7 @@
         />
       </TransitionGroup>
 
-      <div v-if="clientesFiltrados.length === 0" class="empty-state">
+      <div v-if="!carregando && clientesFiltrados.length === 0" class="empty-state">
         <i class="pi pi-users empty-icon"></i>
         <p>Nenhum cliente encontrado com os filtros atuais.</p>
       </div>
@@ -92,11 +97,12 @@
       :cliente-edicao="clienteSelecionado"
       @close="fecharModal"
       @save="salvarCliente"
+      @notify="receberNotificacaoModal"
     />
 
     <Transition name="toast">
-      <div v-if="toast.show" class="toast-notification">
-        <i class="pi pi-check-circle"></i>
+      <div v-if="toast.show" class="toast-notification" :class="toast.type">
+        <i :class="['pi', toast.type === 'error' ? 'pi-times-circle' : 'pi-check-circle']"></i>
         <span>{{ toast.message }}</span>
       </div>
     </Transition>
@@ -104,10 +110,13 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
-import { store } from "@/store.js";
+import { ref, computed, onMounted } from "vue";
+import api from "@/services/api";
 import ClientCard from "./components/ClientCard.vue";
 import ClientModal from "./components/ClientModal.vue";
+
+const clientes = ref([]);
+const carregando = ref(false);
 
 const searchQuery = ref("");
 const camposAtivos = ref(["nome"]);
@@ -115,12 +124,11 @@ const filtroStatus = ref("todos");
 const isModalOpen = ref(false);
 const modalMode = ref("criar");
 const clienteSelecionado = ref(null);
-const toast = ref({ show: false, message: "" });
+const toast = ref({ show: false, message: "", type: "success" });
 
 const camposBusca = [
   { label: "Nome", value: "nome" },
   { label: "CPF", value: "cpf" },
-  { label: "E-mail", value: "email" },
   { label: "Telefone", value: "telefone" },
 ];
 
@@ -130,13 +138,25 @@ const statusBusca = [
   { label: "Inativos", value: "INATIVO" },
 ];
 
-const totalClientes = computed(() => store.clientes.length);
-const clientesAtivos = computed(
-  () => store.clientes.filter((c) => c.status_cadastro === "ATIVO").length
-);
-const clientesInativos = computed(
-  () => store.clientes.filter((c) => c.status_cadastro === "INATIVO").length
-);
+const buscarClientes = async () => {
+  carregando.value = true;
+  try {
+    const response = await api.get("/api/clientes/");
+    clientes.value = response.data.results || response.data;
+  } catch (error) {
+    dispararToast("Erro ao carregar os clientes.", "error");
+  } finally {
+    carregando.value = false;
+  }
+};
+
+onMounted(() => {
+  buscarClientes();
+});
+
+const totalClientes = computed(() => clientes.value.length);
+const clientesAtivos = computed(() => clientes.value.filter((c) => c.status_cadastro === "ATIVO").length);
+const clientesInativos = computed(() => clientes.value.filter((c) => c.status_cadastro === "INATIVO").length);
 
 const placeholderBusca = computed(() => {
   const campos = camposBusca
@@ -172,7 +192,7 @@ const limparFiltros = () => {
 };
 
 const clientesFiltrados = computed(() => {
-  let resultado = store.clientes;
+  let resultado = clientes.value;
 
   if (filtroStatus.value !== "todos") {
     resultado = resultado.filter((c) => c.status_cadastro === filtroStatus.value);
@@ -187,22 +207,32 @@ const clientesFiltrados = computed(() => {
 
   return resultado.filter((c) => {
     return camposAtivos.value.some((campo) => {
-      if (campo === "cpf" || campo === "telefone") {
-        const valorLimpo = String(c[campo] || '').replace(/\D/g, "");
-        return valorLimpo.includes(queryLimpa) || valorLimpo.includes(queryNormal);
+      if (campo === "cpf") {
+        const valorLimpo = String(c.usuario_cpf || '').replace(/\D/g, "");
+        return valorLimpo.includes(queryLimpa);
       }
-      const valor = String(c[campo] || '').toLowerCase();
-      return valor.includes(queryNormal);
+      if (campo === "telefone") {
+        const valorLimpo = String(c.telefone || '').replace(/\D/g, "");
+        return valorLimpo.includes(queryLimpa);
+      }
+      if (campo === "nome") {
+        const valor = String(c.usuario_nome || '').toLowerCase();
+        return valor.includes(queryNormal);
+      }
+      return false;
     });
   });
 });
 
-const dispararToast = (mensagem) => {
-  toast.value.message = mensagem;
-  toast.value.show = true;
+const dispararToast = (mensagem, tipo = "success") => {
+  toast.value = { show: true, message: mensagem, type: tipo };
   setTimeout(() => {
     toast.value.show = false;
   }, 3500);
+};
+
+const receberNotificacaoModal = (evento) => {
+  dispararToast(evento.message, evento.type);
 };
 
 const abrirModalCriacao = () => {
@@ -228,61 +258,41 @@ const fecharModal = () => {
   clienteSelecionado.value = null;
 };
 
-const gerarIniciais = (nome) => {
-  if (!nome) return "";
-  return nome
-    .split(" ")
-    .map((n) => n[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-};
+const salvarCliente = async (dadosForm) => {
+  const payload = {
+    nome_completo: dadosForm.nome,
+    cpf: dadosForm.cpf.replace(/\D/g, ""),
+    telefone: dadosForm.telefone.replace(/\D/g, ""),
+    cep: dadosForm.cep.replace(/\D/g, ""),
+    numero_endereco: dadosForm.numero,
+    status_cadastro: dadosForm.status_cadastro,
+  };
 
-const obterTimestamp = () => {
-  const agora = new Date();
-  const data = agora.toLocaleDateString("pt-BR");
-  const hora = agora.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-  return `${data} ${hora} GMT-3`;
-};
-
-const gerarUUID = () => {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-    return crypto.randomUUID();
-  }
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  });
-};
-
-const salvarCliente = (dadosCliente) => {
-  if (dadosCliente.id) {
-    const index = store.clientes.findIndex((c) => c.id === dadosCliente.id);
-    if (index !== -1) {
-      store.clientes[index] = {
-        ...dadosCliente,
-        iniciais: gerarIniciais(dadosCliente.nome),
-      };
-      dispararToast(`Cliente "${dadosCliente.nome}" atualizado com sucesso!`);
+  try {
+    if (dadosForm.id) {
+      await api.patch(`/api/clientes/${dadosForm.id}/`, payload);
+      dispararToast(`Cliente atualizado com sucesso!`);
+    } else {
+      await api.post("/api/clientes/", payload);
+      dispararToast(`Cliente cadastrado com sucesso!`);
     }
-  } else {
-    const novo = {
-      ...dadosCliente,
-      id: gerarUUID(),
-      iniciais: gerarIniciais(dadosCliente.nome),
-      criadoEm: obterTimestamp()
-    };
-    store.clientes.unshift(novo);
-    dispararToast(`Cliente "${dadosCliente.nome}" cadastrado com sucesso!`);
+    fecharModal();
+    buscarClientes();
+  } catch (error) {
+    const erroAPI = error.response?.data;
+    const msg = erroAPI ? Object.values(erroAPI).flat()[0] : "Erro ao processar solicitação.";
+    dispararToast(msg, "error");
   }
 };
 
-const alternarStatus = (cliente) => {
-  const index = store.clientes.findIndex((c) => c.id === cliente.id);
-  if (index !== -1) {
-    const novoStatus = store.clientes[index].status_cadastro === "ATIVO" ? "INATIVO" : "ATIVO";
-    store.clientes[index].status_cadastro = novoStatus;
-    dispararToast(`Cadastro de "${cliente.nome}" marcado como ${novoStatus}.`);
+const alternarStatus = async (cliente) => {
+  const novoStatus = cliente.status_cadastro === "ATIVO" ? "INATIVO" : "ATIVO";
+  try {
+    await api.patch(`/api/clientes/${cliente.id}/`, { status_cadastro: novoStatus });
+    dispararToast(`Status do cliente atualizado para ${novoStatus}.`);
+    buscarClientes();
+  } catch (error) {
+    dispararToast("Erro ao alterar o status do cliente.", "error");
   }
 };
 </script>
@@ -377,7 +387,12 @@ const alternarStatus = (cliente) => {
   font-family: inherit;
 }
 
-.btn-novo:hover {
+.btn-novo:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.btn-novo:hover:not(:disabled) {
   background-color: #158A8D;
   transform: translateY(-2px);
 }
@@ -534,6 +549,14 @@ const alternarStatus = (cliente) => {
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
   border-left: 4px solid #1CA4A7;
   z-index: 3000;
+}
+
+.toast-notification.error {
+  border-left-color: #ef4444;
+}
+
+.toast-notification.error i {
+  color: #ef4444;
 }
 
 .toast-notification i {

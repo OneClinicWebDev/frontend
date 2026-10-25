@@ -45,9 +45,7 @@
                 <div v-if="activeTab === 'cadastro'" class="tab-pane" key="cadastro">
                   <div class="form-row">
                     <div class="form-group flex-1">
-                      <label
-                        >Nome Completo <span class="required-asterisk">*</span></label
-                      >
+                      <label>Nome Completo <span class="required-asterisk">*</span></label>
                       <input
                         type="text"
                         v-model="form.nome"
@@ -57,9 +55,7 @@
                         :disabled="isDetalhes"
                         placeholder="Ex: João da Silva"
                       />
-                      <span class="error-feedback"
-                        >Preencha o nome completo (mínimo 3 letras).</span
-                      >
+                      <span class="error-feedback">Preencha o nome completo (mínimo 3 letras).</span>
                     </div>
 
                     <div class="form-group flex-1">
@@ -71,7 +67,7 @@
                         required
                         pattern=".{14,14}"
                         maxlength="14"
-                        :disabled="isDetalhes"
+                        :disabled="isDetalhes || mode === 'editar'"
                         placeholder="000.000.000-00"
                       />
                       <span class="error-feedback">O CPF deve conter os 11 números.</span>
@@ -79,20 +75,6 @@
                   </div>
 
                   <div class="form-row mt-3">
-                    <div class="form-group flex-1">
-                      <label>E-mail <span class="required-asterisk">*</span></label>
-                      <input
-                        type="email"
-                        v-model="form.email"
-                        required
-                        pattern="[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$"
-                        :disabled="isDetalhes"
-                        placeholder="Ex: joao@email.com"
-                      />
-                      <span class="error-feedback"
-                        >Insira um e-mail com @ e domínio (ex: .com).</span
-                      >
-                    </div>
                     <div class="form-group flex-1">
                       <label>Telefone <span class="required-asterisk">*</span></label>
                       <input
@@ -105,13 +87,9 @@
                         :disabled="isDetalhes"
                         placeholder="(00) 00000-0000"
                       />
-                      <span class="error-feedback"
-                        >O telefone deve conter o DDD e número válido.</span
-                      >
+                      <span class="error-feedback">O telefone deve conter o DDD e número válido.</span>
                     </div>
-                  </div>
 
-                  <div class="form-row mt-3">
                     <div class="form-group flex-1">
                       <label>CEP <span class="required-asterisk">*</span></label>
                       <input
@@ -124,10 +102,11 @@
                         :disabled="isDetalhes"
                         placeholder="00000-000"
                       />
-                      <span class="error-feedback"
-                        >O CEP deve conter os 8 números corretos.</span
-                      >
+                      <span class="error-feedback">O CEP deve conter os 8 números corretos.</span>
                     </div>
+                  </div>
+
+                  <div class="form-row mt-3">
                     <div class="form-group flex-1">
                       <label>Número <span class="required-asterisk">*</span></label>
                       <input
@@ -140,86 +119,52 @@
                         :disabled="isDetalhes"
                         placeholder="Apenas números"
                       />
-                      <span class="error-feedback"
-                        >Campo obrigatório. Máximo 4 dígitos.</span
-                      >
+                      <span class="error-feedback">Campo obrigatório. Máximo 4 dígitos.</span>
                     </div>
-                  </div>
-
-                  <div class="form-row mt-3">
+                    
                     <div class="form-group flex-1">
-                      <label
-                        >Status do Cadastro
-                        <span class="required-asterisk">*</span></label
-                      >
+                      <label>Status do Cadastro <span class="required-asterisk">*</span></label>
                       <div class="status-toggle" :class="{ disabled: isDetalhes }">
-                        <label
-                          :class="[
-                            'toggle-option',
-                            { active: form.status_cadastro === 'ATIVO' },
-                          ]"
-                        >
-                          <input
-                            type="radio"
-                            v-model="form.status_cadastro"
-                            value="ATIVO"
-                            :disabled="isDetalhes"
-                          />
+                        <label :class="['toggle-option', { active: form.status_cadastro === 'ATIVO' }]">
+                          <input type="radio" v-model="form.status_cadastro" value="ATIVO" :disabled="isDetalhes" />
                           ATIVO
                         </label>
-                        <label
-                          :class="[
-                            'toggle-option',
-                            { active: form.status_cadastro === 'INATIVO' },
-                          ]"
-                        >
-                          <input
-                            type="radio"
-                            v-model="form.status_cadastro"
-                            value="INATIVO"
-                            :disabled="isDetalhes"
-                          />
+                        <label :class="['toggle-option', { active: form.status_cadastro === 'INATIVO' }]">
+                          <input type="radio" v-model="form.status_cadastro" value="INATIVO" :disabled="isDetalhes" />
                           INATIVO
                         </label>
-                        <div
-                          class="toggle-slider"
-                          :class="form.status_cadastro.toLowerCase()"
-                        ></div>
+                        <div class="toggle-slider" :class="form.status_cadastro.toLowerCase()"></div>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div
-                  v-else-if="activeTab === 'historico'"
-                  class="tab-pane mock-section"
-                  key="historico"
-                >
-                  <div class="mock-list scroller">
-                    <div class="mock-item" v-for="i in 8" :key="'hist' + i">
+                <div v-else-if="activeTab === 'historico'" class="tab-pane mock-section" key="historico">
+                  <div v-if="carregandoExtras" style="text-align:center; padding: 20px; color: #64748b;">Carregando histórico...</div>
+                  <div v-else-if="historicoAgendamentos.length === 0" style="text-align:center; padding: 20px; color: #64748b;">Nenhum agendamento encontrado para este cliente.</div>
+                  <div v-else class="mock-list scroller">
+                    <div class="mock-item" v-for="agendamento in historicoAgendamentos" :key="agendamento.id">
                       <div class="mock-icon"><i class="pi pi-calendar-clock"></i></div>
                       <div class="mock-info">
-                        <h4>Sessão Estética Avançada {{ i }}</h4>
-                        <p>Com Profissional - 1{{ i }}/10/2026</p>
+                        <h4>{{ agendamento.servico_nome || servicosMap[agendamento.servico] || 'Serviço Agendado' }}</h4>
+                        <p>Data: {{ new Date(agendamento.data_hora_inicio).toLocaleString('pt-BR') }}</p>
                       </div>
-                      <span class="mock-badge badge-concluido">Concluído</span>
+                      <span class="mock-badge" :class="agendamento.status === 'CONCLUIDO' ? 'badge-concluido' : 'badge-ativo'">{{ agendamento.status }}</span>
                     </div>
                   </div>
                 </div>
 
-                <div
-                  v-else-if="activeTab === 'pacotes'"
-                  class="tab-pane mock-section"
-                  key="pacotes"
-                >
-                  <div class="mock-list scroller">
-                    <div class="mock-item" v-for="i in 5" :key="'pac' + i">
+                <div v-else-if="activeTab === 'pacotes'" class="tab-pane mock-section" key="pacotes">
+                  <div v-if="carregandoExtras" style="text-align:center; padding: 20px; color: #64748b;">Carregando pacotes...</div>
+                  <div v-else-if="pacotesCliente.length === 0" style="text-align:center; padding: 20px; color: #64748b;">Nenhum pacote adquirido por este cliente.</div>
+                  <div v-else class="mock-list scroller">
+                    <div class="mock-item" v-for="pacote in pacotesCliente" :key="pacote.id">
                       <div class="mock-icon"><i class="pi pi-box"></i></div>
                       <div class="mock-info">
-                        <h4>Pacote Personalizado {{ i }}</h4>
-                        <p>Sessões restantes: {{ i }}/10</p>
+                        <h4>Pacote: {{ servicosMap[pacote.servico] || 'Procedimento' }}</h4>
+                        <p>Sessões restantes: {{ pacote.saldo_sessoes }}/{{ pacote.quantidade_sessoes }}</p>
                       </div>
-                      <span class="mock-badge badge-ativo">Ativo</span>
+                      <span class="mock-badge badge-ativo">{{ pacote.status }}</span>
                     </div>
                   </div>
                 </div>
@@ -243,6 +188,7 @@
 
 <script setup>
 import { ref, watch, computed } from "vue";
+import api from "@/services/api";
 
 const props = defineProps({
   isOpen: Boolean,
@@ -256,10 +202,15 @@ const activeTab = ref("cadastro");
 const formRef = ref(null);
 const foiValidado = ref(false);
 
+const historicoAgendamentos = ref([]);
+const pacotesCliente = ref([]);
+const servicosMap = ref({});
+const carregandoExtras = ref(false);
+
 const form = ref({
+  id: null,
   nome: "",
   cpf: "",
-  email: "",
   telefone: "",
   cep: "",
   numero: "",
@@ -278,7 +229,34 @@ const tituloModal = computed(() => {
 
 const isDetalhes = computed(() => props.mode === "detalhes");
 
+const carregarExtras = async () => {
+  if (!props.clienteEdicao?.id) return;
+  carregandoExtras.value = true;
+  try {
+    const [resAgend, resPacotes, resServicos] = await Promise.all([
+      api.get("/api/agendamentos/"),
+      api.get("/api/pacotes/"),
+      api.get("/api/servicos/")
+    ]);
+
+    const servicos = resServicos.data.results || resServicos.data;
+    servicos.forEach(s => { servicosMap.value[s.id] = s.nome; });
+
+    const agendamentos = resAgend.data.results || resAgend.data;
+    historicoAgendamentos.value = agendamentos.filter(a => String(a.cliente) === String(props.clienteEdicao.id));
+
+    const pacs = resPacotes.data.results || resPacotes.data;
+    pacotesCliente.value = pacs.filter(p => String(p.cliente) === String(props.clienteEdicao.id));
+
+  } catch (error) {
+    emit("notify", { message: "Erro ao buscar histórico do cliente.", type: "error" });
+  } finally {
+    carregandoExtras.value = false;
+  }
+};
+
 const aplicarMascaraCpf = (v) => {
+  if (!v) return "";
   v = v.replace(/\D/g, "");
   if (v.length <= 11) {
     v = v.replace(/(\d{3})(\d)/, "$1.$2");
@@ -289,6 +267,7 @@ const aplicarMascaraCpf = (v) => {
 };
 
 const aplicarMascaraTelefone = (v) => {
+  if (!v) return "";
   v = v.replace(/\D/g, "");
   if (v.length <= 11) {
     v = v.replace(/^(\d{2})(\d)/g, "($1) $2");
@@ -298,6 +277,7 @@ const aplicarMascaraTelefone = (v) => {
 };
 
 const aplicarMascaraCep = (v) => {
+  if (!v) return "";
   v = v.replace(/\D/g, "");
   if (v.length <= 8) {
     v = v.replace(/^(\d{5})(\d)/, "$1-$2");
@@ -337,15 +317,23 @@ watch(
       foiValidado.value = false;
 
       if (props.clienteEdicao && props.mode !== "criar") {
-        form.value = { ...props.clienteEdicao };
-        exibicaoCpf.value = props.clienteEdicao.cpf || "";
-        exibicaoTelefone.value = props.clienteEdicao.telefone || "";
-        exibicaoCep.value = props.clienteEdicao.cep || "";
+        form.value = {
+          id: props.clienteEdicao.id,
+          nome: props.clienteEdicao.usuario_nome || "",
+          cpf: props.clienteEdicao.usuario_cpf || "",
+          telefone: props.clienteEdicao.telefone || "",
+          cep: props.clienteEdicao.cep || "",
+          numero: props.clienteEdicao.numero_endereco || "",
+          status_cadastro: props.clienteEdicao.status_cadastro || "ATIVO",
+        };
+        exibicaoCpf.value = aplicarMascaraCpf(form.value.cpf);
+        exibicaoTelefone.value = aplicarMascaraTelefone(form.value.telefone);
+        exibicaoCep.value = aplicarMascaraCep(form.value.cep);
       } else {
         form.value = {
+          id: null,
           nome: "",
           cpf: "",
-          email: "",
           telefone: "",
           cep: "",
           numero: "",
@@ -358,6 +346,12 @@ watch(
     }
   }
 );
+
+watch(activeTab, (newTab) => {
+  if ((newTab === "historico" || newTab === "pacotes") && isDetalhes.value && historicoAgendamentos.value.length === 0) {
+    carregarExtras();
+  }
+});
 
 const fechar = () => {
   emit("close");
@@ -378,7 +372,6 @@ const salvar = () => {
   }
 
   emit("save", { ...form.value });
-  fechar();
 };
 </script>
 

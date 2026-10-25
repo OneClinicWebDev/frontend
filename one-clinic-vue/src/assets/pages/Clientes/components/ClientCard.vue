@@ -2,9 +2,9 @@
   <div class="client-card" @dblclick="emitirDblClick">
     <div class="card-header">
       <div class="client-info-main">
-        <div class="client-avatar">{{ cliente.iniciais }}</div>
+        <div class="client-avatar">{{ gerarIniciais(cliente.usuario_nome) }}</div>
         <div class="client-name-status">
-          <h3 class="client-name">{{ cliente.nome }}</h3>
+          <h3 class="client-name">{{ cliente.usuario_nome }}</h3>
           <span :class="['status-badge', getBadgeClass(cliente.status_cadastro)]">
             {{ cliente.status_cadastro }}
           </span>
@@ -35,15 +35,11 @@
     <div class="client-contact">
       <div class="contact-row">
         <i class="pi pi-phone"></i>
-        <span class="font-semibold">{{ cliente.telefone }}</span>
-      </div>
-      <div class="contact-row">
-        <i class="pi pi-envelope"></i>
-        <span>{{ cliente.email }}</span>
+        <span class="font-semibold">{{ mascararTelefone(cliente.telefone) }}</span>
       </div>
       <div class="contact-row">
         <i class="pi pi-map-marker"></i>
-        <span>CEP: {{ cliente.cep || 'N/A' }} - Nº {{ cliente.numero || 'S/N' }}</span>
+        <span>CEP: {{ cliente.cep || 'N/A' }} - Nº {{ cliente.numero_endereco || 'S/N' }}</span>
       </div>
     </div>
 
@@ -52,11 +48,11 @@
     <div class="card-footer">
       <div class="footer-info">
         <span class="info-label">Cadastrado em</span>
-        <span class="info-value">{{ cliente.criadoEm ? cliente.criadoEm.split(' ')[0] : 'N/A' }}</span>
+        <span class="info-value">{{ cliente.created_at ? new Date(cliente.created_at).toLocaleDateString('pt-BR') : 'N/A' }}</span>
       </div>
       <div class="footer-info text-right">
         <span class="info-label">CPF</span>
-        <span class="info-value text-sm">{{ cliente.cpf }}</span>
+        <span class="info-value text-sm">{{ cliente.usuario_cpf || mascararCpf(cliente.cpf) }}</span>
       </div>
     </div>
   </div>
@@ -93,6 +89,37 @@ const getBadgeClass = (status) => {
   if (status === 'ATIVO') return 'badge-ativo'
   return 'badge-inativo'
 }
+
+const gerarIniciais = (nome) => {
+  if (!nome) return "";
+  return nome
+    .split(" ")
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+};
+
+const mascararTelefone = (v) => {
+  if (!v) return 'N/A';
+  v = v.replace(/\D/g, "");
+  if (v.length <= 11) {
+    v = v.replace(/^(\d{2})(\d)/g, "($1) $2");
+    v = v.replace(/(\d)(\d{4})$/, "$1-$2");
+  }
+  return v;
+};
+
+const mascararCpf = (v) => {
+  if (!v) return 'N/A';
+  v = v.replace(/\D/g, "");
+  if (v.length <= 11) {
+    v = v.replace(/(\d{3})(\d)/, "$1.$2");
+    v = v.replace(/(\d{3})(\d)/, "$1.$2");
+    v = v.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+  }
+  return v;
+};
 
 onMounted(() => {
   window.addEventListener('click', fecharMenu)
