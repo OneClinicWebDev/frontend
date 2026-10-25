@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import api from '@/services/api'
+import api, { registrarSincronizacaoAuth } from '@/services/api'
 
 const obterErro = (error, mensagemPadrao) => {
   const data = error.response?.data
@@ -127,6 +127,10 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async restaurarSessao() {
+      this.token = localStorage.getItem('access_token') || this.token
+      this.refreshToken =
+        localStorage.getItem('refresh_token') || this.refreshToken
+
       if (!this.token || this.carregandoSessao) {
         return false
       }
@@ -142,7 +146,10 @@ export const useAuthStore = defineStore('auth', {
 
         return true
       } catch {
-        this.limparSessao()
+        if (!localStorage.getItem('access_token')) {
+          this.limparSessao()
+        }
+
         return false
       } finally {
         this.carregandoSessao = false
@@ -155,9 +162,7 @@ export const useAuthStore = defineStore('auth', {
       )
 
       if (!vinculo) {
-        throw new Error(
-          'Você não possui vínculo ativo com essa clínica.',
-        )
+        throw new Error('Você não possui vínculo ativo com essa clínica.')
       }
 
       this.clinicaAtivaId = String(vinculo.clinica_id)
@@ -209,8 +214,11 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async logout() {
-      const refresh = this.refreshToken
-      const possuiSessao = Boolean(this.token)
+      const refresh =
+        localStorage.getItem('refresh_token') || this.refreshToken
+      const possuiSessao = Boolean(
+        localStorage.getItem('access_token') || this.token,
+      )
 
       try {
         if (possuiSessao && refresh) {
@@ -221,5 +229,17 @@ export const useAuthStore = defineStore('auth', {
         this.limparSessao()
       }
     },
+  },
+})
+
+registrarSincronizacaoAuth({
+  sincronizarToken(access) {
+    const auth = useAuthStore()
+    auth.token = access
+  },
+
+  limparStore() {
+    const auth = useAuthStore()
+    auth.limparSessao()
   },
 })
