@@ -1,42 +1,64 @@
 <template>
   <div class="page-container">
     <main class="page-content">
-      <AgendaHeader
-        v-model:filters="filters"
-        v-model:displayMode="displayMode"
-        :currentView="currentView"
-        :profissionaisBD="profissionaisBD"
-        :hasActiveFilters="hasActiveFilters"
-        @changeView="changeView"
-        @openCreateModal="openCreateModal"
-        @clearFilters="clearFilters"
-      />
-
-      <AgendaStats
-        :total="totalAgendamentos"
-        :confirmados="confirmados"
-        :pendentes="pendentes"
-        :cancelados="cancelados"
-      />
-
-      <section class="agenda-content" :class="{ 'layout-list': displayMode === 'list' }">
-        <AgendaCalendar
-          v-show="displayMode === 'calendar'"
-          ref="calendarComponentRef"
-          :options="calendarOptions"
+      <div class="agenda-header-section">
+        <AgendaHeader
+          v-model:filters="filters"
+          v-model:displayMode="displayMode"
+          :currentView="currentView"
+          :profissionaisBD="profissionaisBD"
+          :hasActiveFilters="hasActiveFilters"
+          @changeView="changeView"
+          @openCreateModal="openCreateModal"
+          @clearFilters="clearFilters"
         />
+      </div>
 
-        <AgendaSideList
-          v-show="displayMode === 'calendar'"
-          :appointments="filteredAppointments"
-          @edit="editAppointment"
+      <section class="stats-section">
+        <AgendaStats
+          :total="totalAgendamentos"
+          :confirmados="confirmados"
+          :pendentes="pendentes"
+          :cancelados="cancelados"
         />
+      </section>
 
-        <AgendaGridList
+      <section
+        class="agenda-content"
+        :class="{
+          'layout-list': displayMode === 'list',
+          'layout-calendar': displayMode === 'calendar'
+        }"
+      >
+        <div
+          v-show="displayMode === 'calendar'"
+          class="calendar-wrapper"
+        >
+          <AgendaCalendar
+            ref="calendarComponentRef"
+            :options="calendarOptions"
+          />
+        </div>
+
+        <aside
+          v-show="displayMode === 'calendar'"
+          class="agenda-side-wrapper"
+        >
+          <AgendaSideList
+            :appointments="filteredAppointments"
+            @edit="editAppointment"
+          />
+        </aside>
+
+        <div
           v-show="displayMode === 'list'"
-          :appointments="filteredAppointments"
-          @edit="editAppointment"
-        />
+          class="agenda-grid-wrapper"
+        >
+          <AgendaGridList
+            :appointments="filteredAppointments"
+            @edit="editAppointment"
+          />
+        </div>
       </section>
     </main>
 
@@ -56,10 +78,17 @@
     />
 
     <Transition name="toast">
-      <div v-if="toast.show" :class="['toast-notification', toast.type]">
+      <div
+        v-if="toast.show"
+        :class="['toast-notification', toast.type]"
+        role="status"
+        aria-live="polite"
+      >
         <i
           :class="
-            toast.type === 'error' ? 'pi pi-exclamation-circle' : 'pi pi-check-circle'
+            toast.type === 'error'
+              ? 'pi pi-exclamation-circle'
+              : 'pi pi-check-circle'
           "
         ></i>
         <span>{{ toast.message }}</span>
@@ -69,7 +98,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, onBeforeUnmount } from "vue";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
@@ -88,6 +117,7 @@ const modalOpen = ref(false);
 const editing = ref(false);
 const selectedId = ref(null);
 const toast = ref({ show: false, message: "", type: "success" });
+
 let toastTimer;
 
 const filters = ref({
@@ -174,25 +204,39 @@ const normalizarTexto = (valor) =>
     .toLocaleLowerCase("pt-BR")
     .trim();
 
-const apenasNumeros = (valor) => String(valor ?? "").replace(/\D/g, "");
+const apenasNumeros = (valor) =>
+  String(valor ?? "").replace(/\D/g, "");
 
 const dispararToast = (mensagem, tipo = "success") => {
   clearTimeout(toastTimer);
-  toast.value = { show: true, message: mensagem, type: tipo };
+
+  toast.value = {
+    show: true,
+    message: mensagem,
+    type: tipo,
+  };
+
   toastTimer = setTimeout(() => {
     toast.value.show = false;
+    toastTimer = undefined;
   }, 3500);
 };
 
-const handleNotify = ({ message, type }) => dispararToast(message, type);
+const handleNotify = ({ message, type }) => {
+  dispararToast(message, type);
+};
+
+onBeforeUnmount(() => {
+  if (toastTimer) clearTimeout(toastTimer);
+});
 
 const hasActiveFilters = computed(() =>
   Boolean(
     filters.value.search ||
-      filters.value.profissional ||
-      filters.value.status ||
-      filters.value.dataInicio ||
-      filters.value.dataFim
+    filters.value.profissional ||
+    filters.value.status ||
+    filters.value.dataInicio ||
+    filters.value.dataFim
   )
 );
 
@@ -208,12 +252,24 @@ const clearFilters = () => {
 
 const resolverPessoa = (lista, id, nome) =>
   lista.find((item) => String(item.id) === String(id)) ||
-  lista.find((item) => normalizarTexto(item.nome) === normalizarTexto(nome));
+  lista.find(
+    (item) => normalizarTexto(item.nome) === normalizarTexto(nome)
+  );
 
 const resolvedAppointments = computed(() =>
   appointments.value.map((item) => {
-    const cliente = resolverPessoa(clientesBD.value, item.cliente_id, item.cliente);
-    const servico = resolverPessoa(servicosBD.value, item.servico_id, item.servico);
+    const cliente = resolverPessoa(
+      clientesBD.value,
+      item.cliente_id,
+      item.cliente
+    );
+
+    const servico = resolverPessoa(
+      servicosBD.value,
+      item.servico_id,
+      item.servico
+    );
+
     const profissional = resolverPessoa(
       profissionaisBD.value,
       item.profissional_id,
@@ -226,7 +282,9 @@ const resolvedAppointments = computed(() =>
       clienteCpf: cliente?.cpf || item.clienteCpf || "",
       servico: servico?.nome || item.servico || "Serviço não encontrado",
       profissional:
-        profissional?.nome || item.profissional || "Profissional não atribuído",
+        profissional?.nome ||
+        item.profissional ||
+        "Profissional não atribuído",
     };
   })
 );
@@ -235,7 +293,8 @@ const filteredAppointments = computed(() => {
   const termo = String(filters.value.search ?? "").trim();
   const termoTexto = normalizarTexto(termo);
   const termoNumerico = apenasNumeros(termo);
-  const buscaSomenteNumeros = termo !== "" && /^[\d\s./()-]+$/.test(termo);
+  const buscaSomenteNumeros =
+    termo !== "" && /^[\d\s./()-]+$/.test(termo);
 
   return resolvedAppointments.value
     .filter((item) => {
@@ -251,42 +310,84 @@ const filteredAppointments = computed(() => {
 
       const matchProf =
         !filters.value.profissional ||
-        String(item.profissional_id) === String(filters.value.profissional) ||
+        String(item.profissional_id) ===
+          String(filters.value.profissional) ||
         item.profissional === filters.value.profissional;
 
-      const matchStatus = !filters.value.status || item.status === filters.value.status;
+      const matchStatus =
+        !filters.value.status ||
+        item.status === filters.value.status;
 
       const matchDataIni =
-        !filters.value.dataInicio || item.dataInicio >= filters.value.dataInicio;
+        !filters.value.dataInicio ||
+        item.dataInicio >= filters.value.dataInicio;
 
       const matchDataFim =
-        !filters.value.dataFim || item.dataInicio <= filters.value.dataFim;
+        !filters.value.dataFim ||
+        item.dataInicio <= filters.value.dataFim;
 
-      return matchSearch && matchProf && matchStatus && matchDataIni && matchDataFim;
+      return (
+        matchSearch &&
+        matchProf &&
+        matchStatus &&
+        matchDataIni &&
+        matchDataFim
+      );
     })
     .sort((a, b) => {
       const dateA = new Date(`${a.dataInicio}T${a.horaInicio}`);
       const dateB = new Date(`${b.dataInicio}T${b.horaInicio}`);
+
       return dateA - dateB;
     });
 });
 
-const totalAgendamentos = computed(() => filteredAppointments.value.length);
+const totalAgendamentos = computed(
+  () => filteredAppointments.value.length
+);
+
 const confirmados = computed(
-  () => filteredAppointments.value.filter((item) => item.status === "confirmado").length
+  () =>
+    filteredAppointments.value.filter(
+      (item) => item.status === "confirmado"
+    ).length
 );
+
 const pendentes = computed(
-  () => filteredAppointments.value.filter((item) => item.status === "pendente").length
+  () =>
+    filteredAppointments.value.filter(
+      (item) => item.status === "pendente"
+    ).length
 );
+
 const cancelados = computed(
-  () => filteredAppointments.value.filter((item) => item.status === "cancelado").length
+  () =>
+    filteredAppointments.value.filter(
+      (item) => item.status === "cancelado"
+    ).length
 );
 
 const eventColors = {
-  confirmado: { bg: "#ECFDF5", border: "#A7F3D0", text: "#047857" },
-  pendente: { bg: "#FFF7ED", border: "#FED7AA", text: "#C2410C" },
-  em_andamento: { bg: "#EFF6FF", border: "#BFDBFE", text: "#1D4ED8" },
-  cancelado: { bg: "#FEF2F2", border: "#FECACA", text: "#B91C1C" },
+  confirmado: {
+    bg: "#ECFDF5",
+    border: "#A7F3D0",
+    text: "#047857",
+  },
+  pendente: {
+    bg: "#FFF7ED",
+    border: "#FED7AA",
+    text: "#C2410C",
+  },
+  em_andamento: {
+    bg: "#EFF6FF",
+    border: "#BFDBFE",
+    text: "#1D4ED8",
+  },
+  cancelado: {
+    bg: "#FEF2F2",
+    border: "#FECACA",
+    text: "#B91C1C",
+  },
 };
 
 const events = computed(() =>
@@ -294,7 +395,7 @@ const events = computed(() =>
     const theme = eventColors[item.status] || eventColors.confirmado;
 
     return {
-      id: item.id,
+      id: String(item.id),
       title: `${item.cliente} • ${item.servico}`,
       start: `${item.dataInicio}T${item.horaInicio}`,
       end: `${item.dataFim || item.dataInicio}T${item.horaFim}`,
@@ -356,11 +457,13 @@ const editAppointment = (appointment) => {
     original.cliente_id,
     appointment.cliente
   );
+
   const servico = resolverPessoa(
     servicosBD.value,
     original.servico_id,
     appointment.servico
   );
+
   const profissional = resolverPessoa(
     profissionaisBD.value,
     original.profissional_id,
@@ -373,8 +476,10 @@ const editAppointment = (appointment) => {
     cliente_id: cliente?.id ?? original.cliente_id ?? "",
     servico: servico?.nome || appointment.servico || "",
     servico_id: servico?.id ?? original.servico_id ?? "",
-    profissional: profissional?.nome || appointment.profissional || "",
-    profissional_id: profissional?.id ?? original.profissional_id ?? "",
+    profissional:
+      profissional?.nome || appointment.profissional || "",
+    profissional_id:
+      profissional?.id ?? original.profissional_id ?? "",
     dataFim: original.dataFim || original.dataInicio,
   };
 
@@ -383,10 +488,12 @@ const editAppointment = (appointment) => {
 
 const adicionarServico = (nome) => {
   const nomeLimpo = String(nome ?? "").trim();
+
   if (!nomeLimpo) return;
 
   const existente = servicosBD.value.find(
-    (servico) => normalizarTexto(servico.nome) === normalizarTexto(nomeLimpo)
+    (servico) =>
+      normalizarTexto(servico.nome) === normalizarTexto(nomeLimpo)
   );
 
   if (existente) {
@@ -409,8 +516,10 @@ watch(
   () => form.value.cliente,
   (nome) => {
     const cliente = clientesBD.value.find(
-      (item) => normalizarTexto(item.nome) === normalizarTexto(nome)
+      (item) =>
+        normalizarTexto(item.nome) === normalizarTexto(nome)
     );
+
     form.value.cliente_id = cliente?.id ?? "";
   }
 );
@@ -419,8 +528,10 @@ watch(
   () => form.value.servico,
   (nome) => {
     const servico = servicosBD.value.find(
-      (item) => normalizarTexto(item.nome) === normalizarTexto(nome)
+      (item) =>
+        normalizarTexto(item.nome) === normalizarTexto(nome)
     );
+
     form.value.servico_id = servico?.id ?? "";
   }
 );
@@ -429,8 +540,10 @@ watch(
   () => form.value.profissional,
   (nome) => {
     const profissional = profissionaisBD.value.find(
-      (item) => normalizarTexto(item.nome) === normalizarTexto(nome)
+      (item) =>
+        normalizarTexto(item.nome) === normalizarTexto(nome)
     );
+
     form.value.profissional_id = profissional?.id ?? "";
   }
 );
@@ -441,11 +554,13 @@ const saveAppointment = () => {
     form.value.cliente_id,
     form.value.cliente
   );
+
   const servico = resolverPessoa(
     servicosBD.value,
     form.value.servico_id,
     form.value.servico
   );
+
   const profissional = resolverPessoa(
     profissionaisBD.value,
     form.value.profissional_id,
@@ -453,17 +568,37 @@ const saveAppointment = () => {
   );
 
   if (!cliente || !servico || !profissional) {
-    dispararToast("Selecione um cliente, procedimento e profissional válidos.", "error");
+    dispararToast(
+      "Selecione um cliente, procedimento e profissional válidos.",
+      "error"
+    );
     return;
   }
 
+  const dataInicio = form.value.dataInicio;
+  const dataFim = form.value.dataFim || dataInicio;
+  const horaInicio = form.value.horaInicio;
+  const horaFim = form.value.horaFim;
+
   if (
-    !form.value.dataInicio ||
-    !form.value.horaInicio ||
-    !form.value.horaFim ||
-    form.value.horaFim <= form.value.horaInicio
+    !dataInicio ||
+    !horaInicio ||
+    !horaFim ||
+    !dataFim ||
+    `${dataFim}T${horaFim}` <= `${dataInicio}T${horaInicio}`
   ) {
-    dispararToast("Confira a data e os horários do agendamento.", "error");
+    dispararToast(
+      "Confira a data e os horários do agendamento.",
+      "error"
+    );
+    return;
+  }
+
+  if (dataFim !== dataInicio) {
+    dispararToast(
+      "O agendamento não pode ultrapassar a meia-noite.",
+      "error"
+    );
     return;
   }
 
@@ -472,10 +607,10 @@ const saveAppointment = () => {
     cliente_id: cliente.id,
     servico_id: servico.id,
     profissional_id: profissional.id,
-    dataInicio: form.value.dataInicio,
-    horaInicio: form.value.horaInicio,
-    dataFim: form.value.dataFim || form.value.dataInicio,
-    horaFim: form.value.horaFim,
+    dataInicio,
+    horaInicio,
+    dataFim,
+    horaFim,
     status: form.value.status || "confirmado",
   };
 
@@ -484,7 +619,10 @@ const saveAppointment = () => {
       (item) => String(item.id) === String(selectedId.value)
     );
 
-    if (index !== -1) appointments.value[index] = dados;
+    if (index !== -1) {
+      appointments.value[index] = dados;
+    }
+
     dispararToast("Agendamento atualizado com sucesso!");
   } else {
     appointments.value.push(dados);
@@ -498,6 +636,7 @@ const deleteAppointment = () => {
   appointments.value = appointments.value.filter(
     (item) => String(item.id) !== String(selectedId.value)
   );
+
   dispararToast("Agendamento excluído com sucesso!");
   closeModal();
 };
@@ -509,6 +648,60 @@ const changeView = (view) => {
   calendarComponentRef.value?.changeView(view);
 };
 
+const formatarDataLocal = (data) => {
+  if (!data) return "";
+
+  return [
+    data.getFullYear(),
+    String(data.getMonth() + 1).padStart(2, "0"),
+    String(data.getDate()).padStart(2, "0"),
+  ].join("-");
+};
+
+const formatarHoraLocal = (data) =>
+  `${String(data.getHours()).padStart(2, "0")}:${String(
+    data.getMinutes()
+  ).padStart(2, "0")}`;
+
+const atualizarHorarioEvento = (evento, info) => {
+  const item = appointments.value.find(
+    (appointment) =>
+      String(appointment.id) === String(evento.id)
+  );
+
+  if (!item) {
+    info.revert?.();
+    return;
+  }
+
+  const inicio = evento.start;
+  const fim = evento.end;
+
+  if (!inicio || !fim) {
+    info.revert?.();
+    return;
+  }
+
+  const dataInicio = formatarDataLocal(inicio);
+  const dataFim = formatarDataLocal(fim);
+
+  if (dataInicio !== dataFim || fim <= inicio) {
+    info.revert?.();
+    dispararToast(
+      "O agendamento deve terminar no mesmo dia e após o início.",
+      "error"
+    );
+    return;
+  }
+
+  item.dataInicio = dataInicio;
+  item.horaInicio = formatarHoraLocal(inicio);
+  item.dataFim = dataFim;
+  item.horaFim = formatarHoraLocal(fim);
+
+  dispararToast("Horário do agendamento atualizado!");
+};
+
 const calendarOptions = {
   plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
   initialView: "timeGridWeek",
@@ -517,26 +710,51 @@ const calendarOptions = {
   locale: "pt-br",
   slotMinTime: "07:00:00",
   slotMaxTime: "21:00:00",
+  slotDuration: "00:30:00",
+  expandRows: true,
+  nowIndicator: true,
   height: "auto",
+  contentHeight: "auto",
+  dayMaxEvents: true,
+  allDaySlot: false,
+  eventTimeFormat: {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  },
   headerToolbar: {
     left: "prev,next today",
     center: "title",
     right: "",
   },
-  buttonText: { today: "Hoje" },
+  buttonText: {
+    today: "Hoje",
+  },
   select(info) {
     const data = info.startStr.slice(0, 10);
-    const horaInicio = info.startStr.includes("T") ? info.startStr.substring(11, 16) : "";
+    const horaInicio = info.startStr.includes("T")
+      ? info.startStr.substring(11, 16)
+      : "";
 
-    let horaFim = info.endStr.includes("T") ? info.endStr.substring(11, 16) : "";
+    let horaFim = info.endStr.includes("T")
+      ? info.endStr.substring(11, 16)
+      : "";
 
     if (!horaFim && horaInicio) {
       const [hora, minuto] = horaInicio.split(":");
-      horaFim = `${String((Number(hora) + 1) % 24).padStart(2, "0")}:${minuto}`;
+      const fimMinutos = Number(hora) * 60 + Number(minuto) + 60;
+
+      horaFim = `${String(
+        Math.floor(fimMinutos / 60) % 24
+      ).padStart(2, "0")}:${String(fimMinutos % 60).padStart(
+        2,
+        "0"
+      )}`;
     }
 
     editing.value = false;
     selectedId.value = null;
+
     form.value = {
       ...preencherFormVazio(),
       dataInicio: data,
@@ -544,71 +762,27 @@ const calendarOptions = {
       horaInicio,
       horaFim,
     };
+
     modalOpen.value = true;
   },
   eventClick(info) {
     const item = appointments.value.find(
-      (appointment) => String(appointment.id) === String(info.event.id)
+      (appointment) =>
+        String(appointment.id) === String(info.event.id)
     );
 
     if (item) editAppointment(item);
   },
   eventDrop(info) {
-    const item = appointments.value.find(
-      (appointment) => String(appointment.id) === String(info.event.id)
-    );
-
-    if (!item) return;
-
-    const inicio = info.event.start;
-    const fim = info.event.end;
-
-    if (inicio) {
-      item.dataInicio = [
-        inicio.getFullYear(),
-        String(inicio.getMonth() + 1).padStart(2, "0"),
-        String(inicio.getDate()).padStart(2, "0"),
-      ].join("-");
-      item.horaInicio = `${String(inicio.getHours()).padStart(2, "0")}:${String(
-        inicio.getMinutes()
-      ).padStart(2, "0")}`;
-    }
-
-    if (fim) {
-      item.dataFim = [
-        fim.getFullYear(),
-        String(fim.getMonth() + 1).padStart(2, "0"),
-        String(fim.getDate()).padStart(2, "0"),
-      ].join("-");
-      item.horaFim = `${String(fim.getHours()).padStart(2, "0")}:${String(
-        fim.getMinutes()
-      ).padStart(2, "0")}`;
-    }
-
-    dispararToast("Horário reagendado via calendário!");
+    atualizarHorarioEvento(info.event, info);
   },
   eventResize(info) {
-    const item = appointments.value.find(
-      (appointment) => String(appointment.id) === String(info.event.id)
-    );
-
-    if (!item || !info.event.end) return;
-
-    const fim = info.event.end;
-    item.dataFim = [
-      fim.getFullYear(),
-      String(fim.getMonth() + 1).padStart(2, "0"),
-      String(fim.getDate()).padStart(2, "0"),
-    ].join("-");
-    item.horaFim = `${String(fim.getHours()).padStart(2, "0")}:${String(
-      fim.getMinutes()
-    ).padStart(2, "0")}`;
-
-    dispararToast("Duração atualizada com sucesso!");
+    atualizarHorarioEvento(info.event, info);
   },
 };
 
 Object.defineProperty(calendarOptions, "events", {
+  enumerable: true,
   get() {
     return events.value;
   },
@@ -617,53 +791,103 @@ Object.defineProperty(calendarOptions, "events", {
 
 <style scoped>
 .page-container {
+  --agenda-space-xs: 8px;
+  --agenda-space-sm: 12px;
+  --agenda-space-md: 20px;
+  --agenda-space-lg: 28px;
+  --agenda-space-xl: 36px;
+  --agenda-space-2xl: 44px;
+
   min-height: 100vh;
-  background-color: #f9fafb;
-  display: flex;
-  flex-direction: column;
+  width: 100%;
+  background: #f8fafc;
+  color: #1e293b;
   font-family: "Inter", sans-serif;
 }
+
 .page-content {
-  padding: 2rem;
-  flex-grow: 1;
-  max-width: 1440px;
-  margin: 0 auto;
   width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 36px 40px 56px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--agenda-space-xl);
+}
+
+.agenda-header-section {
+  width: 100%;
+  min-width: 0;
+  margin-bottom: 4px;
+}
+
+.stats-section {
+  width: 100%;
+  min-width: 0;
+  margin-bottom: 2px;
 }
 
 .agenda-content {
+  width: 100%;
+  min-width: 0;
+  padding: 28px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
-  gap: 20px;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 350px);
+  gap: 28px;
   align-items: start;
-  padding: 22px;
   background: #fff;
-  border: 1px solid #e8edf2;
-  border-radius: 18px;
-  box-shadow: 0 5px 22px rgba(15, 23, 42, 0.04);
+  border: 1px solid #e8edf3;
+  border-radius: 20px;
+  box-shadow: 0 4px 24px rgba(15, 23, 42, 0.035);
   animation: panel-enter 0.35s ease both;
+}
+
+.calendar-wrapper {
+  min-width: 0;
+  width: 100%;
+  padding: 4px;
+}
+
+.agenda-side-wrapper {
+  min-width: 0;
+  width: 100%;
+  padding: 4px 0 4px 24px;
+  border-left: 1px solid #edf0f4;
+}
+
+.agenda-grid-wrapper {
+  min-width: 0;
+  width: 100%;
+  grid-column: 1 / -1;
 }
 
 .agenda-content.layout-list {
   display: block;
+  padding: 28px;
+}
+
+.layout-list .agenda-grid-wrapper {
+  padding: 4px;
 }
 
 .toast-notification {
   position: fixed;
-  right: 24px;
-  bottom: 24px;
+  right: 28px;
+  bottom: 28px;
   z-index: 3000;
   display: flex;
   align-items: center;
-  gap: 12px;
-  max-width: min(420px, calc(100vw - 32px));
-  padding: 15px 18px;
-  border: 1px solid #d1fae5;
-  border-radius: 12px;
+  gap: 14px;
+  width: max-content;
+  max-width: min(440px, calc(100vw - 40px));
+  padding: 17px 22px;
+  border: 1px solid #a7f3d0;
+  border-radius: 14px;
   background: #fff;
   color: #065f46;
-  box-shadow: 0 12px 35px rgba(15, 23, 42, 0.14);
-  font-size: 0.9rem;
+  box-shadow: 0 12px 36px rgba(15, 23, 42, 0.13);
+  font-size: 14px;
+  line-height: 1.6;
 }
 
 .toast-notification.error {
@@ -672,12 +896,15 @@ Object.defineProperty(calendarOptions, "events", {
 }
 
 .toast-notification i {
-  font-size: 1.1rem;
+  flex-shrink: 0;
+  font-size: 19px;
 }
 
 .toast-enter-active,
 .toast-leave-active {
-  transition: opacity 0.22s ease, transform 0.22s ease;
+  transition:
+    opacity 0.22s ease,
+    transform 0.22s ease;
 }
 
 .toast-enter-from,
@@ -691,32 +918,103 @@ Object.defineProperty(calendarOptions, "events", {
     opacity: 0;
     transform: translateY(6px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
 
-@media (max-width: 1100px) {
+@media (min-width: 1600px) {
+  .page-content {
+    padding-right: 48px;
+    padding-left: 48px;
+  }
+
+  .agenda-content {
+    grid-template-columns: minmax(0, 1fr) 360px;
+    gap: 32px;
+    padding: 32px;
+  }
+
+  .agenda-side-wrapper {
+    padding-left: 28px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .page-content {
+    padding: 28px 24px 40px;
+    gap: 28px;
+  }
+
   .agenda-content {
     grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+    padding: 24px;
+  }
+
+  .agenda-side-wrapper {
+    padding: 24px 0 0;
+    border-left: 0;
+    border-top: 1px solid #edf0f4;
   }
 }
 
 @media (max-width: 768px) {
-  .page-content {
-    padding: 16px;
+  .page-container {
+    --agenda-space-xl: 24px;
   }
 
-  .agenda-content {
-    gap: 16px;
-    padding: 12px;
-    border-radius: 14px;
+  .page-content {
+    padding: 22px 16px 36px;
+    gap: 24px;
+  }
+
+  .agenda-header-section,
+  .stats-section {
+    margin-bottom: 0;
+  }
+
+  .agenda-content,
+  .agenda-content.layout-list {
+    padding: 18px;
+    gap: 22px;
+    border-radius: 16px;
+  }
+
+  .calendar-wrapper,
+  .layout-list .agenda-grid-wrapper {
+    padding: 0;
+  }
+
+  .agenda-side-wrapper {
+    padding-top: 20px;
   }
 
   .toast-notification {
     right: 16px;
     bottom: 16px;
+    max-width: calc(100vw - 32px);
+    padding: 14px 17px;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-content {
+    padding: 18px 12px 28px;
+    gap: 20px;
+  }
+
+  .agenda-content,
+  .agenda-content.layout-list {
+    padding: 12px;
+    gap: 18px;
+    border-radius: 13px;
+  }
+
+  .agenda-side-wrapper {
+    padding-top: 18px;
   }
 }
 
