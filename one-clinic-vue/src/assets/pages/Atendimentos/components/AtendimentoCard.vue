@@ -1,16 +1,21 @@
 <template>
-  <div class="atendimento-card" @dblclick="emitirAcao('detalhes')">
+  <div class="atendimento-card" :class="`card-${atendimento.status}`" @dblclick="emitirAcao('detalhes')">
     <div class="card-header">
       <div class="header-datetime">
         <i class="pi pi-calendar"></i>
-        <span class="date">{{ atendimento.data }}</span>
+        <span class="date">{{ formatarDataBR(atendimento.dataInicio) }}</span>
         <span class="time-badge">
-          <i class="pi pi-clock"></i> {{ atendimento.hora }}
+          <i class="pi pi-clock"></i>
+          {{ atendimento.horaInicio }} – {{ atendimento.horaFim }}
         </span>
       </div>
 
       <div class="menu-container">
-        <button class="btn-dots" @click.stop="toggleMenu">
+        <button
+          class="btn-dots"
+          aria-label="Ações do atendimento"
+          @click.stop="toggleMenu"
+        >
           <i class="pi pi-ellipsis-v"></i>
         </button>
 
@@ -18,42 +23,35 @@
           <button class="dropdown-item" @click.stop="emitirAcao('detalhes')">
             <i class="pi pi-eye"></i> Ver detalhes
           </button>
-          <button class="dropdown-item" @click.stop="emitirAcao('editar')">
+          <button
+            v-if="podeEditar && atendimento.editavel"
+            class="dropdown-item"
+            @click.stop="emitirAcao('editar')"
+          >
             <i class="pi pi-pencil"></i> Editar
           </button>
-          <div class="dropdown-divider"></div>
 
-          <button
-            class="dropdown-item"
-            v-if="atendimento.status === 'agendado'"
-            @click.stop="emitirStatus('andamento')"
-          >
-            <i class="pi pi-play" style="color: #0369a1"></i> Iniciar
-          </button>
-          <button
-            class="dropdown-item"
-            v-if="atendimento.status === 'andamento'"
-            @click.stop="emitirStatus('concluido')"
-          >
-            <i class="pi pi-check" style="color: #047857"></i> Finalizar
-          </button>
-          <button
-            class="dropdown-item"
-            v-if="['agendado', 'andamento'].includes(atendimento.status)"
-            @click.stop="emitirStatus('cancelado')"
-          >
-            <i class="pi pi-times" style="color: #be123c"></i> Cancelar
-          </button>
+          <template v-if="podeEncerrar && atendimento.editavel">
+            <div class="dropdown-divider"></div>
+
+            <button class="dropdown-item" @click.stop="emitirAcao('falta')">
+              <i class="pi pi-user-minus" style="color: #7e22ce"></i> Registrar falta
+            </button>
+            <button class="dropdown-item" @click.stop="emitirAcao('cancelar')">
+              <i class="pi pi-ban" style="color: #be123c"></i> Cancelar
+            </button>
+          </template>
         </div>
       </div>
     </div>
 
     <div class="client-info">
-      <div class="client-avatar">{{ atendimento.iniciais }}</div>
+      <div class="client-avatar">{{ gerarIniciais(atendimento.cliente) }}</div>
       <div class="client-details">
         <h3 class="client-name">{{ atendimento.cliente }}</h3>
         <span class="client-phone"
-          ><i class="pi pi-phone"></i> {{ atendimento.telefone }}</span
+          ><i class="pi pi-phone"></i>
+          {{ atendimento.clienteTelefone || "Telefone não informado" }}</span
         >
       </div>
     </div>
@@ -61,11 +59,19 @@
     <div class="service-details">
       <div class="detail-row">
         <i class="pi pi-file"></i>
-        <span class="font-semibold">{{ atendimento.procedimento }}</span>
+        <span class="font-semibold">{{ atendimento.servico }}</span>
       </div>
       <div class="detail-row">
         <i class="pi pi-user-plus"></i>
         <span>{{ atendimento.profissional }}</span>
+      </div>
+      <div class="detail-row">
+        <i class="pi pi-stopwatch"></i>
+        <span>{{ formatarDuracao(atendimento.duracaoMinutos) }}</span>
+      </div>
+      <div v-if="atendimento.pacoteNome" class="detail-row">
+        <i class="pi pi-box"></i>
+        <span>{{ atendimento.pacoteNome }}</span>
       </div>
     </div>
 
@@ -73,13 +79,13 @@
 
     <div class="card-footer">
       <div class="footer-info">
-        <span :class="['status-badge', getBadgeClass(atendimento.status)]">
-          {{ formatStatus(atendimento.status) }}
+        <span :class="['status-badge', `badge-${atendimento.status}`]">
+          {{ formatarStatus(atendimento.status) }}
         </span>
       </div>
-      <div class="footer-info text-right" v-if="atendimento.valor">
-        <span class="info-label">Valor Estimado</span>
-        <span class="info-value text-sm">R$ {{ atendimento.valor }}</span>
+      <div class="footer-info text-right" v-if="atendimento.servicoPreco !== null">
+        <span class="info-label">Valor de referência</span>
+        <span class="info-value text-sm">{{ formatarMoeda(atendimento.servicoPreco) }}</span>
       </div>
     </div>
   </div>
@@ -87,12 +93,21 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from "vue";
+import {
+  formatarDataBR,
+  formatarDuracao,
+  formatarMoeda,
+  formatarStatus,
+  gerarIniciais,
+} from "@/utils/agendamentos";
 
 const props = defineProps({
-  atendimento: Object,
+  atendimento: { type: Object, required: true },
+  podeEditar: Boolean,
+  podeEncerrar: Boolean,
 });
 
-const emit = defineEmits(["detalhes", "editar", "alterar-status"]);
+const emit = defineEmits(["detalhes", "editar", "cancelar", "falta"]);
 const isMenuAberto = ref(false);
 
 const toggleMenu = () => {
@@ -106,31 +121,6 @@ const fecharMenu = () => {
 const emitirAcao = (acao) => {
   emit(acao, props.atendimento);
   fecharMenu();
-};
-
-const emitirStatus = (novoStatus) => {
-  emit("alterar-status", props.atendimento, novoStatus);
-  fecharMenu();
-};
-
-const getBadgeClass = (status) => {
-  const badges = {
-    agendado: "badge-agendado",
-    andamento: "badge-andamento",
-    concluido: "badge-concluido",
-    cancelado: "badge-cancelado",
-  };
-  return badges[status] || "badge-default";
-};
-
-const formatStatus = (status) => {
-  const formats = {
-    agendado: "Agendado",
-    andamento: "Em Andamento",
-    concluido: "Concluído",
-    cancelado: "Cancelado",
-  };
-  return formats[status] || status;
 };
 
 onMounted(() => window.addEventListener("click", fecharMenu));
@@ -277,21 +267,37 @@ onUnmounted(() => window.removeEventListener("click", fecharMenu));
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
-.badge-agendado {
+.badge-pendente {
+  background-color: #ffedd5;
+  color: #c2410c;
+}
+.badge-confirmado {
   background-color: #e0f2fe;
   color: #0369a1;
 }
-.badge-andamento {
+.badge-em_andamento {
   background-color: #fef3c7;
   color: #92400e;
+}
+.badge-aguardando {
+  background-color: #f1f5f9;
+  color: #475569;
 }
 .badge-concluido {
   background-color: #def7ec;
   color: #03543f;
 }
+.badge-falta {
+  background-color: #f3e8ff;
+  color: #7e22ce;
+}
 .badge-cancelado {
   background-color: #ffe4e6;
   color: #be123c;
+}
+.card-cancelado,
+.card-falta {
+  opacity: 0.85;
 }
 
 .footer-info {

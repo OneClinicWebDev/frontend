@@ -5,9 +5,9 @@
         <div v-if="isOpen" class="modal-container">
           <header class="modal-header">
             <div>
-              <h3>{{ editing ? "Editar Agendamento" : "Novo Agendamento" }}</h3>
+              <h3>{{ tituloModal }}</h3>
               <p class="header-subtitle">
-                Preencha os dados para organizar o atendimento.
+                {{ subtituloModal }}
               </p>
             </div>
             <button type="button" class="btn-close" aria-label="Fechar" @click="fechar">
@@ -16,7 +16,42 @@
           </header>
 
           <form class="modal-form" novalidate @submit.prevent="salvar">
-            <div class="modal-body">
+            <div ref="corpoRef" class="modal-body">
+              <div v-if="alerta" :class="['alerta', alerta.tipo]" role="alert">
+                <span class="alerta-icone">
+                  <i
+                    :class="
+                      alerta.tipo === 'conflito'
+                        ? 'pi pi-calendar-clock'
+                        : 'pi pi-exclamation-triangle'
+                    "
+                  ></i>
+                </span>
+                <div class="alerta-conteudo">
+                  <strong>{{ alerta.titulo }}</strong>
+                  <p>{{ alerta.mensagem }}</p>
+                  <small v-if="alerta.detalhe">{{ alerta.detalhe }}</small>
+                </div>
+                <button
+                  type="button"
+                  class="alerta-fechar"
+                  aria-label="Fechar aviso"
+                  @click="$emit('limpar-alerta')"
+                >
+                  <i class="pi pi-times"></i>
+                </button>
+              </div>
+
+              <div v-if="somenteLeitura && mensagemSomenteLeitura" class="aviso">
+                <i class="pi pi-lock"></i>
+                <span>{{ mensagemSomenteLeitura }}</span>
+              </div>
+
+              <div v-for="aviso in avisosAcesso" :key="aviso" class="aviso">
+                <i class="pi pi-info-circle"></i>
+                <span>{{ aviso }}</span>
+              </div>
+
               <div class="form-group">
                 <label for="cliente"
                   >Cliente <span class="required-asterisk">*</span></label
@@ -34,6 +69,7 @@
                       placeholder="Pesquise por nome ou CPF..."
                       autocomplete="off"
                       required
+                      :disabled="bloqueado"
                       @focus="abrirLista('cliente')"
                       @click="abrirLista('cliente')"
                       @input="aoPesquisar('cliente')"
@@ -46,6 +82,7 @@
                       type="button"
                       class="btn-dropdown"
                       aria-label="Mostrar clientes"
+                      :disabled="bloqueado"
                       @mousedown.prevent
                       @click="alternarLista('cliente')"
                     >
@@ -88,23 +125,11 @@
 
               <div class="form-row">
                 <div class="form-group flex-1">
-                  <div class="label-row">
-                    <label for="servico"
-                      >Procedimento <span class="required-asterisk">*</span></label
-                    >
-                    <button
-                      type="button"
-                      class="btn-text-action"
-                      @click="toggleNovoServico"
-                    >
-                      <i
-                        :class="isCriandoServico ? 'pi pi-arrow-left' : 'pi pi-plus'"
-                      ></i>
-                      {{ isCriandoServico ? "Voltar à lista" : "Novo procedimento" }}
-                    </button>
-                  </div>
+                  <label for="servico"
+                    >Procedimento <span class="required-asterisk">*</span></label
+                  >
 
-                  <div v-if="!isCriandoServico" class="input-with-icon">
+                  <div class="input-with-icon">
                     <i class="pi pi-tag input-icon"></i>
                     <select
                       id="servico"
@@ -112,6 +137,7 @@
                       class="form-control pl-icon"
                       :class="{ 'input-invalid': foiValidado && !servicoSelecionado }"
                       required
+                      :disabled="bloqueado"
                     >
                       <option value="" disabled>Selecione o procedimento...</option>
                       <option
@@ -122,26 +148,6 @@
                         {{ servico.nome }}
                       </option>
                     </select>
-                  </div>
-
-                  <div v-else class="input-with-icon">
-                    <i class="pi pi-plus-circle input-icon"></i>
-                    <input
-                      v-model="novoServicoInput"
-                      type="text"
-                      class="form-control pl-icon input-with-append"
-                      placeholder="Nome do procedimento..."
-                      maxlength="150"
-                      @keydown.enter.prevent="adicionarServico"
-                    />
-                    <button
-                      type="button"
-                      class="btn-inside-append"
-                      aria-label="Salvar procedimento"
-                      @click="adicionarServico"
-                    >
-                      <i class="pi pi-check"></i>
-                    </button>
                   </div>
 
                   <span
@@ -166,9 +172,10 @@
                         type="text"
                         class="form-control pl-icon"
                         :class="{ 'input-invalid': foiValidado && !profissionalValido }"
-                        placeholder="Pesquise por nome ou CPF..."
+                        placeholder="Pesquise por nome..."
                         autocomplete="off"
                         required
+                        :disabled="bloqueado"
                         @focus="abrirLista('profissional')"
                         @click="abrirLista('profissional')"
                         @input="aoPesquisar('profissional')"
@@ -181,6 +188,7 @@
                         type="button"
                         class="btn-dropdown"
                         aria-label="Mostrar profissionais"
+                        :disabled="bloqueado"
                         @mousedown.prevent
                         @click="alternarLista('profissional')"
                       >
@@ -210,7 +218,7 @@
                         </span>
                         <span class="option-details">
                           <strong>{{ profissional.nome }}</strong>
-                          <small>CPF: {{ profissional.cpf || "Não informado" }}</small>
+                          <small>{{ rotuloFuncao(profissional.funcao) }}</small>
                         </span>
                         <i class="pi pi-check option-check"></i>
                       </button>
@@ -230,6 +238,63 @@
                 </div>
               </div>
 
+              <div v-if="servicoAtual" class="referencia-box">
+                <div class="referencia-item">
+                  <i class="pi pi-stopwatch"></i>
+                  <span>
+                    Duração de referência
+                    <strong>{{ formatarDuracao(servicoAtual.duracao) }}</strong>
+                  </span>
+                </div>
+                <div class="referencia-item">
+                  <i class="pi pi-wallet"></i>
+                  <span>
+                    Valor de referência
+                    <strong>{{ formatarMoeda(servicoAtual.preco) }}</strong>
+                  </span>
+                </div>
+              </div>
+
+              <div v-if="mostrarPacotes" class="form-group">
+                <label for="pacote">Pacote do cliente (opcional)</label>
+
+                <div class="input-with-icon">
+                  <i class="pi pi-box input-icon"></i>
+                  <select
+                    id="pacote"
+                    v-model="form.pacote_id"
+                    class="form-control pl-icon"
+                    :disabled="bloqueado || pacotesCarregando"
+                  >
+                    <option value="">
+                      {{
+                        pacotesCarregando
+                          ? "Buscando pacotes..."
+                          : "Agendamento avulso (sem pacote)"
+                      }}
+                    </option>
+                    <option
+                      v-for="pacote in opcoesPacote"
+                      :key="pacote.id"
+                      :value="String(pacote.id)"
+                      :disabled="pacote.semSaldo"
+                    >
+                      {{ pacote.rotulo }}
+                    </option>
+                  </select>
+                </div>
+
+                <small class="campo-ajuda">
+                  <template v-if="!pacotesCarregando && !opcoesPacote.length">
+                    Nenhum pacote ativo deste cliente para o procedimento escolhido.
+                  </template>
+                  <template v-else>
+                    Vincular o pacote não consome a sessão por si só; o uso das sessões
+                    segue as regras do sistema.
+                  </template>
+                </small>
+              </div>
+
               <div class="dates-box">
                 <div class="form-group">
                   <label for="dataInicio"
@@ -241,6 +306,7 @@
                     type="date"
                     class="form-control"
                     required
+                    :disabled="bloqueado"
                   />
                 </div>
 
@@ -255,6 +321,7 @@
                       type="time"
                       class="form-control"
                       required
+                      :disabled="bloqueado"
                     />
                   </div>
 
@@ -268,48 +335,76 @@
                       type="time"
                       class="form-control"
                       required
+                      :disabled="bloqueado"
+                      @input="fimManual = true"
                     />
                   </div>
                 </div>
+
+                <p v-if="duracaoEfetiva > 0" class="duracao-resumo">
+                  <i class="pi pi-clock"></i>
+                  Duração deste agendamento:
+                  <strong>{{ formatarDuracao(duracaoEfetiva) }}</strong>
+                  <span v-if="servicoAtual && duracaoEfetiva !== servicoAtual.duracao">
+                    (referência: {{ formatarDuracao(servicoAtual.duracao) }})
+                  </span>
+                </p>
               </div>
 
-              <div class="form-group status-group">
-                <label
-                  >Status do agendamento <span class="required-asterisk">*</span></label
-                >
-
-                <div class="status-toggle">
-                  <div class="toggle-slider" :class="form.status || 'confirmado'"></div>
-                  <label
-                    v-for="status in statusOptions"
-                    :key="status.value"
-                    class="toggle-option"
-                    :class="{ active: (form.status || 'confirmado') === status.value }"
-                  >
-                    <input v-model="form.status" type="radio" :value="status.value" />
-                    <span>{{ status.label }}</span>
-                  </label>
-                </div>
+              <div class="form-group observacoes-group">
+                <label for="observacoes">Observações</label>
+                <textarea
+                  id="observacoes"
+                  v-model="form.observacoes"
+                  class="form-control textarea"
+                  rows="3"
+                  placeholder="Detalhes adicionais sobre o atendimento..."
+                  :disabled="bloqueado"
+                ></textarea>
               </div>
             </div>
 
             <footer class="modal-footer">
-              <button
-                v-if="editing"
-                type="button"
-                class="btn-excluir"
-                @click="$emit('delete')"
-              >
-                <i class="pi pi-trash"></i>
-                Excluir
-              </button>
+              <div v-if="editing && (permitirCancelar || permitirFalta)" class="footer-extras">
+                <button
+                  v-if="permitirCancelar"
+                  type="button"
+                  class="btn-excluir"
+                  @click="$emit('cancelar-agendamento')"
+                >
+                  <i class="pi pi-ban"></i>
+                  Cancelar agendamento
+                </button>
+
+                <button
+                  v-if="permitirFalta"
+                  type="button"
+                  class="btn-falta"
+                  @click="$emit('registrar-falta')"
+                >
+                  <i class="pi pi-user-minus"></i>
+                  Registrar falta
+                </button>
+              </div>
 
               <div class="footer-actions">
                 <button type="button" class="btn-cancelar" @click="fechar">
-                  Cancelar
+                  Fechar
                 </button>
-                <button type="submit" class="btn-salvar">
-                  {{ editing ? "Salvar alterações" : "Criar agendamento" }}
+                <button
+                  v-if="!bloqueado"
+                  type="submit"
+                  class="btn-salvar"
+                  :disabled="salvando"
+                >
+                  <i v-if="salvando" class="pi pi-spin pi-spinner"></i>
+                  {{
+                    salvando
+                      ? "Salvando..."
+                      : editing
+                        ? "Salvar alterações"
+                        : "Criar agendamento"
+                  }}
                 </button>
               </div>
             </footer>
@@ -321,7 +416,14 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, nextTick } from "vue";
+import { listarPacotes } from "@/services/agendamentos";
+import {
+  diferencaMinutos,
+  formatarDuracao,
+  formatarMoeda,
+  somarMinutosAoHorario,
+} from "@/utils/agendamentos";
 
 const props = defineProps({
   isOpen: Boolean,
@@ -331,114 +433,118 @@ const props = defineProps({
   servicosBD: { type: Array, default: () => [] },
   profissionaisBD: { type: Array, default: () => [] },
   isValid: Boolean,
+  salvando: Boolean,
+  alerta: { type: Object, default: null },
+  avisosAcesso: { type: Array, default: () => [] },
+  somenteLeitura: Boolean,
+  mensagemSomenteLeitura: { type: String, default: "" },
+  permitirCancelar: Boolean,
+  permitirFalta: Boolean,
 });
 
-const emit = defineEmits(["close", "save", "delete", "notify", "add-servico"]);
+const emit = defineEmits([
+  "close",
+  "save",
+  "cancelar-agendamento",
+  "registrar-falta",
+  "notify",
+  "limpar-alerta",
+]);
 
+const corpoRef = ref(null);
 const foiValidado = ref(false);
-const isCriandoServico = ref(false);
-const novoServicoInput = ref("");
 const listaAberta = ref(null);
 const buscaCliente = ref("");
 const buscaProfissional = ref("");
 const indiceSelecionado = ref({ cliente: 0, profissional: 0 });
-const servicosLocais = ref([]);
 
 const clienteEscolhido = ref(null);
 const profissionalEscolhido = ref(null);
 const servicoSelecionado = ref("");
 
-const statusOptions = [
-  { value: "confirmado", label: "Confirmado" },
-  { value: "pendente", label: "Pendente" },
-  { value: "em_andamento", label: "Em andamento" },
-  { value: "cancelado", label: "Cancelado" },
-];
+const fimManual = ref(false);
+const sincronizando = ref(false);
 
-const clientesExemplo = [
-  { id: "demo-cliente-1", nome: "Ana Carolina Souza", cpf: "123.456.789-01" },
-  { id: "demo-cliente-2", nome: "Beatriz Oliveira", cpf: "234.567.890-12" },
-  { id: "demo-cliente-3", nome: "Camila Fernandes", cpf: "345.678.901-23" },
-  { id: "demo-cliente-4", nome: "Mariana Costa", cpf: "456.789.012-34" },
-  { id: "demo-cliente-5", nome: "Juliana Martins", cpf: "567.890.123-45" },
-];
+const pacotes = ref([]);
+const pacotesCarregando = ref(false);
+const pacotesIndisponivel = ref(false);
+const origemInicial = ref({ cliente: "", servico: "", pacote: "" });
 
-const profissionaisExemplo = [
-  { id: "demo-profissional-1", nome: "Amanda Rodrigues", cpf: "123.456.789-10" },
-  { id: "demo-profissional-2", nome: "Fernanda Almeida", cpf: "234.567.890-21" },
-  { id: "demo-profissional-3", nome: "Isabela Santos", cpf: "345.678.901-32" },
-  { id: "demo-profissional-4", nome: "Patrícia Ribeiro", cpf: "456.789.012-43" },
-];
+let tokenPacotes = 0;
+
+const bloqueado = computed(() => props.somenteLeitura);
+
+const tituloModal = computed(() => {
+  if (props.somenteLeitura && props.editing) return "Detalhes do Agendamento";
+  return props.editing ? "Editar Agendamento" : "Novo Agendamento";
+});
+
+const subtituloModal = computed(() =>
+  props.somenteLeitura && props.editing
+    ? "Consulte os dados deste atendimento."
+    : "Preencha os dados para organizar o atendimento."
+);
+
+const rotulosFuncao = {
+  PROFISSIONAL: "Profissional",
+  ADMIN: "Administrador",
+  SECRETARIO: "Secretário",
+};
+
+const rotuloFuncao = (funcao) => rotulosFuncao[funcao] || "Profissional";
 
 const normalizarTexto = (valor) =>
   String(valor ?? "")
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[̀-ͯ]/g, "")
     .toLocaleLowerCase("pt-BR")
     .trim();
 
 const apenasNumeros = (valor) => String(valor ?? "").replace(/\D/g, "");
 
-const prepararPessoa = (pessoa, indice, tipo) => {
-  if (typeof pessoa === "string") {
-    return { id: `${tipo}-${indice}-${pessoa}`, nome: pessoa, cpf: "" };
-  }
+const incluirAtual = (lista, id, nome, extra = {}) => {
+  if (!id || !nome) return lista;
 
-  return {
-    ...pessoa,
-    id: pessoa.id ?? `${tipo}-${indice}-${pessoa.nome ?? "pessoa"}`,
-    nome: pessoa.nome ?? "",
-    cpf: pessoa.cpf ?? "",
-  };
-};
+  if (lista.some((item) => String(item.id) === String(id))) return lista;
 
-const unirPessoas = (listaPrincipal, listaExemplo, tipo) => {
-  const mapa = new Map();
-
-  [...listaPrincipal, ...listaExemplo].forEach((pessoa, indice) => {
-    const preparada = prepararPessoa(pessoa, indice, tipo);
-    const chave = normalizarTexto(preparada.nome);
-
-    if (chave && !mapa.has(chave)) mapa.set(chave, preparada);
-  });
-
-  return [...mapa.values()];
+  return [...lista, { id, nome, ...extra }];
 };
 
 const clientesDisponiveis = computed(() =>
-  unirPessoas(props.clientesBD, clientesExemplo, "cliente")
+  incluirAtual(props.clientesBD, props.form.cliente_id, props.form.cliente, {
+    cpf: "",
+  })
 );
 
 const profissionaisDisponiveis = computed(() =>
-  unirPessoas(props.profissionaisBD, profissionaisExemplo, "profissional")
+  incluirAtual(
+    props.profissionaisBD,
+    props.form.profissional_id,
+    props.form.profissional,
+    { funcao: "" }
+  )
 );
 
-const servicosDisponiveis = computed(() => {
-  const mapa = new Map();
+const servicosDisponiveis = computed(() =>
+  incluirAtual(props.servicosBD, props.form.servico_id, props.form.servico, {
+    preco: props.form.servicoPreco ?? null,
+    duracao: props.form.servicoDuracao ?? null,
+  })
+);
 
-  [...props.servicosBD, ...servicosLocais.value].forEach((item, indice) => {
-    const nome = typeof item === "string" ? item : item?.nome;
-    if (!nome) return;
-
-    const chave = normalizarTexto(nome);
-
-    if (!mapa.has(chave)) {
-      mapa.set(chave, {
-        id: item?.id ?? `servico-${indice}-${chave}`,
-        nome,
-      });
-    }
-  });
-
-  return [...mapa.values()];
-});
+const servicoAtual = computed(
+  () =>
+    servicosDisponiveis.value.find(
+      (item) => String(item.id) === String(servicoSelecionado.value)
+    ) || null
+);
 
 const pesquisarPessoa = (lista, busca) => {
   const termo = String(busca ?? "").trim();
   if (!termo) return lista;
 
   const numero = apenasNumeros(termo);
-  const buscaNumerica = /^[\d\s.()/-]+$/.test(termo);
+  const buscaNumerica = /^[\d\s.()/*-]+$/.test(termo);
 
   if (buscaNumerica && numero) {
     return lista.filter((pessoa) => apenasNumeros(pessoa.cpf).includes(numero));
@@ -478,7 +584,59 @@ const profissionalValido = computed(
     )
 );
 
+const duracaoEfetiva = computed(() =>
+  diferencaMinutos(
+    props.form.dataInicio,
+    props.form.horaInicio,
+    props.form.dataInicio,
+    props.form.horaFim
+  )
+);
+
+const mostrarPacotes = computed(
+  () =>
+    !pacotesIndisponivel.value &&
+    Boolean(clienteEscolhido.value) &&
+    Boolean(servicoSelecionado.value)
+);
+
+const opcoesPacote = computed(() => {
+  const opcoes = pacotes.value.map((pacote) => {
+    const saldo = Number(pacote.saldo_sessoes ?? 0);
+    const nome = pacote.modelo_nome || pacote.servico_nome || "Pacote";
+
+    return {
+      id: pacote.id,
+      semSaldo: saldo <= 0,
+      rotulo: `${nome} — ${saldo} ${
+        saldo === 1 ? "sessão disponível" : "sessões disponíveis"
+      }`,
+    };
+  });
+
+  const atual = props.form.pacote_id;
+  const mesmoContexto =
+    String(origemInicial.value.cliente) === String(props.form.cliente_id) &&
+    String(origemInicial.value.servico) === String(props.form.servico_id);
+
+  if (
+    atual &&
+    mesmoContexto &&
+    !opcoes.some((opcao) => String(opcao.id) === String(atual))
+  ) {
+    opcoes.push({
+      id: atual,
+      semSaldo: false,
+      rotulo: `${props.form.pacoteNome || "Pacote vinculado"} — vinculado`,
+    });
+  }
+
+  return opcoes;
+});
+
 const abrirLista = (tipo) => {
+  if (bloqueado.value) return;
+
   listaAberta.value = tipo;
   indiceSelecionado.value[tipo] = 0;
 };
@@ -551,71 +709,85 @@ const selecionarProfissional = (profissional) => {
   fecharListas();
 };
 
-const toggleNovoServico = () => {
-  isCriandoServico.value = !isCriandoServico.value;
-  novoServicoInput.value = "";
-  fecharListas();
-};
+const sugerirFim = () => {
+  if (fimManual.value || bloqueado.value) return;
+  if (!servicoAtual.value || !props.form.horaInicio) return;
 
-const adicionarServico = () => {
-  const nome = novoServicoInput.value.trim();
-
-  if (nome.length < 3) {
-    emit("notify", {
-      message: "Informe um procedimento com pelo menos 3 caracteres.",
-      type: "error",
-    });
-    return;
-  }
-
-  const existente = servicosDisponiveis.value.find(
-    (servico) => normalizarTexto(servico.nome) === normalizarTexto(nome)
+  const sugestao = somarMinutosAoHorario(
+    props.form.horaInicio,
+    servicoAtual.value.duracao
   );
 
-  if (existente) {
-    servicoSelecionado.value = String(existente.id);
-    props.form.servico = existente.nome;
-    props.form.servico_id = existente.id;
-    isCriandoServico.value = false;
-    novoServicoInput.value = "";
+  if (sugestao) props.form.horaFim = sugestao;
+};
+
+const carregarPacotes = async () => {
+  const cliente = clienteEscolhido.value?.id;
+  const servico = servicoSelecionado.value;
+  const token = ++tokenPacotes;
+
+  pacotes.value = [];
+
+  if (!cliente || !servico || bloqueado.value) {
+    pacotesCarregando.value = false;
     return;
   }
 
-  const novoServico = { id: `local-${Date.now()}`, nome };
-  servicosLocais.value.push(novoServico);
+  pacotesCarregando.value = true;
 
-  servicoSelecionado.value = String(novoServico.id);
-  props.form.servico = novoServico.nome;
-  props.form.servico_id = novoServico.id;
+  try {
+    const dados = await listarPacotes({
+      cliente,
+      servico,
+      status: "ATIVO",
+    });
 
-  emit("add-servico", nome);
+    if (token !== tokenPacotes) return;
 
-  isCriandoServico.value = false;
-  novoServicoInput.value = "";
+    pacotesIndisponivel.value = false;
+    pacotes.value = dados;
+  } catch (erro) {
+    if (token !== tokenPacotes) return;
+
+    pacotesIndisponivel.value = erro?.response?.status === 403;
+  } finally {
+    if (token === tokenPacotes) pacotesCarregando.value = false;
+  }
+
+  if (token !== tokenPacotes) return;
+
+  const atual = props.form.pacote_id;
+
+  if (!atual) return;
+
+  const existe = pacotes.value.some(
+    (pacote) => String(pacote.id) === String(atual)
+  );
+  const mesmoContexto =
+    String(origemInicial.value.cliente) === String(cliente) &&
+    String(origemInicial.value.servico) === String(servico);
+
+  if (!existe && !mesmoContexto) props.form.pacote_id = "";
 };
 
 const sincronizarFormulario = () => {
+  sincronizando.value = true;
+
   buscaCliente.value = props.form.cliente || "";
   buscaProfissional.value = props.form.profissional || "";
-  servicoSelecionado.value = props.form.servico_id ? String(props.form.servico_id) : "";
+  servicoSelecionado.value = props.form.servico_id
+    ? String(props.form.servico_id)
+    : "";
 
   clienteEscolhido.value =
     clientesDisponiveis.value.find(
       (item) => String(item.id) === String(props.form.cliente_id)
-    ) ||
-    clientesDisponiveis.value.find(
-      (item) => normalizarTexto(item.nome) === normalizarTexto(props.form.cliente)
-    ) ||
-    null;
+    ) || null;
 
   profissionalEscolhido.value =
     profissionaisDisponiveis.value.find(
       (item) => String(item.id) === String(props.form.profissional_id)
-    ) ||
-    profissionaisDisponiveis.value.find(
-      (item) => normalizarTexto(item.nome) === normalizarTexto(props.form.profissional)
-    ) ||
-    null;
+    ) || null;
 
   if (clienteEscolhido.value) {
     props.form.cliente = clienteEscolhido.value.nome;
@@ -629,27 +801,30 @@ const sincronizarFormulario = () => {
     buscaProfissional.value = profissionalEscolhido.value.nome;
   }
 
-  const servicoAtual =
-    servicosDisponiveis.value.find(
-      (item) => String(item.id) === String(props.form.servico_id)
-    ) ||
-    servicosDisponiveis.value.find(
-      (item) => normalizarTexto(item.nome) === normalizarTexto(props.form.servico)
-    );
+  props.form.pacote_id = props.form.pacote_id ? String(props.form.pacote_id) : "";
 
-  if (servicoAtual) {
-    servicoSelecionado.value = String(servicoAtual.id);
-    props.form.servico = servicoAtual.nome;
-    props.form.servico_id = servicoAtual.id;
-  }
+  origemInicial.value = {
+    cliente: props.form.cliente_id || "",
+    servico: props.form.servico_id || "",
+    pacote: props.form.pacote_id || "",
+  };
+
+  fimManual.value = props.editing || Boolean(props.form.horaFim);
+  pacotesIndisponivel.value = false;
+
+  carregarPacotes();
+
+  nextTick(() => {
+    sincronizando.value = false;
+  });
 };
 
 const salvar = () => {
+  if (bloqueado.value) return;
+
   foiValidado.value = true;
 
-  const servico = servicosDisponiveis.value.find(
-    (item) => String(item.id) === String(servicoSelecionado.value)
-  );
+  const servico = servicoAtual.value;
 
   if (!clienteValido.value || !profissionalValido.value || !servico) {
     emit("notify", {
@@ -693,8 +868,6 @@ watch(
   (aberto) => {
     if (aberto) {
       foiValidado.value = false;
-      isCriandoServico.value = false;
-      novoServicoInput.value = "";
       fecharListas();
       sincronizarFormulario();
     } else {
@@ -703,46 +876,63 @@ watch(
   }
 );
 
+watch(servicoSelecionado, (id) => {
+  if (!props.isOpen || sincronizando.value) return;
+
+  const servico = servicosDisponiveis.value.find(
+    (item) => String(item.id) === String(id)
+  );
+
+  if (servico) {
+    props.form.servico = servico.nome;
+    props.form.servico_id = servico.id;
+  }
+
+  sugerirFim();
+  carregarPacotes();
+});
+
 watch(
-  () => props.form.servico_id,
-  (id) => {
-    if (!id) return;
+  () => clienteEscolhido.value?.id,
+  () => {
+    if (!props.isOpen || sincronizando.value) return;
 
-    const servico = servicosDisponiveis.value.find(
-      (item) => String(item.id) === String(id)
-    );
+    carregarPacotes();
+  }
+);
 
-    if (servico) {
-      servicoSelecionado.value = String(servico.id);
-      props.form.servico = servico.nome;
+watch(
+  () => props.form.horaInicio,
+  () => {
+    if (!props.isOpen || sincronizando.value) return;
+
+    sugerirFim();
+  }
+);
+
+watch(
+  () => [
+    props.form.dataInicio,
+    props.form.horaInicio,
+    props.form.horaFim,
+    props.form.profissional_id,
+    props.form.cliente_id,
+  ],
+  () => {
+    if (props.isOpen && props.alerta && !sincronizando.value) {
+      emit("limpar-alerta");
     }
   }
 );
 
-watch(servicosDisponiveis, () => {
-  if (!props.isOpen) return;
-
-  const servico = servicosDisponiveis.value.find(
-    (item) => normalizarTexto(item.nome) === normalizarTexto(props.form.servico)
-  );
-
-  if (servico) {
-    servicoSelecionado.value = String(servico.id);
-    props.form.servico_id = servico.id;
-  }
-});
-
 watch(
-  () => props.form.cliente_id,
-  () => {
-    if (props.isOpen) sincronizarFormulario();
-  }
-);
+  () => props.alerta,
+  (alerta) => {
+    if (!alerta) return;
 
-watch(
-  () => props.form.profissional_id,
-  () => {
-    if (props.isOpen) sincronizarFormulario();
+    nextTick(() => {
+      corpoRef.value?.scrollTo({ top: 0, behavior: "smooth" });
+    });
   }
 );
 </script>
@@ -856,23 +1046,6 @@ watch(
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 0.5rem;
-}
-
-.btn-text-action {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 4px 0;
-  border: 0;
-  background: transparent;
-  color: #0f999b;
-  font-size: 0.78rem;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.btn-text-action:hover {
-  color: #087d80;
 }
 
 .autocomplete,
@@ -1060,123 +1233,12 @@ watch(
   flex: 1;
 }
 
-.input-with-append {
-  padding-right: 3.2rem;
-}
-
-.btn-inside-append {
-  position: absolute;
-  right: 6px;
-  width: 34px;
-  height: 34px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 0;
-  border-radius: 8px;
-  background: #1ca4a7;
-  color: #fff;
-  cursor: pointer;
-}
-
-.btn-inside-append:hover {
-  background: #158a8d;
-}
-
 .dates-box {
   margin: 0.3rem 0 1.2rem;
   padding: 1.1rem 1.15rem 0.1rem;
   border: 1px solid #e7edf2;
   border-radius: 13px;
   background: #f8fafc;
-}
-
-.status-group {
-  margin-bottom: 0;
-}
-
-.status-toggle {
-  --toggle-padding: 4px;
-  position: relative;
-  isolation: isolate;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  align-items: stretch;
-  width: 100%;
-  min-height: 48px;
-  box-sizing: border-box;
-  padding: var(--toggle-padding);
-  overflow: hidden;
-  border: 1px solid #e2e8f0;
-  border-radius: 11px;
-  background: #f1f5f9;
-}
-
-.toggle-slider {
-  position: absolute;
-  z-index: -1;
-  top: var(--toggle-padding);
-  bottom: var(--toggle-padding);
-  left: var(--toggle-padding);
-  width: calc((100% - 8px) / 4);
-  border-radius: 7px;
-  pointer-events: none;
-  transition: transform 0.25s ease, background-color 0.25s ease;
-}
-
-.toggle-slider.confirmado {
-  transform: translateX(0);
-  background: #10b981;
-}
-
-.toggle-slider.pendente {
-  transform: translateX(100%);
-  background: #f97316;
-}
-
-.toggle-slider.em_andamento {
-  transform: translateX(200%);
-  background: #3b82f6;
-}
-
-.toggle-slider.cancelado {
-  transform: translateX(300%);
-  background: #ef4444;
-}
-
-.toggle-option {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 0;
-  padding: 0.65rem 0.2rem;
-  border-radius: 7px;
-  color: #64748b;
-  font-size: 0.73rem;
-  font-weight: 700;
-  line-height: 1.2;
-  text-align: center;
-  cursor: pointer;
-  user-select: none;
-  transition: color 0.2s;
-}
-
-.toggle-option input {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  opacity: 0;
-}
-
-.toggle-option.active {
-  color: #fff;
-}
-
-.toggle-option:focus-within {
-  outline: 2px solid #1f2937;
-  outline-offset: -2px;
 }
 
 .error-feedback {
@@ -1274,6 +1336,209 @@ watch(
   transform: scale(0.97);
 }
 
+.alerta {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  margin-bottom: 1.2rem;
+  padding: 1rem 1.05rem;
+  border: 1px solid #fecaca;
+  border-radius: 14px;
+  background: #fef2f2;
+  color: #991b1b;
+  animation: dropdown-enter 0.25s ease both;
+}
+
+.alerta.conflito {
+  border-color: #fed7aa;
+  background: linear-gradient(135deg, #fff7ed 0%, #fffbeb 100%);
+  color: #9a3412;
+}
+
+.alerta-icone {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: rgba(220, 38, 38, 0.12);
+  font-size: 1rem;
+}
+
+.alerta.conflito .alerta-icone {
+  background: rgba(234, 88, 12, 0.14);
+}
+
+.alerta-conteudo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.alerta-conteudo strong {
+  font-size: 0.88rem;
+}
+
+.alerta-conteudo p {
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.alerta-conteudo small {
+  margin-top: 0.15rem;
+  font-size: 0.76rem;
+  opacity: 0.85;
+  line-height: 1.45;
+}
+
+.alerta-fechar {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.2s, background 0.2s;
+}
+
+.alerta-fechar:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem 0.95rem;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: #eff6ff;
+  color: #1e40af;
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.aviso i {
+  margin-top: 2px;
+}
+
+.referencia-box {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  margin: -0.35rem 0 1.2rem;
+  padding: 0.8rem 1rem;
+  border: 1px dashed #cbd5e1;
+  border-radius: 12px;
+  background: #fbfdff;
+}
+
+.referencia-item {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: #64748b;
+  font-size: 0.78rem;
+}
+
+.referencia-item i {
+  color: #15999c;
+  font-size: 0.95rem;
+}
+
+.referencia-item span {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.referencia-item strong {
+  color: #1f2937;
+  font-size: 0.88rem;
+}
+
+.campo-ajuda {
+  color: #64748b;
+  font-size: 0.74rem;
+  line-height: 1.4;
+}
+
+.duracao-resumo {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0 0 1rem;
+  color: #475569;
+  font-size: 0.8rem;
+}
+
+.duracao-resumo i {
+  color: #15999c;
+}
+
+.duracao-resumo strong {
+  color: #1f2937;
+}
+
+.textarea {
+  min-height: 84px;
+  resize: vertical;
+}
+
+.observacoes-group {
+  margin-bottom: 0.4rem;
+}
+
+.form-control:disabled,
+.btn-dropdown:disabled {
+  background: #f8fafc;
+  color: #64748b;
+  cursor: not-allowed;
+}
+
+.footer-extras {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.btn-falta {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.1rem;
+  border: 1px solid #fed7aa;
+  border-radius: 10px;
+  background: #fff;
+  color: #c2410c;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.btn-falta:hover {
+  background: #fff7ed;
+}
+
+.btn-salvar:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
 @keyframes dropdown-enter {
   from {
     opacity: 0;
@@ -1310,16 +1575,6 @@ watch(
     gap: 0;
   }
 
-  .status-toggle {
-    min-height: 54px;
-  }
-
-  .toggle-option {
-    padding: 0.45rem 0.08rem;
-    font-size: 0.66rem;
-    overflow-wrap: anywhere;
-  }
-
   .modal-footer {
     align-items: stretch;
     flex-direction: column-reverse;
@@ -1334,7 +1589,13 @@ watch(
     padding-inline: 0.5rem;
   }
 
-  .btn-excluir {
+  .footer-extras {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .btn-excluir,
+  .btn-falta {
     width: 100%;
   }
 }

@@ -19,6 +19,27 @@
 
         <div class="filters-row">
           <div class="filter-group">
+            <span class="filter-label"><i class="pi pi-calendar"></i> Período:</span>
+            <div class="chips-container">
+              <button
+                v-for="item in periodosBusca"
+                :key="item.value"
+                :class="['chip chip-periodo', { active: periodo === item.value }]"
+                @click="periodo = item.value"
+              >
+                {{ item.label }}
+              </button>
+            </div>
+            <div v-if="periodo === 'personalizado'" class="periodo-datas">
+              <input v-model="dataDe" type="date" class="date-input" aria-label="Data inicial" />
+              <span class="date-separator">até</span>
+              <input v-model="dataAte" type="date" class="date-input" aria-label="Data final" />
+            </div>
+          </div>
+        </div>
+
+        <div class="filters-row">
+          <div class="filter-group">
             <span class="filter-label"><i class="pi pi-filter"></i> Buscar em:</span>
             <div class="chips-container">
               <button
@@ -51,6 +72,24 @@
         </div>
       </div>
 
+      <div v-if="mensagemPeriodo" class="status-banner erro" role="alert">
+        <i class="pi pi-exclamation-triangle"></i>
+        <span>{{ mensagemPeriodo }}</span>
+      </div>
+
+      <div v-else-if="erroCarregamento" class="status-banner erro" role="alert">
+        <i class="pi pi-exclamation-triangle"></i>
+        <span>{{ erroCarregamento }}</span>
+        <button type="button" class="banner-acao" @click="recarregar">
+          Tentar novamente
+        </button>
+      </div>
+
+      <div v-else-if="carregando" class="status-banner" role="status">
+        <i class="pi pi-spin pi-spinner"></i>
+        <span>Carregando atendimentos...</span>
+      </div>
+
       <div class="stats-grid">
         <div class="stat-card">
           <span class="stat-number">{{ totalFiltrados }}</span>
@@ -66,30 +105,76 @@
         </div>
       </div>
 
-      <TransitionGroup name="list" tag="div" class="atendimentos-grid">
-        <AtendimentoCard
-          v-for="atendimento in atendimentosFiltrados"
-          :key="atendimento.id"
-          :atendimento="atendimento"
-          @detalhes="abrirModalDetalhes"
-          @editar="abrirModalEdicao"
-          @alterar-status="alterarStatusAtendimento"
-        />
-      </TransitionGroup>
+      <section v-for="grupo in grupos" :key="grupo.data" class="dia-grupo">
+        <h3 class="dia-titulo">
+          <i class="pi pi-calendar"></i>
+          {{ grupo.rotulo }}
+          <span class="dia-contagem">{{ grupo.itens.length }}</span>
+        </h3>
 
-      <div v-if="atendimentosFiltrados.length === 0" class="empty-state">
+        <TransitionGroup name="list" tag="div" class="atendimentos-grid">
+          <AtendimentoCard
+            v-for="atendimento in grupo.itens"
+            :key="atendimento.id"
+            :atendimento="atendimento"
+            :pode-editar="podeEditarAgenda"
+            :pode-encerrar="podeGerenciar"
+            @detalhes="abrirModalDetalhes"
+            @editar="abrirModalEdicao"
+            @cancelar="abrirAcao('cancelar', $event)"
+            @falta="abrirAcao('falta', $event)"
+          />
+        </TransitionGroup>
+      </section>
+
+      <div v-if="!grupos.length && !carregando" class="empty-state">
         <i class="pi pi-calendar-times empty-icon"></i>
         <p>Nenhum atendimento encontrado com os filtros atuais.</p>
       </div>
     </main>
 
     <AtendimentoModal
-      :is-open="isModalOpen"
-      :mode="modalMode"
-      :atendimento-edicao="atendimentoSelecionado"
-      @close="fecharModal"
+      :is-open="detalhesAberto"
+      :atendimento="atendimentoDetalhe"
+      :pode-editar="podeEditarAgenda"
+      :pode-encerrar="podeGerenciar"
+      @close="fecharDetalhes"
+      @editar="abrirModalEdicao"
+      @cancelar="abrirAcao('cancelar', $event)"
+      @falta="abrirAcao('falta', $event)"
+    />
+
+    <AgendaFormModal
+      :isOpen="formAberto"
+      :editing="editando"
+      :form="form"
+      :clientesBD="clientesBD"
+      :servicosBD="servicosBD"
+      :profissionaisBD="profissionaisBD"
+      :isValid="formValido"
+      :salvando="salvando"
+      :alerta="alertaForm"
+      :avisosAcesso="avisosAcesso"
+      :somenteLeitura="somenteLeitura"
+      :mensagemSomenteLeitura="mensagemSomenteLeitura"
+      :permitirCancelar="permitirAcoesEncerramento"
+      :permitirFalta="permitirAcoesEncerramento"
+      @close="fecharFormulario"
       @save="salvarAtendimento"
+      @cancelar-agendamento="abrirAcao('cancelar')"
+      @registrar-falta="abrirAcao('falta')"
+      @limpar-alerta="alertaForm = null"
       @notify="handleNotify"
+    />
+
+    <AgendaAcaoModal
+      :isOpen="acao.aberto"
+      :modo="acao.modo"
+      :agendamento="acao.item"
+      :processando="processandoAcao"
+      :erro="acao.erro"
+      @close="fecharAcao"
+      @confirmar="confirmarAcao"
     />
 
     <Transition name="toast">
@@ -106,18 +191,52 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
 import AtendimentoCard from "./components/AtendimentoCard.vue";
 import AtendimentoModal from "./components/AtendimentoModal.vue";
+import AgendaFormModal from "../Agenda/components/AgendaFormModal.vue";
+import AgendaAcaoModal from "../Agenda/components/AgendaAcaoModal.vue";
+import { useAgendamentos } from "@/composables/useAgendamentos";
+import { hojeNoFuso, inicioDaSemana, rotuloDia, somarDias } from "@/utils/agendamentos";
+
+const {
+  agora,
+  agendamentos,
+  carregando,
+  erroCarregamento,
+  salvando,
+  processandoAcao,
+  clientesBD,
+  profissionaisBD,
+  servicosBD,
+  avisosAcesso,
+  podeGerenciar,
+  podeEditarAgenda,
+  carregarCadastros,
+  carregarAgendamentos,
+  salvarAgendamento,
+  cancelar,
+  registrarFalta,
+} = useAgendamentos();
 
 const searchQuery = ref("");
 const camposAtivos = ref(["cliente", "procedimento"]);
 const filtroStatus = ref("todos");
+const periodo = ref("hoje");
+const dataDe = ref("");
+const dataAte = ref("");
 const toast = ref({ show: false, message: "", type: "success" });
 
-const isModalOpen = ref(false);
-const modalMode = ref("criar");
-const atendimentoSelecionado = ref(null);
+const detalhesAberto = ref(false);
+const idDetalhe = ref(null);
+
+const formAberto = ref(false);
+const editando = ref(false);
+const idEdicao = ref(null);
+const alertaForm = ref(null);
+const acao = ref({ aberto: false, modo: "cancelar", item: null, erro: "" });
+
+let toastTimer;
 
 const camposBusca = [
   { label: "Cliente", value: "cliente" },
@@ -125,56 +244,182 @@ const camposBusca = [
   { label: "Profissional", value: "profissional" },
 ];
 
+const periodosBusca = [
+  { label: "Hoje", value: "hoje" },
+  { label: "Esta semana", value: "semana" },
+  { label: "Este mês", value: "mes" },
+  { label: "Personalizado", value: "personalizado" },
+];
+
 const statusBusca = [
   { label: "Todos", value: "todos" },
   { label: "Agendados", value: "agendado" },
   { label: "Em Andamento", value: "andamento" },
+  { label: "Aguardando conclusão", value: "aguardando" },
   { label: "Concluídos", value: "concluido" },
+  { label: "Faltas", value: "falta" },
   { label: "Cancelados", value: "cancelado" },
 ];
 
-// O ideal é passar isso para a sua store.js de forma definitiva futuramente
-const atendimentos = ref([
-  {
-    id: "1a",
-    iniciais: "AS",
-    cliente: "Ana Silva",
-    telefone: "(11) 98765-4321",
-    procedimento: "Limpeza de Pele",
-    profissional: "Dra. Maria",
-    data: new Date().toLocaleDateString("pt-BR"),
-    hora: "09:00",
-    status: "concluido",
-    observacao: "Recomendado retorno em 30 dias.",
-    valor: "150,00",
-    criadoEm: "10/01/2026 14:22 GMT-3",
-  },
-  {
-    id: "2b",
-    iniciais: "CS",
-    cliente: "Carla Santos",
-    telefone: "(11) 97654-3210",
-    procedimento: "Aplicação de Botox",
-    profissional: "Dr. Paulo",
-    data: new Date().toLocaleDateString("pt-BR"),
-    hora: "10:30",
-    status: "andamento",
-    observacao: "Região frontal e periorbital.",
-    valor: "850,00",
-    criadoEm: "01/03/2026 09:15 GMT-3",
-  },
-]);
+const grupoDoStatus = {
+  pendente: "agendado",
+  confirmado: "agendado",
+  em_andamento: "andamento",
+  aguardando: "aguardando",
+  concluido: "concluido",
+  falta: "falta",
+  cancelado: "cancelado",
+};
 
-const hojeFormatoBR = new Date().toLocaleDateString("pt-BR");
+const preencherFormVazio = () => ({
+  cliente: "",
+  cliente_id: "",
+  servico: "",
+  servico_id: "",
+  servicoPreco: null,
+  servicoDuracao: null,
+  profissional: "",
+  profissional_id: "",
+  pacote_id: "",
+  pacoteNome: "",
+  dataInicio: "",
+  horaInicio: "",
+  dataFim: "",
+  horaFim: "",
+  observacoes: "",
+});
+
+const form = ref(preencherFormVazio());
+
+const hoje = computed(() => hojeNoFuso(agora.value));
+
+const intervalo = computed(() => {
+  if (periodo.value === "hoje") {
+    return { inicio: hoje.value, fim: hoje.value };
+  }
+
+  if (periodo.value === "semana") {
+    const inicio = inicioDaSemana(hoje.value);
+
+    return { inicio, fim: somarDias(inicio, 6) };
+  }
+
+  if (periodo.value === "mes") {
+    const [ano, mes] = hoje.value.split("-").map(Number);
+    const ultimo = new Date(Date.UTC(ano, mes, 0)).getUTCDate();
+    const prefixo = `${ano}-${String(mes).padStart(2, "0")}`;
+
+    return {
+      inicio: `${prefixo}-01`,
+      fim: `${prefixo}-${String(ultimo).padStart(2, "0")}`,
+    };
+  }
+
+  return { inicio: dataDe.value, fim: dataAte.value };
+});
+
+const mensagemPeriodo = computed(() =>
+  periodo.value === "personalizado" &&
+  intervalo.value.inicio &&
+  intervalo.value.fim &&
+  intervalo.value.inicio > intervalo.value.fim
+    ? "A data final deve ser igual ou posterior à data inicial."
+    : ""
+);
+
+const parametrosConsulta = computed(() => {
+  if (mensagemPeriodo.value) return null;
+
+  const params = {};
+
+  if (intervalo.value.inicio) params.data_inicio = intervalo.value.inicio;
+  if (intervalo.value.fim) params.data_fim = intervalo.value.fim;
+
+  return params;
+});
+
+const recarregar = () => {
+  const params = parametrosConsulta.value;
+
+  if (!params) return Promise.resolve();
+
+  return carregarAgendamentos(params);
+};
+
+watch(parametrosConsulta, recarregar, { immediate: true });
+
+onMounted(() => {
+  carregarCadastros();
+});
+
+onBeforeUnmount(() => {
+  if (toastTimer) clearTimeout(toastTimer);
+});
+
+const valorDoCampo = (item, campo) => {
+  if (campo === "procedimento") return item.servico;
+
+  return item[campo];
+};
+
+const atendimentosFiltrados = computed(() => {
+  let resultado = agendamentos.value;
+
+  if (filtroStatus.value !== "todos") {
+    resultado = resultado.filter(
+      (a) => grupoDoStatus[a.status] === filtroStatus.value
+    );
+  }
+
+  if (!searchQuery.value || camposAtivos.value.length === 0) return resultado;
+
+  const queryNormal = searchQuery.value.toLowerCase();
+
+  return resultado.filter((a) =>
+    camposAtivos.value.some((campo) =>
+      String(valorDoCampo(a, campo) ?? "")
+        .toLowerCase()
+        .includes(queryNormal)
+    )
+  );
+});
+
+const grupos = computed(() => {
+  const mapa = new Map();
+
+  [...atendimentosFiltrados.value]
+    .sort((a, b) => {
+      const chaveA = `${a.dataInicio}T${a.horaInicio}`;
+      const chaveB = `${b.dataInicio}T${b.horaInicio}`;
+
+      if (chaveA === chaveB) return String(a.id).localeCompare(String(b.id));
+
+      return chaveA < chaveB ? -1 : 1;
+    })
+    .forEach((item) => {
+      if (!mapa.has(item.dataInicio)) mapa.set(item.dataInicio, []);
+
+      mapa.get(item.dataInicio).push(item);
+    });
+
+  return [...mapa.entries()].map(([data, itens]) => ({
+    data,
+    rotulo: rotuloDia(data, hoje.value),
+    itens,
+  }));
+});
 
 const totalFiltrados = computed(() => atendimentosFiltrados.value.length);
+
 const atendimentosHoje = computed(
   () =>
-    atendimentos.value.filter((a) => a.data === hojeFormatoBR && a.status !== "cancelado")
-      .length
+    agendamentos.value.filter(
+      (a) => a.dataInicio === hoje.value && a.status !== "cancelado"
+    ).length
 );
+
 const atendimentosAndamento = computed(
-  () => atendimentos.value.filter((a) => a.status === "andamento").length
+  () => agendamentos.value.filter((a) => a.status === "em_andamento").length
 );
 
 const placeholderBusca = computed(() => {
@@ -188,22 +433,9 @@ const temFiltroAtivo = computed(() => {
   return (
     searchQuery.value.length > 0 ||
     camposAtivos.value.length !== 2 ||
-    filtroStatus.value !== "todos"
+    filtroStatus.value !== "todos" ||
+    periodo.value !== "hoje"
   );
-});
-
-const atendimentosFiltrados = computed(() => {
-  let resultado = atendimentos.value;
-  if (filtroStatus.value !== "todos")
-    resultado = resultado.filter((a) => a.status === filtroStatus.value);
-  if (!searchQuery.value || camposAtivos.value.length === 0) return resultado;
-  const queryNormal = searchQuery.value.toLowerCase();
-
-  return resultado.filter((a) => {
-    return camposAtivos.value.some((campo) =>
-      String(a[campo]).toLowerCase().includes(queryNormal)
-    );
-  });
 });
 
 const toggleCampo = (campo) => {
@@ -219,101 +451,218 @@ const limparFiltros = () => {
   camposAtivos.value = ["cliente", "procedimento"];
   filtroStatus.value = "todos";
   searchQuery.value = "";
+  periodo.value = "hoje";
+  dataDe.value = "";
+  dataAte.value = "";
 };
 
 const dispararToast = (mensagem, tipo = "success") => {
+  clearTimeout(toastTimer);
+
   toast.value.message = mensagem;
   toast.value.type = tipo;
   toast.value.show = true;
-  setTimeout(() => {
+
+  toastTimer = setTimeout(() => {
     toast.value.show = false;
   }, 3500);
 };
 
 const handleNotify = ({ message, type }) => dispararToast(message, type);
 
-const gerarIniciais = (nome) =>
-  nome
-    .split(" ")
-    .map((n) => n[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
+const atendimentoDetalhe = computed(
+  () =>
+    agendamentos.value.find(
+      (item) => String(item.id) === String(idDetalhe.value)
+    ) || null
+);
 
-const obterTimestamp = () => {
-  const agora = new Date();
-  return `${agora.toLocaleDateString("pt-BR")} ${agora.toLocaleTimeString("pt-BR", {
-    hour: "2-digit",
-    minute: "2-digit",
-  })} GMT-3`;
-};
+const itemEmEdicao = computed(() =>
+  editando.value
+    ? agendamentos.value.find(
+        (item) => String(item.id) === String(idEdicao.value)
+      ) || null
+    : null
+);
 
-const gerarUUID = () => {
-  if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
-  return Date.now().toString(36);
-};
+const atravessaMeiaNoite = computed(
+  () =>
+    Boolean(itemEmEdicao.value) &&
+    itemEmEdicao.value.dataFim !== itemEmEdicao.value.dataInicio
+);
+
+const somenteLeitura = computed(() => {
+  if (!podeEditarAgenda.value) return true;
+  if (!editando.value) return false;
+  if (!itemEmEdicao.value) return true;
+
+  return !itemEmEdicao.value.editavel || atravessaMeiaNoite.value;
+});
+
+const mensagemSomenteLeitura = computed(() => {
+  if (!podeEditarAgenda.value) {
+    return "Seu perfil não permite alterar a agenda.";
+  }
+
+  if (!editando.value || !itemEmEdicao.value) return "";
+
+  if (!itemEmEdicao.value.editavel) {
+    return "Agendamentos concluídos ou cancelados não podem ser editados.";
+  }
+
+  if (atravessaMeiaNoite.value) {
+    return "Este agendamento ultrapassa a meia-noite e só pode ser consultado nesta tela.";
+  }
+
+  return "";
+});
+
+const permitirAcoesEncerramento = computed(
+  () =>
+    podeGerenciar.value &&
+    Boolean(itemEmEdicao.value) &&
+    itemEmEdicao.value.editavel
+);
+
+const formValido = computed(
+  () =>
+    Boolean(form.value.cliente_id) &&
+    Boolean(form.value.servico_id) &&
+    Boolean(form.value.profissional_id) &&
+    Boolean(form.value.dataInicio) &&
+    Boolean(form.value.horaInicio) &&
+    Boolean(form.value.horaFim)
+);
 
 const abrirModalCriacao = () => {
-  modalMode.value = "criar";
-  atendimentoSelecionado.value = null;
-  isModalOpen.value = true;
+  if (!podeEditarAgenda.value) {
+    dispararToast("Seu perfil não permite criar agendamentos.", "error");
+    return;
+  }
+
+  editando.value = false;
+  idEdicao.value = null;
+  alertaForm.value = null;
+  form.value = {
+    ...preencherFormVazio(),
+    dataInicio: hoje.value,
+    dataFim: hoje.value,
+  };
+  formAberto.value = true;
 };
 
 const abrirModalEdicao = (atendimento) => {
-  modalMode.value = "editar";
-  atendimentoSelecionado.value = atendimento;
-  isModalOpen.value = true;
+  const original = agendamentos.value.find(
+    (item) => String(item.id) === String(atendimento.id)
+  );
+
+  if (!original) return;
+
+  detalhesAberto.value = false;
+  editando.value = true;
+  idEdicao.value = original.id;
+  alertaForm.value = null;
+
+  form.value = {
+    cliente: original.cliente,
+    cliente_id: original.cliente_id,
+    servico: original.servico,
+    servico_id: original.servico_id,
+    servicoPreco: original.servicoPreco,
+    servicoDuracao: original.servicoDuracaoMinutos,
+    profissional: original.profissional,
+    profissional_id: original.profissional_id,
+    pacote_id: original.pacote_id ? String(original.pacote_id) : "",
+    pacoteNome: original.pacoteNome,
+    dataInicio: original.dataInicio,
+    horaInicio: original.horaInicio,
+    dataFim: original.dataFim || original.dataInicio,
+    horaFim: original.horaFim,
+    observacoes: original.observacoes,
+  };
+
+  formAberto.value = true;
 };
 
 const abrirModalDetalhes = (atendimento) => {
-  modalMode.value = "detalhes";
-  atendimentoSelecionado.value = atendimento;
-  isModalOpen.value = true;
+  idDetalhe.value = atendimento.id;
+  detalhesAberto.value = true;
 };
 
-const fecharModal = () => {
-  isModalOpen.value = false;
-  atendimentoSelecionado.value = null;
+const fecharDetalhes = () => {
+  detalhesAberto.value = false;
+  idDetalhe.value = null;
 };
 
-const salvarAtendimento = (dadosAtendimento) => {
-  if (dadosAtendimento.id) {
-    const index = atendimentos.value.findIndex((a) => a.id === dadosAtendimento.id);
-    if (index !== -1) {
-      atendimentos.value[index] = {
-        ...dadosAtendimento,
-        iniciais: gerarIniciais(dadosAtendimento.cliente),
-      };
-      dispararToast(`Atendimento de "${dadosAtendimento.cliente}" atualizado!`);
-    }
-  } else {
-    const novo = {
-      ...dadosAtendimento,
-      id: gerarUUID(),
-      iniciais: gerarIniciais(dadosAtendimento.cliente),
-      criadoEm: obterTimestamp(),
-    };
-    atendimentos.value.unshift(novo);
-    dispararToast(`Atendimento para "${dadosAtendimento.cliente}" agendado com sucesso!`);
+const fecharFormulario = () => {
+  formAberto.value = false;
+  alertaForm.value = null;
+};
+
+const salvarAtendimento = async () => {
+  alertaForm.value = null;
+
+  const resultado = await salvarAgendamento(
+    form.value,
+    editando.value ? idEdicao.value : null
+  );
+
+  if (!resultado.ok) {
+    alertaForm.value = resultado.erro;
+    return;
   }
+
+  dispararToast(
+    editando.value
+      ? "Atendimento atualizado com sucesso!"
+      : "Atendimento agendado com sucesso!"
+  );
+
+  fecharFormulario();
+  await recarregar();
 };
 
-const alterarStatusAtendimento = (atendimento, novoStatus) => {
-  const index = atendimentos.value.findIndex((a) => a.id === atendimento.id);
-  if (index !== -1) {
-    atendimentos.value[index].status = novoStatus;
-    const mensagens = {
-      agendado: "reagendado",
-      andamento: "iniciado",
-      concluido: "finalizado",
-      cancelado: "cancelado",
-    };
-    const tiposToast = { andamento: "info", concluido: "success", cancelado: "error" };
-    dispararToast(
-      `Atendimento de "${atendimento.cliente}" ${mensagens[novoStatus]}.`,
-      tiposToast[novoStatus] || "success"
-    );
+const abrirAcao = (modo, atendimento = null) => {
+  const item = atendimento
+    ? agendamentos.value.find((a) => String(a.id) === String(atendimento.id))
+    : itemEmEdicao.value;
+
+  if (!item) return;
+
+  acao.value = { aberto: true, modo, item, erro: "" };
+};
+
+const fecharAcao = () => {
+  acao.value = { ...acao.value, aberto: false, erro: "" };
+};
+
+const confirmarAcao = async (payload) => {
+  const { modo, item } = acao.value;
+
+  if (!item) return;
+
+  const resultado =
+    modo === "cancelar"
+      ? await cancelar(item.id, payload.motivo)
+      : await registrarFalta(item.id, payload);
+
+  if (!resultado.ok) {
+    acao.value = { ...acao.value, erro: resultado.erro.mensagem };
+    return;
   }
+
+  fecharAcao();
+  fecharFormulario();
+  fecharDetalhes();
+
+  dispararToast(
+    modo === "cancelar"
+      ? "Agendamento cancelado com sucesso."
+      : "Falta registrada com sucesso.",
+    modo === "cancelar" ? "error" : "info"
+  );
+
+  await recarregar();
 };
 </script>
 
@@ -503,6 +852,91 @@ const alterarStatusAtendimento = (atendimento, novoStatus) => {
   font-size: 0.875rem;
   color: #6b7280;
   font-weight: 500;
+}
+
+.chip-periodo.active {
+  background-color: #1ca4a7;
+  border-color: #1ca4a7;
+}
+.periodo-datas {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.date-input {
+  padding: 0.4rem 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  outline: none;
+  font-size: 0.85rem;
+  color: #1f2937;
+  background-color: #f9fafb;
+  font-family: inherit;
+}
+.date-input:focus {
+  border-color: #1ca4a7;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(28, 164, 167, 0.1);
+}
+.date-separator {
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.status-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-bottom: 1.5rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #4b5563;
+  font-size: 0.85rem;
+}
+.status-banner.erro {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #991b1b;
+}
+.banner-acao {
+  margin-left: auto;
+  padding: 0.45rem 0.85rem;
+  border: 1px solid currentColor;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dia-grupo {
+  margin-bottom: 2rem;
+}
+.dia-titulo {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+.dia-titulo i {
+  color: #1ca4a7;
+  font-size: 0.95rem;
+}
+.dia-contagem {
+  padding: 0.1rem 0.55rem;
+  border-radius: 20px;
+  background-color: #e5e7eb;
+  color: #4b5563;
+  font-size: 0.75rem;
+  font-weight: 600;
 }
 
 .atendimentos-grid {

@@ -2,146 +2,113 @@
   <Transition name="fade">
     <div class="modal-overlay" v-if="isOpen" @click.self="fechar">
       <Transition name="scale">
-        <div class="modal-container" v-if="isOpen">
+        <div class="modal-container" v-if="isOpen && atendimento">
           <header class="modal-header">
             <div class="header-titles">
-              <h3>{{ tituloModal }}</h3>
-              <p class="subtitle" v-if="isDetalhes">{{ form.cliente }}</p>
+              <h3>Detalhes do Atendimento</h3>
+              <p class="subtitle">{{ atendimento.cliente }}</p>
             </div>
-            <button class="btn-close" @click="fechar">
+            <button class="btn-close" aria-label="Fechar" @click="fechar">
               <i class="pi pi-times"></i>
             </button>
           </header>
 
-          <form
-            ref="formRef"
-            @submit.prevent="salvar"
-            novalidate
-            :class="['modal-form', { 'was-validated': foiValidado }]"
-          >
-            <div class="form-row">
-              <div class="form-group flex-1">
-                <label>Nome do Cliente <span class="required-asterisk">*</span></label>
-                <input
-                  type="text"
-                  v-model="form.cliente"
-                  required
-                  minlength="3"
-                  pattern=".{3,}"
-                  :disabled="isDetalhes"
-                  placeholder="Ex: Maria Oliveira"
-                />
-                <span class="error-feedback">Preencha o nome completo do cliente.</span>
+          <div class="modal-body">
+            <div class="status-linha">
+              <span :class="['status-badge', `badge-${atendimento.status}`]">
+                {{ formatarStatus(atendimento.status) }}
+              </span>
+              <span class="resultado-texto">
+                Resultado: <strong>{{ rotuloResultado }}</strong>
+              </span>
+            </div>
+
+            <div class="info-grid">
+              <div class="info-item">
+                <span class="info-rotulo">Cliente</span>
+                <span class="info-valor">{{ atendimento.cliente }}</span>
               </div>
-              <div class="form-group flex-1">
-                <label>Telefone <span class="required-asterisk">*</span></label>
-                <input
-                  type="text"
-                  v-model="exibicaoTelefone"
-                  @input="processarTelefone"
-                  required
-                  pattern=".{14,15}"
-                  maxlength="15"
-                  :disabled="isDetalhes"
-                  placeholder="(00) 00000-0000"
-                />
-                <span class="error-feedback">Insira um telefone válido com DDD.</span>
+              <div class="info-item">
+                <span class="info-rotulo">Telefone</span>
+                <span class="info-valor">{{ atendimento.clienteTelefone || "Não informado" }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-rotulo">Procedimento</span>
+                <span class="info-valor">{{ atendimento.servico }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-rotulo">Profissional</span>
+                <span class="info-valor">{{ atendimento.profissional }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-rotulo">Data</span>
+                <span class="info-valor">{{ formatarDataBR(atendimento.dataInicio) }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-rotulo">Horário</span>
+                <span class="info-valor">
+                  {{ atendimento.horaInicio }} às {{ atendimento.horaFim }}
+                </span>
+              </div>
+              <div class="info-item">
+                <span class="info-rotulo">Duração do agendamento</span>
+                <span class="info-valor">{{ formatarDuracao(atendimento.duracaoMinutos) }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-rotulo">Duração de referência</span>
+                <span class="info-valor">{{ formatarDuracao(atendimento.servicoDuracaoMinutos) }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-rotulo">Valor de referência</span>
+                <span class="info-valor">{{ formatarMoeda(atendimento.servicoPreco) }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-rotulo">Pacote</span>
+                <span class="info-valor">
+                  {{ atendimento.pacoteNome || "Agendamento avulso" }}
+                  <small v-if="rotuloSessao" class="info-extra">{{ rotuloSessao }}</small>
+                </span>
               </div>
             </div>
 
-            <div class="form-row">
-              <div class="form-group flex-1">
-                <label>Procedimento <span class="required-asterisk">*</span></label>
-                <input
-                  type="text"
-                  v-model="form.procedimento"
-                  required
-                  pattern=".{3,}"
-                  :disabled="isDetalhes"
-                  placeholder="Ex: Limpeza de Pele"
-                />
-                <span class="error-feedback"
-                  >Informe o procedimento (mín. 3 caracteres).</span
-                >
-              </div>
-              <div class="form-group flex-1">
-                <label
-                  >Profissional Responsável
-                  <span class="required-asterisk">*</span></label
-                >
-                <input
-                  type="text"
-                  v-model="form.profissional"
-                  required
-                  pattern=".{3,}"
-                  :disabled="isDetalhes"
-                  placeholder="Ex: Dra. Ana"
-                />
-                <span class="error-feedback">Informe o nome do profissional.</span>
-              </div>
+            <div v-if="atendimento.motivoCancelamento" class="bloco bloco-alerta">
+              <span class="info-rotulo">Motivo do cancelamento</span>
+              <p>{{ atendimento.motivoCancelamento }}</p>
             </div>
 
-            <div class="form-row">
-              <div class="form-group flex-1">
-                <label>Data <span class="required-asterisk">*</span></label>
-                <input type="date" v-model="form.data" required :disabled="isDetalhes" />
-                <span class="error-feedback">A data é obrigatória.</span>
-              </div>
-              <div class="form-group flex-1">
-                <label>Horário <span class="required-asterisk">*</span></label>
-                <input type="time" v-model="form.hora" required :disabled="isDetalhes" />
-                <span class="error-feedback">O horário é obrigatório.</span>
-              </div>
+            <div v-if="atendimento.observacoes" class="bloco">
+              <span class="info-rotulo">Observações</span>
+              <p>{{ atendimento.observacoes }}</p>
             </div>
 
-            <div class="form-row">
-              <div class="form-group flex-1">
-                <label>Valor Estimado (R$)</label>
-                <input
-                  type="text"
-                  :value="form.valor"
-                  @input="processarValor"
-                  :disabled="isDetalhes"
-                  placeholder="0,00"
-                />
-              </div>
-              <div class="form-group flex-1">
-                <label>Status <span class="required-asterisk">*</span></label>
-                <select v-model="form.status" :disabled="isDetalhes" required>
-                  <option value="agendado">Agendado</option>
-                  <option value="andamento">Em Andamento</option>
-                  <option value="concluido">Concluído</option>
-                  <option value="cancelado">Cancelado</option>
-                </select>
-                <span class="error-feedback">Selecione o status do atendimento.</span>
-              </div>
+            <div v-if="registroFormatado" class="registro">
+              <i class="pi pi-history"></i>
+              Registrado em {{ registroFormatado }}
             </div>
+          </div>
 
-            <div class="form-group">
-              <label>Observações</label>
-              <textarea
-                v-model="form.observacao"
-                :disabled="isDetalhes"
-                placeholder="Detalhes adicionais sobre o atendimento..."
-                rows="3"
-                class="textarea-custom"
-              ></textarea>
-            </div>
-
-            <div class="form-group" v-if="modalMode !== 'criar'">
-              <label>Registro no Sistema</label>
-              <input type="text" v-model="form.criadoEm" disabled class="bg-gray" />
-            </div>
-
-            <footer class="modal-footer">
-              <button type="button" class="btn-cancelar" @click="fechar">
-                {{ isDetalhes ? "Fechar" : "Cancelar" }}
+          <footer class="modal-footer">
+            <div v-if="podeEncerrar && atendimento.editavel" class="footer-extras">
+              <button type="button" class="btn-falta" @click="$emit('falta', atendimento)">
+                <i class="pi pi-user-minus"></i> Registrar falta
               </button>
-              <button type="submit" class="btn-salvar" v-if="!isDetalhes">
-                Confirmar
+              <button type="button" class="btn-perigo" @click="$emit('cancelar', atendimento)">
+                <i class="pi pi-ban"></i> Cancelar
               </button>
-            </footer>
-          </form>
+            </div>
+
+            <div class="footer-actions">
+              <button type="button" class="btn-cancelar" @click="fechar">Fechar</button>
+              <button
+                v-if="podeEditar && atendimento.editavel"
+                type="button"
+                class="btn-salvar"
+                @click="$emit('editar', atendimento)"
+              >
+                <i class="pi pi-pencil"></i> Editar
+              </button>
+            </div>
+          </footer>
         </div>
       </Transition>
     </div>
@@ -149,142 +116,64 @@
 </template>
 
 <script setup>
-import { ref, watch, computed } from "vue";
+import { computed } from "vue";
+import {
+  FUSO_CLINICA,
+  formatarDataBR,
+  formatarDuracao,
+  formatarMoeda,
+  formatarStatus,
+} from "@/utils/agendamentos";
 
 const props = defineProps({
   isOpen: Boolean,
-  mode: String,
-  atendimentoEdicao: Object,
+  atendimento: { type: Object, default: null },
+  podeEditar: Boolean,
+  podeEncerrar: Boolean,
 });
 
-const emit = defineEmits(["close", "save", "notify"]);
+const emit = defineEmits(["close", "editar", "cancelar", "falta"]);
 
-const formRef = ref(null);
-const foiValidado = ref(false);
-
-const form = ref({
-  cliente: "",
-  telefone: "",
-  procedimento: "",
-  profissional: "",
-  data: "",
-  hora: "",
-  valor: "",
-  status: "agendado",
-  observacao: "",
-  criadoEm: "",
-});
-
-const exibicaoTelefone = ref("");
-
-const tituloModal = computed(() => {
-  if (props.mode === "detalhes") return "Detalhes do Atendimento";
-  if (props.mode === "editar") return "Editar Atendimento";
-  return "Novo Agendamento";
-});
-
-const isDetalhes = computed(() => props.mode === "detalhes");
-const modalMode = computed(() => props.mode);
-
-const aplicarMascaraTelefone = (v) => {
-  v = v.replace(/\D/g, "");
-  if (v.length <= 11) {
-    v = v.replace(/^(\d{2})(\d)/g, "($1) $2");
-    v = v.replace(/(\d)(\d{4})$/, "$1-$2");
-  }
-  return v;
+const rotulosResultado = {
+  AGUARDANDO_RESULTADO: "Aguardando resultado",
+  REALIZADO: "Realizado",
+  FALTA: "Falta",
 };
 
-const processarTelefone = (event) => {
-  let num = event.target.value.replace(/\D/g, "").slice(0, 11);
-  exibicaoTelefone.value = aplicarMascaraTelefone(num);
-  form.value.telefone = exibicaoTelefone.value;
+const rotulosSessao = {
+  DISPONIVEL: "Sessão disponível",
+  AGENDADA: "Sessão reservada",
+  UTILIZADA: "Sessão utilizada",
+  PERDIDA: "Sessão perdida",
+  CANCELADA: "Sessão cancelada",
 };
 
-const processarValor = (event) => {
-  let v = event.target.value.replace(/\D/g, "");
-  if (v) {
-    v = (v / 100).toFixed(2) + "";
-    v = v.replace(".", ",");
-    v = v.replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1.");
-  }
-  form.value.valor = v;
-  event.target.value = v;
-};
-
-const formatarDataInput = (dataStr) => {
-  if (!dataStr) return "";
-  if (dataStr.includes("/")) {
-    const [dia, mes, ano] = dataStr.split("/");
-    return `${ano}-${mes}-${dia}`;
-  }
-  return dataStr;
-};
-
-const formatarDataVisualizacao = (dataStr) => {
-  if (!dataStr) return "";
-  if (dataStr.includes("-")) {
-    const [ano, mes, dia] = dataStr.split("-");
-    return `${dia}/${mes}/${ano}`;
-  }
-  return dataStr;
-};
-
-watch(
-  () => props.isOpen,
-  (aberto) => {
-    if (aberto) {
-      foiValidado.value = false;
-      if (props.atendimentoEdicao && props.mode !== "criar") {
-        form.value = {
-          ...props.atendimentoEdicao,
-          data: formatarDataInput(props.atendimentoEdicao.data),
-        };
-        exibicaoTelefone.value = props.atendimentoEdicao.telefone || "";
-      } else {
-        form.value = {
-          cliente: "",
-          telefone: "",
-          procedimento: "",
-          profissional: "",
-          data: "",
-          hora: "",
-          valor: "",
-          status: "agendado",
-          observacao: "",
-          criadoEm: "",
-        };
-        exibicaoTelefone.value = "";
-      }
-    }
-  }
+const rotuloResultado = computed(
+  () => rotulosResultado[props.atendimento?.resultado] || "—"
 );
+
+const rotuloSessao = computed(
+  () => rotulosSessao[props.atendimento?.sessaoPacoteStatus] || ""
+);
+
+const registroFormatado = computed(() => {
+  const iso = props.atendimento?.criadoEm;
+
+  if (!iso) return "";
+
+  const data = new Date(iso);
+
+  if (Number.isNaN(data.getTime())) return "";
+
+  return data.toLocaleString("pt-BR", {
+    timeZone: FUSO_CLINICA,
+    dateStyle: "short",
+    timeStyle: "short",
+  });
+});
 
 const fechar = () => {
   emit("close");
-};
-
-const salvar = () => {
-  if (isDetalhes.value) return;
-
-  if (formRef.value && !formRef.value.checkValidity()) {
-    foiValidado.value = true;
-    emit("notify", {
-      message: "Por favor, preencha os campos corretamente.",
-      type: "error",
-    });
-    const firstInvalid = formRef.value.querySelector(":invalid");
-    if (firstInvalid) firstInvalid.focus();
-    return;
-  }
-
-  const dadosSalvos = {
-    ...form.value,
-    data: formatarDataVisualizacao(form.value.data),
-  };
-
-  emit("save", dadosSalvos);
-  fechar();
 };
 </script>
 
@@ -347,138 +236,144 @@ const salvar = () => {
   transform: scale(1.1);
 }
 
-.modal-form {
+.modal-body {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
   padding: 1.5rem;
-  max-height: 80vh;
+  max-height: 70vh;
   overflow-y: auto;
 }
-.form-row {
+.status-linha {
   display: flex;
-  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
 }
-@media (max-width: 600px) {
-  .form-row {
-    flex-direction: column;
-    gap: 1.25rem;
-  }
+.status-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.3rem 0.7rem;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
-.flex-1 {
-  flex: 1;
+.badge-pendente {
+  background-color: #ffedd5;
+  color: #c2410c;
 }
-
-.form-group {
+.badge-confirmado {
+  background-color: #e0f2fe;
+  color: #0369a1;
+}
+.badge-em_andamento {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+.badge-aguardando {
+  background-color: #f1f5f9;
+  color: #475569;
+}
+.badge-concluido {
+  background-color: #def7ec;
+  color: #03543f;
+}
+.badge-falta {
+  background-color: #f3e8ff;
+  color: #7e22ce;
+}
+.badge-cancelado {
+  background-color: #ffe4e6;
+  color: #be123c;
+}
+.resultado-texto {
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+.resultado-texto strong {
+  color: #1f2937;
+}
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem 1.5rem;
+}
+.info-item {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
-  position: relative;
+  gap: 0.2rem;
+  min-width: 0;
 }
-.form-group label {
-  font-size: 0.85rem;
+.info-rotulo {
+  font-size: 0.75rem;
   font-weight: 600;
   color: #6b7280;
-  transition: color 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
 }
-.required-asterisk {
-  color: #ef4444;
+.info-valor {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1f2937;
+  overflow-wrap: anywhere;
 }
-
-.form-group input,
-.form-group select,
-.textarea-custom {
-  padding: 0.8rem 1rem;
+.info-extra {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #6b7280;
+}
+.bloco {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.85rem 1rem;
   border: 1px solid #e5e7eb;
   border-radius: 10px;
-  outline: none;
-  font-size: 0.95rem;
-  color: #1f2937;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  background-color: #ffffff;
-  font-family: inherit;
-}
-.form-group input:hover:not(:disabled),
-.form-group select:hover:not(:disabled),
-.textarea-custom:hover:not(:disabled) {
-  border-color: #cbd5e1;
-}
-.form-group input:focus,
-.form-group select:focus,
-.textarea-custom:focus {
-  border-color: #1ca4a7;
-  box-shadow: 0 0 0 4px rgba(28, 164, 167, 0.1);
-  transform: translateY(-1px);
-}
-.form-group input:disabled,
-.form-group select:disabled,
-.textarea-custom:disabled,
-.bg-gray {
   background-color: #f9fafb;
+}
+.bloco p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #374151;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+.bloco-alerta {
+  border-color: #fecdd3;
+  background-color: #fff1f2;
+}
+.registro {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.78rem;
   color: #9ca3af;
-  cursor: not-allowed;
-  border-color: #e5e7eb;
 }
-.textarea-custom {
-  resize: vertical;
-}
-
-.error-feedback {
-  font-size: 0.75rem;
-  color: #ef4444;
-  margin-top: 0.2rem;
-  opacity: 0;
-  height: 0;
-  overflow: hidden;
-  transition: opacity 0.3s ease, height 0.3s ease;
-}
-
-.was-validated input:invalid,
-.was-validated select:invalid {
-  border-color: #ef4444;
-  background-color: #fef2f2;
-  animation: shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
-}
-.was-validated input:invalid:focus,
-.was-validated select:invalid:focus {
-  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
-}
-.was-validated .form-group:has(:invalid) label {
-  color: #ef4444;
-}
-.was-validated input:invalid ~ .error-feedback,
-.was-validated select:invalid ~ .error-feedback {
-  opacity: 1;
-  height: 16px;
-}
-
-@keyframes shake {
-  10%,
-  90% {
-    transform: translate3d(-1px, 0, 0);
-  }
-  20%,
-  80% {
-    transform: translate3d(2px, 0, 0);
-  }
-  30%,
-  50%,
-  70% {
-    transform: translate3d(-3px, 0, 0);
-  }
-  40%,
-  60% {
-    transform: translate3d(3px, 0, 0);
+@media (max-width: 600px) {
+  .info-grid {
+    grid-template-columns: 1fr;
   }
 }
 
 .modal-footer {
   display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-  margin-top: 0.5rem;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
   border-top: 1px solid #e5e7eb;
-  padding-top: 1rem;
+  padding: 1rem 1.5rem 1.25rem;
+}
+.footer-extras,
+.footer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.footer-actions {
+  margin-left: auto;
 }
 .btn-cancelar {
   background: #ffffff;
@@ -495,6 +390,9 @@ const salvar = () => {
   color: #1f2937;
 }
 .btn-salvar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   background-color: #1ca4a7;
   color: #ffffff;
   border: none;
@@ -508,6 +406,43 @@ const salvar = () => {
   background-color: #158a8d;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(28, 164, 167, 0.2);
+}
+.btn-perigo,
+.btn-falta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #ffffff;
+  padding: 0.8rem 1.25rem;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+.btn-perigo {
+  border: 1px solid #fecaca;
+  color: #dc2626;
+}
+.btn-perigo:hover {
+  background-color: #fef2f2;
+}
+.btn-falta {
+  border: 1px solid #e9d5ff;
+  color: #7e22ce;
+}
+.btn-falta:hover {
+  background-color: #faf5ff;
+}
+@media (max-width: 600px) {
+  .footer-extras,
+  .footer-actions {
+    width: 100%;
+  }
+  .footer-extras button,
+  .footer-actions button {
+    flex: 1;
+    justify-content: center;
+  }
 }
 
 .fade-enter-active,

@@ -33,6 +33,14 @@
             <span class="detail-label">Profissional</span>
             <span class="detail-value">{{ item.profissional }}</span>
           </div>
+          <div class="detail-item">
+            <span class="detail-label">Duração</span>
+            <span class="detail-value">{{ formatarDuracao(item.duracaoMinutos) }}</span>
+          </div>
+          <div class="detail-item" v-if="item.pacoteNome">
+            <span class="detail-label">Pacote</span>
+            <span class="detail-value">{{ item.pacoteNome }}</span>
+          </div>
           <div class="detail-item" v-if="item.dataInicio !== item.dataFim">
             <span class="detail-label">Término</span>
             <span class="detail-value">{{ formatarDataBR(item.dataFim) }}</span>
@@ -49,6 +57,8 @@
 </template>
 
 <script setup>
+import { formatarDuracao } from "@/utils/agendamentos";
+
 defineProps({
   appointments: {
     type: Array,
@@ -70,6 +80,9 @@ const formatStatus = (status) => {
     confirmado: "Confirmado",
     pendente: "Pendente",
     em_andamento: "Em Andamento",
+    aguardando: "Aguardando conclusão",
+    concluido: "Concluído",
+    falta: "Falta",
     cancelado: "Cancelado",
   };
   return map[status] || status;
@@ -158,6 +171,21 @@ const gerarIniciais = (nome) => {
   background-color: #fef2f2;
   color: #ef4444;
   border-color: #fecaca;
+}
+.badge-aguardando {
+  background-color: #f1f5f9;
+  color: #64748b;
+  border-color: #cbd5e1;
+}
+.badge-concluido {
+  background-color: #f0fdfa;
+  color: #0f766e;
+  border-color: #99f6e4;
+}
+.badge-falta {
+  background-color: #faf5ff;
+  color: #7e22ce;
+  border-color: #e9d5ff;
 }
 
 .appointment-client-large {

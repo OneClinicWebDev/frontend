@@ -1,4 +1,3 @@
-
 <template>
   <section class="action-panel">
     <div class="top-row">
@@ -107,10 +106,10 @@
 
           <option
             v-for="profissional in profissionaisBD"
-            :key="profissional.id ?? profissional"
-            :value="profissional.nome ?? profissional"
+            :key="profissional.id"
+            :value="profissional.id"
           >
-            {{ profissional.nome ?? profissional }}
+            {{ profissional.nome }}
           </option>
         </select>
       </div>
@@ -130,6 +129,9 @@
           <option value="confirmado">Confirmado</option>
           <option value="pendente">Pendente</option>
           <option value="em_andamento">Em andamento</option>
+          <option value="aguardando">Aguardando conclusão</option>
+          <option value="concluido">Concluído</option>
+          <option value="falta">Falta</option>
           <option value="cancelado">Cancelado</option>
         </select>
       </div>
