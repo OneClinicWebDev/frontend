@@ -49,3 +49,8 @@ export const listarPacotes = async (params = {}) => {
   const resposta = await api.get("/api/pacotes/", { params });
   return Array.isArray(resposta.data) ? resposta.data : [];
 };
+
+export const criarCliente = async (payload) => {
+  const resposta = await api.post("/api/clientes/", payload);
+  return resposta.data;
+};

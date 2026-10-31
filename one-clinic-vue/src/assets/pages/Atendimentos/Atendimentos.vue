@@ -158,7 +158,7 @@
       :somenteLeitura="somenteLeitura"
       :mensagemSomenteLeitura="mensagemSomenteLeitura"
       :permitirCancelar="permitirAcoesEncerramento"
-      :permitirFalta="permitirAcoesEncerramento"
+      :permitirFalta="permitirFaltaForm"
       @close="fecharFormulario"
       @save="salvarAtendimento"
       @cancelar-agendamento="abrirAcao('cancelar')"
@@ -197,7 +197,13 @@ import AtendimentoModal from "./components/AtendimentoModal.vue";
 import AgendaFormModal from "../Agenda/components/AgendaFormModal.vue";
 import AgendaAcaoModal from "../Agenda/components/AgendaAcaoModal.vue";
 import { useAgendamentos } from "@/composables/useAgendamentos";
-import { hojeNoFuso, inicioDaSemana, rotuloDia, somarDias } from "@/utils/agendamentos";
+import {
+  hojeNoFuso,
+  inicioDaSemana,
+  precoParaCampo,
+  rotuloDia,
+  somarDias,
+} from "@/utils/agendamentos";
 
 const {
   agora,
@@ -210,6 +216,8 @@ const {
   profissionaisBD,
   servicosBD,
   avisosAcesso,
+  colaboradorId,
+  profissionalComAutonomia,
   podeGerenciar,
   podeEditarAgenda,
   carregarCadastros,
@@ -271,6 +279,18 @@ const grupoDoStatus = {
   cancelado: "cancelado",
 };
 
+const profissionalPadrao = () => {
+  if (!profissionalComAutonomia.value) return { nome: "", id: "" };
+
+  const proprio = profissionaisBD.value.find(
+    (item) => String(item.id) === colaboradorId.value
+  );
+
+  return proprio
+    ? { nome: proprio.nome, id: proprio.id }
+    : { nome: "", id: "" };
+};
+
 const preencherFormVazio = () => ({
   cliente: "",
   cliente_id: "",
@@ -278,8 +298,8 @@ const preencherFormVazio = () => ({
   servico_id: "",
   servicoPreco: null,
   servicoDuracao: null,
-  profissional: "",
-  profissional_id: "",
+  profissional: profissionalPadrao().nome,
+  profissional_id: profissionalPadrao().id,
   pacote_id: "",
   pacoteNome: "",
   dataInicio: "",
@@ -287,6 +307,7 @@ const preencherFormVazio = () => ({
   dataFim: "",
   horaFim: "",
   observacoes: "",
+  precoAcordado: "",
 });
 
 const form = ref(preencherFormVazio());
@@ -524,6 +545,13 @@ const permitirAcoesEncerramento = computed(
     itemEmEdicao.value.editavel
 );
 
+const permitirFaltaForm = computed(
+  () =>
+    podeGerenciar.value &&
+    Boolean(itemEmEdicao.value) &&
+    itemEmEdicao.value.faltaRegistravel
+);
+
 const formValido = computed(
   () =>
     Boolean(form.value.cliente_id) &&
@@ -579,6 +607,7 @@ const abrirModalEdicao = (atendimento) => {
     dataFim: original.dataFim || original.dataInicio,
     horaFim: original.horaFim,
     observacoes: original.observacoes,
+    precoAcordado: precoParaCampo(original.precoAcordado),
   };
 
   formAberto.value = true;

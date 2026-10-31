@@ -104,18 +104,33 @@
                   </span>
                 </div>
 
-                <div v-if="exigeDecisao" class="form-group">
-                  <label for="justificativa-falta">Justificativa</label>
+                <div v-if="exigeDecisao || corrigindoConcluido" class="form-group">
+                  <label for="justificativa-falta">
+                    Justificativa
+                    <span v-if="corrigindoConcluido" class="required-asterisk">*</span>
+                  </label>
                   <textarea
                     id="justificativa-falta"
                     v-model="justificativa"
                     class="form-control textarea"
+                    :class="{ 'input-invalid': foiValidado && !justificativaValida }"
                     rows="3"
-                    placeholder="Opcional: explique a decisão tomada."
+                    :placeholder="
+                      corrigindoConcluido
+                        ? 'Explique por que o resultado está sendo corrigido.'
+                        : 'Opcional: explique a decisão tomada.'
+                    "
                   ></textarea>
+                  <span v-if="foiValidado && !justificativaValida" class="error-feedback">
+                    Informe a justificativa da correção.
+                  </span>
                 </div>
 
-                <p class="nota">
+                <p v-if="corrigindoConcluido" class="nota">
+                  Este atendimento já foi concluído. A correção altera o resultado
+                  para Falta e fica registrada na auditoria do sistema.
+                </p>
+                <p v-else class="nota">
                   A falta encerra o agendamento com o resultado Falta. Esta ação
                   não pode ser desfeita pela tela.
                 </p>
@@ -177,13 +192,22 @@ const iconeConfirmar = computed(() =>
   props.modo === "cancelar" ? "pi pi-ban" : "pi pi-user-minus"
 );
 
+const corrigindoConcluido = computed(
+  () => props.modo === "falta" && Boolean(props.agendamento?.corrigeConcluido)
+);
+
 const exigeDecisao = computed(
   () =>
     props.modo === "falta" &&
-    props.agendamento?.sessaoPacoteStatus === "AGENDADA"
+    (props.agendamento?.sessaoPacoteStatus === "AGENDADA" ||
+      (corrigindoConcluido.value &&
+        props.agendamento?.sessaoPacoteStatus === "UTILIZADA"))
 );
 
 const motivoValido = computed(() => motivo.value.trim().length > 0);
+const justificativaValida = computed(
+  () => !corrigindoConcluido.value || justificativa.value.trim().length > 0
+);
 const decisaoValida = computed(() =>
   ["PRESERVAR", "PERDER"].includes(decisao.value)
 );
@@ -203,6 +227,8 @@ const confirmar = () => {
     return;
   }
 
+  if (!justificativaValida.value) return;
+
   if (exigeDecisao.value) {
     if (!decisaoValida.value) return;
 
@@ -210,6 +236,11 @@ const confirmar = () => {
       decisao_sessao: decisao.value,
       justificativa: justificativa.value.trim(),
     });
+    return;
+  }
+
+  if (corrigindoConcluido.value) {
+    emit("confirmar", { justificativa: justificativa.value.trim() });
     return;
   }
 

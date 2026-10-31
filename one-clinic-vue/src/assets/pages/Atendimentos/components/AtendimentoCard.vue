@@ -31,13 +31,24 @@
             <i class="pi pi-pencil"></i> Editar
           </button>
 
-          <template v-if="podeEncerrar && atendimento.editavel">
+          <template
+            v-if="podeEncerrar && (atendimento.faltaRegistravel || atendimento.editavel)"
+          >
             <div class="dropdown-divider"></div>
 
-            <button class="dropdown-item" @click.stop="emitirAcao('falta')">
-              <i class="pi pi-user-minus" style="color: #7e22ce"></i> Registrar falta
+            <button
+              v-if="atendimento.faltaRegistravel"
+              class="dropdown-item"
+              @click.stop="emitirAcao('falta')"
+            >
+              <i class="pi pi-user-minus" style="color: #7e22ce"></i>
+              {{ atendimento.corrigeConcluido ? "Corrigir para falta" : "Registrar falta" }}
             </button>
-            <button class="dropdown-item" @click.stop="emitirAcao('cancelar')">
+            <button
+              v-if="atendimento.editavel"
+              class="dropdown-item"
+              @click.stop="emitirAcao('cancelar')"
+            >
               <i class="pi pi-ban" style="color: #be123c"></i> Cancelar
             </button>
           </template>
@@ -83,9 +94,11 @@
           {{ formatarStatus(atendimento.status) }}
         </span>
       </div>
-      <div class="footer-info text-right" v-if="atendimento.servicoPreco !== null">
-        <span class="info-label">Valor de referência</span>
-        <span class="info-value text-sm">{{ formatarMoeda(atendimento.servicoPreco) }}</span>
+      <div class="footer-info text-right" v-if="atendimento.valorCobrado !== null">
+        <span class="info-label">
+          {{ atendimento.precoAcordado !== null ? "Valor do agendamento" : "Valor de referência" }}
+        </span>
+        <span class="info-value text-sm">{{ formatarMoeda(atendimento.valorCobrado) }}</span>
       </div>
     </div>
   </div>

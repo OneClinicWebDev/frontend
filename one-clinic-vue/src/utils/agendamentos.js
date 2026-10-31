@@ -176,6 +176,37 @@ export const formatarDuracao = (minutos) => {
   return `${horas} h ${String(resto).padStart(2, "0")} min`;
 };
 
+export const interpretarPreco = (texto) => {
+  if (texto === null || texto === undefined) return { vazio: true, valor: null };
+
+  const limpo = String(texto)
+    .replace(/[R$\s]/g, "")
+    .replace(/\.(?=\d{3}(\D|$))/g, "")
+    .replace(",", ".");
+
+  if (limpo === "") return { vazio: true, valor: null };
+
+  if (!/^\d+(\.\d{1,2})?$/.test(limpo)) return { vazio: false, valor: null };
+
+  const numero = Number(limpo);
+
+  if (!Number.isFinite(numero) || numero < 0 || numero >= 100000000) {
+    return { vazio: false, valor: null };
+  }
+
+  return { vazio: false, valor: numero.toFixed(2) };
+};
+
+export const precoParaCampo = (valor) => {
+  if (valor === null || valor === undefined || valor === "") return "";
+
+  const numero = Number(valor);
+
+  if (Number.isNaN(numero)) return "";
+
+  return numero.toFixed(2).replace(".", ",");
+};
+
 export const gerarIniciais = (nome) => {
   if (!nome) return "";
 
@@ -248,6 +279,16 @@ export const normalizarAgendamento = (registro, agora = new Date()) => {
         ? null
         : Number(registro.servico_preco),
     servicoDuracaoMinutos: registro.servico_duracao_minutos ?? null,
+    precoAcordado:
+      registro.preco_acordado === undefined || registro.preco_acordado === null
+        ? null
+        : Number(registro.preco_acordado),
+    valorCobrado:
+      registro.preco_acordado !== undefined && registro.preco_acordado !== null
+        ? Number(registro.preco_acordado)
+        : registro.servico_preco === undefined || registro.servico_preco === null
+        ? null
+        : Number(registro.servico_preco),
     profissional: registro.profissional_nome || "Profissional não identificado",
     statusApi: registro.status,
     resultado: registro.resultado,
@@ -256,6 +297,10 @@ export const normalizarAgendamento = (registro, agora = new Date()) => {
     criadoEm: registro.created_at || "",
     status: calcularStatusVisual(registro, agora),
     editavel: ["PENDENTE", "CONFIRMADO"].includes(registro.status),
+    faltaRegistravel:
+      ["PENDENTE", "CONFIRMADO"].includes(registro.status) ||
+      (registro.status === "CONCLUIDO" && registro.resultado !== "FALTA"),
+    corrigeConcluido: registro.status === "CONCLUIDO",
   };
 };
 
@@ -270,6 +315,7 @@ const CAMPOS_ROTULOS = {
   decisao_sessao: "Decisão sobre a sessão",
   justificativa: "Justificativa",
   observacoes: "Observações",
+  preco_acordado: "Valor do agendamento",
   resolucao_conflito: "Conflito",
   non_field_errors: "",
 };

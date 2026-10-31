@@ -289,8 +289,8 @@
                     Nenhum pacote ativo deste cliente para o procedimento escolhido.
                   </template>
                   <template v-else>
-                    Vincular o pacote não consome a sessão por si só; o uso das sessões
-                    segue as regras do sistema.
+                    Ao salvar, uma sessão disponível do pacote é reservada para este
+                    agendamento e só é consumida quando o atendimento for concluído.
                   </template>
                 </small>
               </div>
@@ -349,6 +349,33 @@
                     (referência: {{ formatarDuracao(servicoAtual.duracao) }})
                   </span>
                 </p>
+              </div>
+
+              <div class="form-group">
+                <label for="precoAcordado">Valor deste agendamento (opcional)</label>
+
+                <div class="input-with-icon">
+                  <i class="pi pi-wallet input-icon"></i>
+                  <input
+                    id="precoAcordado"
+                    v-model="form.precoAcordado"
+                    type="text"
+                    inputmode="decimal"
+                    class="form-control pl-icon"
+                    :class="{ 'input-error': precoInvalido }"
+                    placeholder="Em branco = valor de referência"
+                    maxlength="12"
+                    autocomplete="off"
+                    :disabled="bloqueado"
+                  />
+                </div>
+
+                <span v-if="precoInvalido" class="error-feedback visible">
+                  Informe um valor válido, maior ou igual a zero.
+                </span>
+                <small v-else class="campo-ajuda">
+                  Vale apenas para este agendamento e não altera o valor do procedimento.
+                </small>
               </div>
 
               <div class="form-group observacoes-group">
@@ -422,6 +449,7 @@ import {
   diferencaMinutos,
   formatarDuracao,
   formatarMoeda,
+  interpretarPreco,
   somarMinutosAoHorario,
 } from "@/utils/agendamentos";
 
@@ -592,6 +620,12 @@ const duracaoEfetiva = computed(() =>
     props.form.horaFim
   )
 );
+
+const precoInvalido = computed(() => {
+  const resultado = interpretarPreco(props.form.precoAcordado);
+
+  return !resultado.vazio && resultado.valor === null;
+});
 
 const mostrarPacotes = computed(
   () =>
@@ -842,6 +876,14 @@ const salvar = () => {
   if (props.form.horaFim <= props.form.horaInicio) {
     emit("notify", {
       message: "A hora de término deve ser posterior à hora de início.",
+      type: "error",
+    });
+    return;
+  }
+
+  if (precoInvalido.value) {
+    emit("notify", {
+      message: "Informe um valor válido para o agendamento.",
       type: "error",
     });
     return;
@@ -1497,6 +1539,10 @@ watch(
 
 .observacoes-group {
   margin-bottom: 0.4rem;
+}
+
+.input-error {
+  border-color: #ef4444;
 }
 
 .form-control:disabled,

@@ -13,6 +13,7 @@ import {
 import {
   camposParaIso,
   interpretarErro,
+  interpretarPreco,
   normalizarAgendamento,
 } from "@/utils/agendamentos";
 
@@ -54,11 +55,21 @@ export function useAgendamentos() {
     ["ADMIN", "SECRETARIO"].includes(perfil.value)
   );
 
-  const podeEditarAgenda = computed(
+  const colaboradorId = computed(() =>
+    auth.clinicaAtiva?.colaborador_id
+      ? String(auth.clinicaAtiva.colaborador_id)
+      : ""
+  );
+
+  const profissionalComAutonomia = computed(
     () =>
-      podeGerenciar.value ||
-      (perfil.value === "PROFISSIONAL" &&
-        Boolean(auth.clinicaAtiva?.pode_editar_agenda))
+      perfil.value === "PROFISSIONAL" &&
+      Boolean(auth.clinicaAtiva?.pode_editar_agenda) &&
+      Boolean(auth.clinicaAtiva?.profissionais_podem_editar_agenda)
+  );
+
+  const podeEditarAgenda = computed(
+    () => podeGerenciar.value || profissionalComAutonomia.value
   );
 
   const agendamentos = computed(() =>
@@ -84,7 +95,9 @@ export function useAgendamentos() {
         .filter(
           (colaborador) =>
             colaborador.ativo &&
-            ["PROFISSIONAL", "ADMIN"].includes(colaborador.role_nome)
+            ["PROFISSIONAL", "ADMIN"].includes(colaborador.role_nome) &&
+            (!profissionalComAutonomia.value ||
+              String(colaborador.id) === colaboradorId.value)
         )
         .map((colaborador) => ({
           id: colaborador.id,
@@ -206,6 +219,7 @@ export function useAgendamentos() {
     data_hora_inicio: camposParaIso(form.dataInicio, form.horaInicio),
     data_hora_fim: camposParaIso(form.dataInicio, form.horaFim),
     observacoes: form.observacoes || "",
+    preco_acordado: interpretarPreco(form.precoAcordado).valor,
   });
 
   const salvarAgendamento = async (form, id = null) => {
@@ -297,8 +311,11 @@ export function useAgendamentos() {
     profissionaisBD,
     servicosBD,
     avisosAcesso,
+    acessoNegado,
     formularioDisponivel,
     perfil,
+    colaboradorId,
+    profissionalComAutonomia,
     podeGerenciar,
     podeEditarAgenda,
     carregarCadastros,

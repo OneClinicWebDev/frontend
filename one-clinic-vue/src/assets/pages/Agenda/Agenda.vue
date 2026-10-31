@@ -89,7 +89,7 @@
       :somenteLeitura="somenteLeitura"
       :mensagemSomenteLeitura="mensagemSomenteLeitura"
       :permitirCancelar="permitirAcoesEncerramento"
-      :permitirFalta="permitirAcoesEncerramento"
+      :permitirFalta="permitirFaltaForm"
       @close="closeModal"
       @save="saveAppointment"
       @cancelar-agendamento="abrirAcao('cancelar')"
@@ -142,6 +142,7 @@ import AgendaGridList from "./components/AgendaGridList.vue";
 import AgendaFormModal from "./components/AgendaFormModal.vue";
 import AgendaAcaoModal from "./components/AgendaAcaoModal.vue";
 import { useAgendamentos } from "@/composables/useAgendamentos";
+import { precoParaCampo } from "@/utils/agendamentos";
 
 const {
   agendamentos,
@@ -153,6 +154,8 @@ const {
   profissionaisBD,
   servicosBD,
   avisosAcesso,
+  colaboradorId,
+  profissionalComAutonomia,
   podeGerenciar,
   podeEditarAgenda,
   carregarCadastros,
@@ -184,6 +187,18 @@ const filters = ref({
   dataFim: "",
 });
 
+const profissionalPadrao = () => {
+  if (!profissionalComAutonomia.value) return { nome: "", id: "" };
+
+  const proprio = profissionaisBD.value.find(
+    (item) => String(item.id) === colaboradorId.value
+  );
+
+  return proprio
+    ? { nome: proprio.nome, id: proprio.id }
+    : { nome: "", id: "" };
+};
+
 const preencherFormVazio = () => ({
   cliente: "",
   cliente_id: "",
@@ -191,8 +206,8 @@ const preencherFormVazio = () => ({
   servico_id: "",
   servicoPreco: null,
   servicoDuracao: null,
-  profissional: "",
-  profissional_id: "",
+  profissional: profissionalPadrao().nome,
+  profissional_id: profissionalPadrao().id,
   pacote_id: "",
   pacoteNome: "",
   dataInicio: "",
@@ -200,6 +215,7 @@ const preencherFormVazio = () => ({
   dataFim: "",
   horaFim: "",
   observacoes: "",
+  precoAcordado: "",
 });
 
 const form = ref(preencherFormVazio());
@@ -491,6 +507,13 @@ const permitirAcoesEncerramento = computed(
     itemAtual.value.editavel
 );
 
+const permitirFaltaForm = computed(
+  () =>
+    podeGerenciar.value &&
+    Boolean(itemAtual.value) &&
+    itemAtual.value.faltaRegistravel
+);
+
 const isFormValid = computed(
   () =>
     Boolean(form.value.cliente_id) &&
@@ -546,6 +569,7 @@ const editAppointment = (appointment) => {
     dataFim: original.dataFim || original.dataInicio,
     horaFim: original.horaFim,
     observacoes: original.observacoes,
+    precoAcordado: precoParaCampo(original.precoAcordado),
   };
 
   modalOpen.value = true;

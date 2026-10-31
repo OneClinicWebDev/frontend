@@ -59,6 +59,19 @@
                 <span class="info-valor">{{ formatarDuracao(atendimento.servicoDuracaoMinutos) }}</span>
               </div>
               <div class="info-item">
+                <span class="info-rotulo">Valor do agendamento</span>
+                <span class="info-valor">
+                  {{ formatarMoeda(atendimento.valorCobrado) }}
+                  <small class="info-extra">
+                    {{
+                      atendimento.precoAcordado !== null
+                        ? "Valor específico deste agendamento"
+                        : "Valor de referência do procedimento"
+                    }}
+                  </small>
+                </span>
+              </div>
+              <div v-if="atendimento.precoAcordado !== null" class="info-item">
                 <span class="info-rotulo">Valor de referência</span>
                 <span class="info-valor">{{ formatarMoeda(atendimento.servicoPreco) }}</span>
               </div>
@@ -88,11 +101,25 @@
           </div>
 
           <footer class="modal-footer">
-            <div v-if="podeEncerrar && atendimento.editavel" class="footer-extras">
-              <button type="button" class="btn-falta" @click="$emit('falta', atendimento)">
-                <i class="pi pi-user-minus"></i> Registrar falta
+            <div
+              v-if="podeEncerrar && (atendimento.faltaRegistravel || atendimento.editavel)"
+              class="footer-extras"
+            >
+              <button
+                v-if="atendimento.faltaRegistravel"
+                type="button"
+                class="btn-falta"
+                @click="$emit('falta', atendimento)"
+              >
+                <i class="pi pi-user-minus"></i>
+                {{ atendimento.corrigeConcluido ? "Corrigir para falta" : "Registrar falta" }}
               </button>
-              <button type="button" class="btn-perigo" @click="$emit('cancelar', atendimento)">
+              <button
+                v-if="atendimento.editavel"
+                type="button"
+                class="btn-perigo"
+                @click="$emit('cancelar', atendimento)"
+              >
                 <i class="pi pi-ban"></i> Cancelar
               </button>
             </div>
