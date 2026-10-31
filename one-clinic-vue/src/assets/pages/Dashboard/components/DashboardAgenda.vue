@@ -2,54 +2,53 @@
   <div class="panel agenda-panel">
     <div class="panel-header">
       <h3>Agenda de Hoje</h3>
-      <a href="#" class="link-ver-tudo">Ver tudo</a>
+      <router-link to="/app/atendimentos" class="link-ver-tudo">Ver tudo</router-link>
     </div>
 
-    <div class="agenda-list">
-      <div class="agenda-item">
+    <div v-if="carregando && !itens.length" class="estado-vazio">
+      <i class="pi pi-spin pi-spinner"></i>
+      <span>Carregando agenda...</span>
+    </div>
+
+    <div v-else-if="!itens.length" class="estado-vazio">
+      <i class="pi pi-calendar"></i>
+      <span>
+        {{ erro ? 'Não foi possível carregar a agenda de hoje.' : 'Nenhum agendamento para hoje.' }}
+      </span>
+    </div>
+
+    <div v-else class="agenda-list">
+      <div v-for="item in itens" :key="item.id" class="agenda-item">
         <span class="time">
           <i class="pi pi-clock"></i>
-          09:00
+          {{ item.horaInicio }}
         </span>
 
         <div class="client-info">
-          <span class="client-name">Ana Silva</span>
-          <span class="procedure">Limpeza de Pele</span>
+          <span class="client-name">{{ item.cliente }}</span>
+          <span class="procedure">{{ item.servico }}</span>
         </div>
 
-        <span class="professional">Dra. Maria</span>
-      </div>
-
-      <div class="agenda-item">
-        <span class="time">
-          <i class="pi pi-clock"></i>
-          10:30
-        </span>
-
-        <div class="client-info">
-          <span class="client-name">Carla Santos</span>
-          <span class="procedure">Botox</span>
+        <div class="side-info">
+          <span class="professional">{{ item.profissional }}</span>
+          <span :class="['status-badge', `badge-${item.status}`]">
+            {{ formatarStatus(item.status) }}
+          </span>
         </div>
-
-        <span class="professional">Dr. Paulo</span>
-      </div>
-
-      <div class="agenda-item">
-        <span class="time">
-          <i class="pi pi-clock"></i>
-          11:00
-        </span>
-
-        <div class="client-info">
-          <span class="client-name">Julia Lima</span>
-          <span class="procedure">Peeling</span>
-        </div>
-
-        <span class="professional">Dra. Maria</span>
       </div>
     </div>
   </div>
 </template>
+
+<script setup>
+import { formatarStatus } from '@/utils/agendamentos'
+
+defineProps({
+  itens: { type: Array, default: () => [] },
+  carregando: Boolean,
+  erro: Boolean,
+})
+</script>
 
 <style scoped>
 .panel {
@@ -113,6 +112,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .client-name {
@@ -125,9 +125,66 @@
   color: var(--cor-secundaria, #6b7280);
 }
 
+.side-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+}
+
 .professional {
   color: var(--cor-secundaria, #4b5563);
   white-space: nowrap;
+}
+
+.status-badge {
+  padding: 0.15rem 0.55rem;
+  border-radius: 20px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.badge-pendente {
+  background: #ffedd5;
+  color: #c2410c;
+}
+
+.badge-confirmado {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.badge-em_andamento {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.badge-aguardando {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.badge-concluido {
+  background: #def7ec;
+  color: #03543f;
+}
+
+.badge-falta {
+  background: #f3e8ff;
+  color: #7e22ce;
+}
+
+.estado-vazio {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 2rem 1rem;
+  color: var(--cor-secundaria, #6b7280);
+  font-size: 0.9rem;
 }
 
 @media (max-width: 768px) {
@@ -137,6 +194,10 @@
 
   .agenda-item {
     flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .side-info {
     align-items: flex-start;
   }
 

@@ -3,44 +3,68 @@
     <div class="stat-card">
       <div class="stat-header">
         <i class="pi pi-calendar stat-icon"></i>
-        <span class="trend positive">+2 ↗</span>
+        <span v-if="emAndamento" class="trend positive">{{ emAndamento }} em andamento</span>
       </div>
 
-      <div class="stat-value">12</div>
+      <div class="stat-value">{{ carregando ? '...' : agendamentosHoje }}</div>
       <div class="stat-label">Agendamentos Hoje</div>
     </div>
 
     <div class="stat-card">
       <div class="stat-header">
         <i class="pi pi-users stat-icon"></i>
-        <span class="trend positive">+18 ↗</span>
       </div>
 
-      <div class="stat-value">248</div>
+      <div class="stat-value">{{ valorClientes }}</div>
       <div class="stat-label">Clientes Ativos</div>
     </div>
 
     <div class="stat-card">
       <div class="stat-header">
         <i class="pi pi-dollar stat-icon"></i>
-        <span class="trend positive">+12% ↗</span>
+        <span class="trend neutral">Módulo financeiro</span>
       </div>
 
-      <div class="stat-value">R$ 24.500</div>
+      <div class="stat-value stat-value-dev">Em desenvolvimento</div>
       <div class="stat-label">Receita do Mês</div>
     </div>
 
     <div class="stat-card">
       <div class="stat-header">
         <i class="pi pi-chart-line stat-icon"></i>
-        <span class="trend negative">-3% ↘</span>
+        <span v-if="taxaComparecimento !== null" class="trend neutral">
+          {{ atendimentosConsiderados }} atendimentos
+        </span>
       </div>
 
-      <div class="stat-value">78%</div>
-      <div class="stat-label">Taxa de Retorno</div>
+      <div class="stat-value">{{ valorTaxa }}</div>
+      <div class="stat-label">Comparecimento (30 dias)</div>
     </div>
   </div>
 </template>
+
+<script setup>
+import { computed } from 'vue'
+
+const props = defineProps({
+  agendamentosHoje: { type: Number, default: 0 },
+  emAndamento: { type: Number, default: 0 },
+  clientesAtivos: { type: Number, default: null },
+  taxaComparecimento: { type: Number, default: null },
+  atendimentosConsiderados: { type: Number, default: 0 },
+  carregando: Boolean,
+})
+
+const valorClientes = computed(() =>
+  props.clientesAtivos === null ? '—' : props.clientesAtivos
+)
+
+const valorTaxa = computed(() => {
+  if (props.carregando) return '...'
+
+  return props.taxaComparecimento === null ? '—' : `${props.taxaComparecimento}%`
+})
+</script>
 
 <style scoped>
 .stats-grid {
@@ -61,6 +85,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  min-height: 1.5rem;
   margin-bottom: 1rem;
 }
 
@@ -70,7 +95,7 @@
 }
 
 .trend {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 600;
 }
 
@@ -78,8 +103,8 @@
   color: #10b981;
 }
 
-.negative {
-  color: #ef4444;
+.neutral {
+  color: #6b7280;
 }
 
 .stat-value {
@@ -87,6 +112,12 @@
   font-weight: 700;
   color: var(--cor-escura, #111827);
   margin-bottom: 0.25rem;
+}
+
+.stat-value-dev {
+  font-size: 1.1rem;
+  line-height: 2.7rem;
+  color: #9ca3af;
 }
 
 .stat-label {

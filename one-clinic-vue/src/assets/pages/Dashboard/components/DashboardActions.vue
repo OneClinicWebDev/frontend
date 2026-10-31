@@ -3,32 +3,39 @@
     <h3>Ações Rápidas</h3>
 
     <div class="actions-buttons">
-      <button 
-        class="btn-action"
-        @click="$emit('novo-agendamento')"
-      >
+      <button v-if="podeAgendar" class="btn-action" @click="$emit('novo-agendamento')">
         <i class="pi pi-calendar-plus"></i>
         Novo Agendamento
       </button>
 
-      <button
-        class="btn-action"
-        @click="$emit('novo-cliente')"
-      >
+      <button v-if="podeCadastrarCliente" class="btn-action" @click="$emit('novo-cliente')">
         <i class="pi pi-user-plus"></i>
         Cadastrar Cliente
       </button>
 
-      <button class="btn-action">
-        <i class="pi pi-file-edit"></i>
-        Registrar Atendimento
+      <button class="btn-action" @click="irParaAtendimentos">
+        <i class="pi pi-list"></i>
+        Ver Atendimentos
       </button>
     </div>
   </div>
 </template>
 
 <script setup>
+import { useRouter } from 'vue-router'
+
+defineProps({
+  podeAgendar: Boolean,
+  podeCadastrarCliente: Boolean,
+})
+
 defineEmits(['novo-cliente', 'novo-agendamento'])
+
+const router = useRouter()
+
+const irParaAtendimentos = () => {
+  router.push('/app/atendimentos')
+}
 </script>
 
 <style scoped>
