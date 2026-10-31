@@ -1,4 +1,3 @@
-
 import { createRouter, createWebHistory } from 'vue-router'
 import Home from '../assets/pages/Home/Home.vue'
 import SystemLayout from '../assets/layouts/SystemLayout.vue'
@@ -24,6 +23,7 @@ const routes = [
     path: '/app',
     component: SystemLayout,
     meta: { requiresAuth: true },
+    redirect: { name: 'Dashboard' },
     children: [
       {
         path: 'dashboard',
@@ -47,37 +47,37 @@ const routes = [
         path: 'clientes',
         name: 'Clientes',
         component: Clientes,
-        meta: { title: 'Clientes' },
+        meta: { title: 'Clientes', roles: ['ADMIN', 'SECRETARIO'] },
       },
       {
         path: 'estoque',
         name: 'Estoque',
         component: Estoque,
-        meta: { title: 'Estoque' },
+        meta: { title: 'Estoque', roles: ['ADMIN', 'SECRETARIO'] },
       },
       {
         path: 'financeiro',
         name: 'Financeiro',
         component: Financeiro,
-        meta: { title: 'Financeiro' },
+        meta: { title: 'Financeiro', roles: ['ADMIN'] },
       },
       {
         path: 'colaboradores',
         name: 'Colaboradores',
         component: Colaboradores,
-        meta: { title: 'Colaboradores' },
+        meta: { title: 'Colaboradores', roles: ['ADMIN', 'SECRETARIO'] },
       },
       {
         path: 'pacotes-procedimentos',
         name: 'Pacotes/Procedimentos',
         component: PacotesProcedimentos,
-        meta: { title: 'Pacotes/Procedimentos' },
+        meta: { title: 'Pacotes/Procedimentos', roles: ['ADMIN', 'SECRETARIO'] },
       },
       {
         path: 'configuracoes-clinica',
         name: 'Configurações da Clínica',
         component: ConfiguracoesClinica,
-        meta: { title: 'Configurações da Clínica' },
+        meta: { title: 'Configurações da Clínica', roles: ['ADMIN'] },
       },
       {
         path: 'meu-perfil',
@@ -86,6 +86,10 @@ const routes = [
         meta: { title: 'Meu Perfil' },
       },
     ],
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    redirect: { name: 'Home' },
   },
 ]
 
@@ -127,6 +131,15 @@ router.beforeEach(async (to) => {
 
   if (authStore.precisaSelecionarClinica || !authStore.clinicaAtiva) {
     return { name: 'Home' }
+  }
+
+  const papeisPermitidos = to.matched
+    .map((record) => record.meta.roles)
+    .filter(Boolean)
+    .pop()
+
+  if (papeisPermitidos && !papeisPermitidos.includes(authStore.role)) {
+    return { name: 'Dashboard' }
   }
 
   return true

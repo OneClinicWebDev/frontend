@@ -13,6 +13,10 @@
         </div>
 
         <form class="profile-form" novalidate @submit.prevent="validarFormulario">
+          <p v-if="carregandoPerfil" class="load-note" role="status">
+            <i class="pi pi-spin pi-spinner"></i> Carregando seus dados...
+          </p>
+
           <div class="form-grid">
             <div class="form-group full-width">
               <label for="nome_completo">Nome completo <span>*</span></label>
@@ -97,6 +101,79 @@
           </div>
         </form>
       </section>
+
+      <section class="profile-card security-card">
+        <div class="card-heading">
+          <div class="section-icon">
+            <i class="pi pi-shield"></i>
+          </div>
+          <div>
+            <h2>Segurança</h2>
+            <p>Altere sua senha de acesso. As demais sessões abertas serão encerradas.</p>
+          </div>
+        </div>
+
+        <form class="profile-form" novalidate @submit.prevent="alterarSenhaUsuario">
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <label for="senha_atual">Senha atual <span>*</span></label>
+              <input
+                id="senha_atual"
+                v-model="senhas.atual"
+                class="form-control"
+                :class="{ 'has-error': errosSenha.atual }"
+                type="password"
+                autocomplete="current-password"
+                @input="errosSenha.atual = ''"
+              />
+              <small v-if="errosSenha.atual" class="error-message">
+                {{ errosSenha.atual }}
+              </small>
+            </div>
+
+            <div class="form-group">
+              <label for="nova_senha">Nova senha <span>*</span></label>
+              <input
+                id="nova_senha"
+                v-model="senhas.nova"
+                class="form-control"
+                :class="{ 'has-error': errosSenha.nova }"
+                type="password"
+                autocomplete="new-password"
+                @input="errosSenha.nova = ''"
+              />
+              <small v-if="errosSenha.nova" class="error-message">
+                {{ errosSenha.nova }}
+              </small>
+              <small v-else class="field-hint">Mínimo de 8 caracteres.</small>
+            </div>
+
+            <div class="form-group">
+              <label for="confirmar_senha">Confirmar nova senha <span>*</span></label>
+              <input
+                id="confirmar_senha"
+                v-model="senhas.confirmacao"
+                class="form-control"
+                :class="{ 'has-error': errosSenha.confirmacao }"
+                type="password"
+                autocomplete="new-password"
+                @input="errosSenha.confirmacao = ''"
+              />
+              <small v-if="errosSenha.confirmacao" class="error-message">
+                {{ errosSenha.confirmacao }}
+              </small>
+            </div>
+          </div>
+
+          <div class="form-footer">
+            <span class="required-note"><span>*</span> Campos obrigatórios</span>
+            <button class="btn-save" type="submit" :disabled="salvandoSenha">
+              <i :class="salvandoSenha ? 'pi pi-spin pi-spinner' : 'pi pi-key'"></i>
+              {{ salvandoSenha ? "Alterando..." : "Alterar senha" }}
+            </button>
+          </div>
+        </form>
+      </section>
     </main>
 
     <Transition name="toast">
@@ -116,9 +193,15 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, reactive, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from "vue";
+import { useAuthStore } from "@/store/auth";
+import { alterarSenha, atualizarPerfil, obterPerfil } from "@/services/conta";
+
+const authStore = useAuthStore();
 
 const loading = ref(false);
+const carregandoPerfil = ref(false);
+const salvandoSenha = ref(false);
 const cpfExibicao = ref("");
 const erros = reactive({
   nome_completo: "",
@@ -133,6 +216,18 @@ const form = reactive({
   telefone: "",
 });
 
+const senhas = reactive({
+  atual: "",
+  nova: "",
+  confirmacao: "",
+});
+
+const errosSenha = reactive({
+  atual: "",
+  nova: "",
+  confirmacao: "",
+});
+
 const toast = reactive({
   show: false,
   message: "",
@@ -140,7 +235,6 @@ const toast = reactive({
 });
 
 let toastTimer = null;
-let saveTimer = null;
 
 const dataHoje = computed(() => {
   const hoje = new Date();
@@ -161,6 +255,69 @@ function dispararToast(message, type = "success") {
   }, 3500);
 }
 
+function formatarCpf(valor) {
+  const numeros = String(valor || "").replace(/\D/g, "").slice(0, 11);
+
+  if (numeros.length !== 11) return numeros;
+
+  return `${numeros.slice(0, 3)}.${numeros.slice(3, 6)}.${numeros.slice(6, 9)}-${numeros.slice(9)}`;
+}
+
+function formatarTelefone(valor) {
+  const numeros = String(valor || "").replace(/\D/g, "").slice(0, 11);
+
+  if (!numeros) return "";
+
+  if (numeros.length <= 2) return `(${numeros}`;
+  if (numeros.length <= 6) return `(${numeros.slice(0, 2)}) ${numeros.slice(2)}`;
+  if (numeros.length <= 10) {
+    return `(${numeros.slice(0, 2)}) ${numeros.slice(2, 6)}-${numeros.slice(6)}`;
+  }
+
+  return `(${numeros.slice(0, 2)}) ${numeros.slice(2, 7)}-${numeros.slice(7)}`;
+}
+
+function preencherFormulario(dados) {
+  form.nome_completo = dados.nome_completo || "";
+  form.cpf = dados.cpf || "";
+  form.data_nascimento = dados.data_nascimento || "";
+  form.telefone = formatarTelefone(dados.telefone);
+  cpfExibicao.value = formatarCpf(dados.cpf);
+}
+
+function mensagemDaApi(erro, padrao) {
+  const dados = erro?.response?.data;
+
+  if (!erro?.response) {
+    return "Não foi possível falar com o servidor. Tente novamente.";
+  }
+
+  if (typeof dados?.detail === "string") return dados.detail;
+
+  return padrao;
+}
+
+function primeiroErro(valor) {
+  if (Array.isArray(valor)) return String(valor[0] || "");
+
+  return typeof valor === "string" ? valor : "";
+}
+
+async function carregarPerfil() {
+  carregandoPerfil.value = true;
+
+  try {
+    preencherFormulario(await obterPerfil());
+  } catch (erro) {
+    dispararToast(
+      mensagemDaApi(erro, "Não foi possível carregar seus dados."),
+      "error"
+    );
+  } finally {
+    carregandoPerfil.value = false;
+  }
+}
+
 function validarDataReal(valor) {
   if (typeof valor !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(valor)) {
     return false;
@@ -178,7 +335,7 @@ function validarDataReal(valor) {
     data.getUTCFullYear() === ano &&
     data.getUTCMonth() === mes - 1 &&
     data.getUTCDate() === dia &&
-    valor <= dataHoje.value
+    valor < dataHoje.value
   );
 }
 
@@ -189,7 +346,7 @@ function validarDataNascimento() {
   }
 
   if (!validarDataReal(form.data_nascimento)) {
-    erros.data_nascimento = "Informe uma data real entre 01/01/1900 e hoje.";
+    erros.data_nascimento = "Informe uma data real entre 01/01/1900 e ontem.";
     form.data_nascimento = "";
     return false;
   }
@@ -199,28 +356,11 @@ function validarDataNascimento() {
 }
 
 function atualizarTelefone() {
-  const numeros = form.telefone.replace(/\D/g, "").slice(0, 11);
-
-  if (!numeros) {
-    form.telefone = "";
-    erros.telefone = "";
-    return;
-  }
-
-  if (numeros.length <= 2) {
-    form.telefone = `(${numeros}`;
-  } else if (numeros.length <= 6) {
-    form.telefone = `(${numeros.slice(0, 2)}) ${numeros.slice(2)}`;
-  } else if (numeros.length <= 10) {
-    form.telefone = `(${numeros.slice(0, 2)}) ${numeros.slice(2, 6)}-${numeros.slice(6)}`;
-  } else {
-    form.telefone = `(${numeros.slice(0, 2)}) ${numeros.slice(2, 7)}-${numeros.slice(7)}`;
-  }
-
+  form.telefone = formatarTelefone(form.telefone);
   erros.telefone = "";
 }
 
-function validarFormulario() {
+async function validarFormulario() {
   erros.nome_completo = "";
   erros.telefone = "";
 
@@ -250,16 +390,90 @@ function validarFormulario() {
 
   loading.value = true;
 
-  clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => {
+  try {
+    const atualizado = await atualizarPerfil({
+      nome_completo: nome,
+      data_nascimento: form.data_nascimento,
+      telefone: telefoneNumeros,
+    });
+
+    preencherFormulario(atualizado);
+    authStore.atualizarUsuario(atualizado);
+    dispararToast("Dados atualizados com sucesso.");
+  } catch (erro) {
+    const dados = erro?.response?.data || {};
+
+    erros.nome_completo = primeiroErro(dados.nome_completo);
+    erros.data_nascimento = primeiroErro(dados.data_nascimento);
+    erros.telefone = primeiroErro(dados.telefone);
+
+    dispararToast(
+      mensagemDaApi(erro, "Não foi possível salvar os dados. Revise os campos."),
+      "error"
+    );
+  } finally {
     loading.value = false;
-    dispararToast("Dados validados. O salvamento definitivo será conectado ao backend.");
-  }, 700);
+  }
 }
+
+async function alterarSenhaUsuario() {
+  errosSenha.atual = "";
+  errosSenha.nova = "";
+  errosSenha.confirmacao = "";
+
+  if (!senhas.atual) {
+    errosSenha.atual = "Informe sua senha atual.";
+  }
+
+  if (senhas.nova.length < 8) {
+    errosSenha.nova = "A nova senha deve ter pelo menos 8 caracteres.";
+  } else if (senhas.nova === senhas.atual) {
+    errosSenha.nova = "A nova senha deve ser diferente da atual.";
+  }
+
+  if (senhas.confirmacao !== senhas.nova) {
+    errosSenha.confirmacao = "A confirmação não confere com a nova senha.";
+  }
+
+  if (errosSenha.atual || errosSenha.nova || errosSenha.confirmacao) {
+    dispararToast("Revise os campos destacados antes de continuar.", "error");
+    return;
+  }
+
+  salvandoSenha.value = true;
+
+  try {
+    const resposta = await alterarSenha({
+      senha_atual: senhas.atual,
+      nova_senha: senhas.nova,
+    });
+
+    authStore.salvarTokens(resposta.access, resposta.refresh);
+
+    senhas.atual = "";
+    senhas.nova = "";
+    senhas.confirmacao = "";
+
+    dispararToast("Senha alterada com sucesso.");
+  } catch (erro) {
+    const dados = erro?.response?.data || {};
+
+    errosSenha.atual = primeiroErro(dados.senha_atual);
+    errosSenha.nova = primeiroErro(dados.nova_senha);
+
+    dispararToast(
+      mensagemDaApi(erro, "Não foi possível alterar a senha. Revise os campos."),
+      "error"
+    );
+  } finally {
+    salvandoSenha.value = false;
+  }
+}
+
+onMounted(carregarPerfil);
 
 onBeforeUnmount(() => {
   clearTimeout(toastTimer);
-  clearTimeout(saveTimer);
 });
 </script>
 
@@ -322,6 +536,19 @@ onBeforeUnmount(() => {
   color: #64748b;
   font-size: 13px;
   line-height: 1.5;
+}
+
+.security-card {
+  margin-top: 24px;
+}
+
+.load-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 18px;
+  color: #64748b;
+  font-size: 12px;
 }
 
 .profile-form {

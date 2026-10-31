@@ -58,6 +58,20 @@ export const useAuthStore = defineStore('auth', {
     isAdmin() {
       return this.clinicaAtiva?.role === 'ADMIN'
     },
+
+    role() {
+      return this.clinicaAtiva?.role || ''
+    },
+
+    colaboradorId() {
+      return this.clinicaAtiva?.colaborador_id
+        ? String(this.clinicaAtiva.colaborador_id)
+        : ''
+    },
+
+    podeGerenciar() {
+      return ['ADMIN', 'SECRETARIO'].includes(this.role)
+    },
   },
 
   actions: {
@@ -154,6 +168,30 @@ export const useAuthStore = defineStore('auth', {
       } finally {
         this.carregandoSessao = false
       }
+    },
+
+    atualizarUsuario(dados = {}) {
+      this.usuario = {
+        ...(this.usuario || {}),
+        nome: dados.nome_completo ?? this.usuario?.nome ?? '',
+        data_nascimento:
+          dados.data_nascimento ?? this.usuario?.data_nascimento ?? '',
+        telefone: dados.telefone ?? this.usuario?.telefone ?? '',
+      }
+    },
+
+    atualizarClinicaAtiva(dados = {}) {
+      this.vinculos = this.vinculos.map((vinculo) =>
+        String(vinculo.clinica_id) === String(this.clinicaAtivaId)
+          ? {
+              ...vinculo,
+              clinica_nome: dados.nome_fantasia ?? vinculo.clinica_nome,
+              profissionais_podem_editar_agenda:
+                dados.profissionais_podem_editar_agenda ??
+                vinculo.profissionais_podem_editar_agenda,
+            }
+          : vinculo,
+      )
     },
 
     setClinicaAtiva(clinicaId) {

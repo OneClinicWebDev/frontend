@@ -56,6 +56,7 @@
       </router-link>
 
       <router-link
+        v-if="podeGerenciar"
         data-cy="menu-clientes"
         to="/app/clientes"
         class="nav-item"
@@ -66,6 +67,7 @@
       </router-link>
 
       <router-link
+        v-if="podeGerenciar"
         data-cy="menu-colaboradores"
         to="/app/colaboradores"
         class="nav-item"
@@ -86,6 +88,7 @@
       </router-link>
 
       <router-link
+        v-if="podeGerenciar"
         data-cy="menu-pacotes-procedimentos"
         to="/app/pacotes-procedimentos"
         class="nav-item"
@@ -96,7 +99,7 @@
       </router-link>
 
       <router-link
-        v-if="usuarioRole === 'admin'"
+        v-if="isAdmin"
         data-cy="menu-financeiro"
         to="/app/financeiro"
         class="nav-item"
@@ -107,6 +110,7 @@
       </router-link>
 
       <router-link
+        v-if="podeGerenciar"
         data-cy="menu-estoque"
         to="/app/estoque"
         class="nav-item"
@@ -116,20 +120,11 @@
         <span>Estoque</span>
       </router-link>
 
-      <router-link
-        v-if="usuarioRole === 'admin'"
-        data-cy="menu-colaboradores"
-        to="/app/Colaboradores"
-        class="nav-item"
-        @click="closeOnMobile"
-      >
-        <div class="icon-wrapper"><i class="pi pi-id-card"></i></div>
-        <span>Colaboradores</span>
-      </router-link>
     </nav>
 
     <div class="sidebar-footer">
       <router-link
+        v-if="isAdmin"
         data-cy="configuracoes-clinica"
         to="/app/configuracoes-clinica"
         class="nav-item"
@@ -143,12 +138,17 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import { LOGO_URL } from "@/config.js";
+import { useAuthStore } from "@/store/auth";
+
+const authStore = useAuthStore();
 
 const isCollapsed = ref(true);
 const isMobile = ref(false);
-const usuarioRole = ref("");
+
+const isAdmin = computed(() => authStore.isAdmin);
+const podeGerenciar = computed(() => authStore.podeGerenciar);
 
 const checkScreenSize = () => {
   isMobile.value = window.innerWidth <= 768;
@@ -163,12 +163,6 @@ const closeOnMobile = () => {
 onMounted(() => {
   checkScreenSize();
   window.addEventListener("resize", checkScreenSize);
-
-  const sessao = localStorage.getItem("oneclinic_user");
-  if (sessao) {
-    const dados = JSON.parse(sessao);
-    usuarioRole.value = dados.role;
-  }
 });
 
 onUnmounted(() => {

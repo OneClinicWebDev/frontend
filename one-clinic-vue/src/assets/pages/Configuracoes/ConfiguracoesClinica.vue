@@ -3,6 +3,10 @@
     <main class="page-content">
       <section class="cards-section-container">
         <form class="settings-form" novalidate @submit.prevent="salvarClinica">
+          <p v-if="carregandoClinica" class="load-note" role="status">
+            <i class="pi pi-spin pi-spinner"></i> Carregando dados da clínica...
+          </p>
+
           <div class="form-section">
             <div class="section-header">
               <div class="icon-circle">
@@ -147,10 +151,22 @@
               <div>
                 <h3>Permissões da agenda</h3>
                 <p>
-                  A permissão para um profissional editar agendamentos é configurada
-                  individualmente na gestão de colaboradores. Administradores e
-                  secretários seguem as permissões definidas pelas regras do sistema.
+                  A permissão individual de cada profissional é configurada na gestão
+                  de colaboradores e só tem efeito quando a autonomia abaixo estiver
+                  ativada. Administradores e secretários seguem as regras do sistema.
                 </p>
+
+                <label class="autonomia-toggle" for="autonomia_agenda">
+                  <input
+                    id="autonomia_agenda"
+                    v-model="form.profissionais_podem_editar_agenda"
+                    type="checkbox"
+                  />
+                  <span>
+                    Permitir que profissionais com permissão individual editem a
+                    própria agenda
+                  </span>
+                </label>
               </div>
             </div>
           </div>
@@ -183,9 +199,19 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, reactive, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from "vue";
+import { useAuthStore } from "@/store/auth";
+import {
+  atualizarAutonomiaAgenda,
+  atualizarClinicaAtual,
+  obterClinicaAtual,
+} from "@/services/conta";
+
+const authStore = useAuthStore();
 
 const loading = ref(false);
+const carregandoClinica = ref(false);
+const autonomiaOriginal = ref(false);
 
 const form = reactive({
   razao_social: "",
@@ -193,6 +219,7 @@ const form = reactive({
   cnpj: "",
   telefone: "",
   endereco: "",
+  profissionais_podem_editar_agenda: false,
 });
 
 const erros = reactive({
@@ -210,7 +237,6 @@ const toast = reactive({
 });
 
 let toastTimer = null;
-let saveTimer = null;
 
 const cnpjNumeros = computed(() => form.cnpj.replace(/\D/g, ""));
 const telefoneNumeros = computed(() => form.telefone.replace(/\D/g, ""));
@@ -353,7 +379,59 @@ function validarFormulario() {
   return !Object.values(erros).some(Boolean);
 }
 
-function salvarClinica() {
+function preencherFormulario(dados) {
+  form.razao_social = dados.razao_social || "";
+  form.nome_fantasia = dados.nome_fantasia || "";
+  form.cnpj = dados.cnpj || "";
+  form.telefone = dados.telefone || "";
+  form.endereco = dados.endereco || "";
+  form.profissionais_podem_editar_agenda = Boolean(
+    dados.profissionais_podem_editar_agenda
+  );
+  autonomiaOriginal.value = form.profissionais_podem_editar_agenda;
+
+  formatarCNPJ();
+  formatarTelefone();
+}
+
+function primeiroErro(valor) {
+  if (Array.isArray(valor)) return String(valor[0] || "");
+
+  return typeof valor === "string" ? valor : "";
+}
+
+function mensagemDaApi(erro, padrao) {
+  if (!erro?.response) {
+    return "Não foi possível falar com o servidor. Tente novamente.";
+  }
+
+  if (erro.response.status === 403) {
+    return "Somente administradores podem alterar as configurações da clínica.";
+  }
+
+  if (typeof erro.response.data?.detail === "string") {
+    return erro.response.data.detail;
+  }
+
+  return padrao;
+}
+
+async function carregarClinica() {
+  carregandoClinica.value = true;
+
+  try {
+    preencherFormulario(await obterClinicaAtual());
+  } catch (erro) {
+    dispararToast(
+      mensagemDaApi(erro, "Não foi possível carregar os dados da clínica."),
+      "error"
+    );
+  } finally {
+    carregandoClinica.value = false;
+  }
+}
+
+async function salvarClinica() {
   if (!validarFormulario()) {
     dispararToast("Revise os campos destacados antes de continuar.", "error");
     return;
@@ -361,16 +439,53 @@ function salvarClinica() {
 
   loading.value = true;
 
-  clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => {
+  try {
+    const atualizada = await atualizarClinicaAtual({
+      razao_social: form.razao_social.trim(),
+      nome_fantasia: form.nome_fantasia.trim(),
+      cnpj: cnpjNumeros.value,
+      telefone: telefoneNumeros.value,
+      endereco: form.endereco.trim(),
+    });
+
+    let autonomia = autonomiaOriginal.value;
+
+    if (form.profissionais_podem_editar_agenda !== autonomiaOriginal.value) {
+      const resposta = await atualizarAutonomiaAgenda(
+        form.profissionais_podem_editar_agenda
+      );
+
+      autonomia = Boolean(resposta.profissionais_podem_editar_agenda);
+    }
+
+    const dadosFinais = {
+      ...atualizada,
+      profissionais_podem_editar_agenda: autonomia,
+    };
+
+    preencherFormulario(dadosFinais);
+    authStore.atualizarClinicaAtiva(dadosFinais);
+    dispararToast("Configurações da clínica salvas com sucesso.");
+  } catch (erro) {
+    const dados = erro?.response?.data || {};
+
+    Object.keys(erros).forEach((campo) => {
+      erros[campo] = primeiroErro(dados[campo]);
+    });
+
+    dispararToast(
+      mensagemDaApi(erro, "Não foi possível salvar. Revise os campos."),
+      "error"
+    );
+  } finally {
     loading.value = false;
-    dispararToast("Dados validados. O salvamento definitivo será conectado ao backend.");
-  }, 700);
+  }
 }
+
+onMounted(carregarClinica);
 
 onBeforeUnmount(() => {
   clearTimeout(toastTimer);
-  clearTimeout(saveTimer);
 });
 </script>
 
@@ -588,6 +703,37 @@ onBeforeUnmount(() => {
   line-height: 1.7;
 }
 
+.autonomia-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 14px;
+  color: #164e52;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.autonomia-toggle input {
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  flex-shrink: 0;
+  accent-color: var(--cor-primaria, #1ca4a7);
+  cursor: pointer;
+}
+
+.load-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 18px 30px 0;
+  color: #64748b;
+  font-size: 12px;
+}
+
 .form-actions {
   display: flex;
   align-items: center;
@@ -744,4 +890,4 @@ onBeforeUnmount(() => {
     transition-duration: 0.01ms !important;
   }
 }
-</style>
+</style>  
