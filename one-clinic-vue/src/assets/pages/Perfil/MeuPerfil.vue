@@ -43,6 +43,7 @@
                 <input
                   id="cpf"
                   class="form-control readonly-control"
+                  disabled
                   type="text"
                   :value="cpfExibicao"
                   readonly
