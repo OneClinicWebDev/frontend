@@ -7,6 +7,7 @@ import { useAuthStore } from '@/store/auth'
 import 'primeicons/primeicons.css'
 import './assets/styles/global.css'
 import './assets/styles/variables.css'
+import './assets/styles/ajustes-login-modal.css'
 
 const app = createApp(App)
 const pinia = createPinia()

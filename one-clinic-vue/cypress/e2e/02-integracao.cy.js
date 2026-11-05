@@ -314,8 +314,10 @@ describe("Integração - perfil e configurações da clínica", () => {
 
   it("mostra erro ao salvar nome inválido", () => {
     cy.visitarLogado("/app/meu-perfil", sessao());
+    cy.get("#nome_completo").should("not.have.value", "");
     cy.get("#nome_completo").clear().type("Ab");
     cy.contains("button", "Salvar alterações").click();
+    cy.contains(".error-message", "pelo menos 3 caracteres").should("be.visible");
     cy.get(".toast-notification.error").should("be.visible");
   });
 
@@ -356,9 +358,12 @@ describe("Integração - perfil e configurações da clínica", () => {
 
   it("valida CNPJ inválido nas configurações", () => {
     cy.visitarLogado("/app/configuracoes-clinica", sessao());
+    cy.get("#cnpj").should("not.have.value", "");
+    cy.get("#razao_social").should("not.have.value", "");
     cy.get("#cnpj").clear().type("11111111111111");
     cy.contains("button", "Salvar configurações").click();
-    cy.get(".toast-notification.error, .error-feedback.visible").should("exist");
+    cy.contains(".error-message", "CNPJ válido").should("be.visible");
+    cy.get(".toast-notification.error").should("be.visible");
   });
 
   it("alterna a autonomia de agenda e reflete no backend", () => {
@@ -400,8 +405,8 @@ describe("Integração - procedimentos, pacotes, clientes e colaboradores", () =
     cy.visitarLogado("/app/pacotes-procedimentos", sessao());
     cy.contains("button", "Novo Procedimento").click();
     cy.get("#catalogo-nome").type(nomeProc);
-    cy.get("#catalogo-preco").type("19990");
-    cy.get("#catalogo-duracao").type("45");
+    cy.get("#catalogo-preco").clear().type("19990");
+    cy.get("#catalogo-duracao").clear().type("45");
     cy.get("#catalogo-categoria").type("Facial");
     cy.get("#catalogo-descricao").type("Procedimento criado via Cypress");
     cy.get("button.btn-salvar").click();
@@ -423,8 +428,8 @@ describe("Integração - procedimentos, pacotes, clientes e colaboradores", () =
     cy.get("#catalogo-servico").find("option").contains(nomeProc).then(($opcao) => {
       cy.get("#catalogo-servico").select($opcao.val());
     });
-    cy.get("#catalogo-preco").type("80000");
-    cy.get("#catalogo-sessoes").type("5");
+    cy.get("#catalogo-preco").clear().type("80000");
+    cy.get("#catalogo-sessoes").clear().type("5");
     cy.get("#catalogo-categoria").type("Facial");
     cy.get("button.btn-salvar").click();
     cy.contains(nomePac).should("be.visible");
@@ -531,6 +536,7 @@ describe("Integração - agenda de ponta a ponta", () => {
   const abrirNovoAgendamento = () => {
     cy.visitarLogado("/app/agenda", sessao());
     cy.contains("button", "Novo Agendamento").click();
+    cy.get(".modal-overlay").should("have.css", "opacity", "1");
     cy.get("#cliente").should("be.visible");
   };
 
@@ -605,10 +611,11 @@ describe("Integração - agenda de ponta a ponta", () => {
     cy.venderPacote(ctx, modelo, outroCliente.id).then((pacote) => {
       abrirNovoAgendamento();
       preencherAgendamento(outroCliente, 7, "11:00", "12:00");
-      cy.get("#pacote").should("be.visible");
+      cy.get("#pacote").scrollIntoView().should("be.visible");
       cy.get("#pacote").find("option").should("have.length.greaterThan", 1);
       cy.get("#pacote").select(String(pacote.id));
-      cy.get("button.btn-salvar").click();
+      
+      cy.get("button.btn-salvar").scrollIntoView().click();
       cy.get(".toast-notification.success", { timeout: 15000 }).should("be.visible");
       cy.apiReq("GET", `/api/pacotes/${pacote.id}/`, {
         token: ctx.admin.access,
@@ -619,17 +626,21 @@ describe("Integração - agenda de ponta a ponta", () => {
 
   it("cancela um agendamento pela interface informando o motivo", () => {
     cy.criarCliente(ctx, { nome_completo: `Cliente Cancelar ${sufixo()}` }).then((alvo) => {
+      const diaCancelamento = 50; 
+      
       cy.criarAgendamento(ctx, {
         cliente: alvo.id,
         profissional: profissional.colaboradorId,
         servico: servico.id,
-        data_hora_inicio: isoFuturo(8, 9, 0),
-        data_hora_fim: isoFuturo(8, 10, 0),
+        data_hora_inicio: isoFuturo(diaCancelamento, 9, 0),
+        data_hora_fim: isoFuturo(diaCancelamento, 10, 0),
       }).then((criado) => {
         expect(criado.status).to.eq(201);
         cy.visitarLogado("/app/agenda", sessao());
         cy.contains("button", "Lista").click();
-        cy.contains(alvo.nomeOriginal).click();
+        cy.contains(".agenda-grid-wrapper .appointment-card", alvo.nomeOriginal)
+          .should("be.visible")
+          .click();
         cy.contains("button", "Cancelar agendamento").click();
         cy.get("#motivo-cancelamento").type("Cliente desistiu");
         cy.get("button.btn-confirmar").click();
@@ -647,17 +658,21 @@ describe("Integração - agenda de ponta a ponta", () => {
 
   it("registra falta pela interface", () => {
     cy.criarCliente(ctx, { nome_completo: `Cliente Falta ${sufixo()}` }).then((alvo) => {
+      const diaFalta = 60;
+
       cy.criarAgendamento(ctx, {
         cliente: alvo.id,
         profissional: profissional.colaboradorId,
         servico: servico.id,
-        data_hora_inicio: isoFuturo(9, 9, 0),
-        data_hora_fim: isoFuturo(9, 10, 0),
+        data_hora_inicio: isoFuturo(diaFalta, 9, 0),
+        data_hora_fim: isoFuturo(diaFalta, 10, 0),
       }).then((criado) => {
         expect(criado.status).to.eq(201);
         cy.visitarLogado("/app/agenda", sessao());
         cy.contains("button", "Lista").click();
-        cy.contains(alvo.nomeOriginal).click();
+        cy.contains(".agenda-grid-wrapper .appointment-card", alvo.nomeOriginal)
+          .should("be.visible")
+          .click();
         cy.contains("button", "Registrar falta").click();
         cy.get("button.btn-confirmar").click();
         cy.get(".toast-notification.success", { timeout: 15000 }).should("be.visible");
@@ -699,9 +714,8 @@ describe("Integração - agenda de ponta a ponta", () => {
     cy.contains("Em desenvolvimento").should("be.visible");
     cy.contains(".stat-card", "Clientes Ativos")
       .find(".stat-value")
-      .invoke("text")
-      .then((texto) => {
-        expect(Number(texto.trim())).to.be.greaterThan(1);
+      .should(($valor) => {
+        expect(Number($valor.text().trim())).to.be.greaterThan(1);
       });
   });
 });

@@ -1,0 +1,39 @@
+.login-modal-overlay .primary-action.p-button,
+.login-modal-overlay .primary-action {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.75rem !important;
+}
+
+.login-modal-overlay .primary-action .p-button-label {
+  flex: 0 0 auto;
+  order: 0;
+}
+
+.login-modal-overlay .primary-action .p-button-icon,
+.login-modal-overlay .primary-action .pi {
+  margin: 0 !important;
+  flex-shrink: 0;
+}
+
+.login-modal-overlay .primary-action .p-button-icon-right {
+  order: 1;
+}
+
+.login-modal-overlay .text-action,
+.login-modal-overlay .secondary-action {
+  gap: 0.75rem !important;
+}
+
+.login-modal-overlay .text-action .pi,
+.login-modal-overlay .secondary-action .pi {
+  margin: 0 !important;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .system-header .header-left {
+    margin-left: 3.5rem;
+  }
+}

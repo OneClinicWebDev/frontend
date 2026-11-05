@@ -329,7 +329,13 @@ Cypress.Commands.add("limparSessao", () => {
 
 Cypress.Commands.add("abrirLogin", () => {
   cy.visit("/");
-  cy.contains("button", "Entrar como Colaborador").click();
+  cy.window().then((win) => {
+    if (win.innerWidth > 1024) {
+      cy.contains("button", "Entrar como Colaborador").click();
+    } else {
+      cy.contains("button", "Sou Colaborador").click();
+    }
+  });
   cy.get("#login-cpf").should("be.visible");
 });
 
