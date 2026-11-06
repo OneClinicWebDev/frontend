@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { envolverGetComCache, limparCacheHttp } from '@/services/cacheHttp'
 
 const api = axios.create({
   baseURL: (import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000').replace(/\/+$/, ''),
@@ -7,15 +8,21 @@ const api = axios.create({
   },
 })
 
+envolverGetComCache(api)
+
 const rotasSemAutenticacao = [
   '/api/auth/login/',
   '/api/auth/criar-clinica/',
   '/api/token/',
 ]
 
+const metodosDeLeitura = ['get', 'head', 'options']
+
 let renovacaoEmAndamento = null
 let sincronizarToken = null
 let limparStore = null
+
+export { limparCacheHttp }
 
 export const registrarSincronizacaoAuth = (callbacks) => {
   sincronizarToken = callbacks?.sincronizarToken || null
@@ -25,10 +32,15 @@ export const registrarSincronizacaoAuth = (callbacks) => {
 const ehRotaSemAutenticacao = (url = '') =>
   rotasSemAutenticacao.some((rota) => url.includes(rota))
 
+const ehEscrita = (config) =>
+  !metodosDeLeitura.includes(String(config?.method || 'get').toLowerCase())
+
 const limparAutenticacao = () => {
   localStorage.removeItem('access_token')
   localStorage.removeItem('refresh_token')
   localStorage.removeItem('clinica_ativa_id')
+
+  limparCacheHttp()
 
   if (limparStore) {
     limparStore()
@@ -64,10 +76,20 @@ api.interceptors.request.use(
 )
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if (ehEscrita(response.config)) {
+      limparCacheHttp()
+    }
+
+    return response
+  },
   async (error) => {
     const requestOriginal = error.config
     const url = requestOriginal?.url || ''
+
+    if (ehEscrita(requestOriginal)) {
+      limparCacheHttp()
+    }
 
     if (
       error.response?.status !== 401 ||

@@ -1,17 +1,22 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Home from '../assets/pages/Home/Home.vue'
-import SystemLayout from '../assets/layouts/SystemLayout.vue'
-import Dashboard from '../assets/pages/Dashboard/Dashboard.vue'
-import Agenda from '../assets/pages/Agenda/Agenda.vue'
-import Atendimentos from '../assets/pages/Atendimentos/Atendimentos.vue'
-import Clientes from '../assets/pages/Clientes/Clientes.vue'
-import Estoque from '../assets/pages/Estoque/Estoque.vue'
-import Financeiro from '../assets/pages/Financeiro/Financeiro.vue'
-import Colaboradores from '../assets/pages/Colaboradores/Colaboradores.vue'
-import PacotesProcedimentos from '../assets/pages/PacotesProcedimentos/PacotesProcedimentos.vue'
-import ConfiguracoesClinica from '../assets/pages/Configuracoes/ConfiguracoesClinica.vue'
-import MeuPerfil from '../assets/pages/Perfil/MeuPerfil.vue'
 import { useAuthStore } from '@/store/auth'
+
+const carregadores = {
+  SystemLayout: () => import('../assets/layouts/SystemLayout.vue'),
+  Dashboard: () => import('../assets/pages/Dashboard/Dashboard.vue'),
+  Agenda: () => import('../assets/pages/Agenda/Agenda.vue'),
+  Atendimentos: () => import('../assets/pages/Atendimentos/Atendimentos.vue'),
+  Clientes: () => import('../assets/pages/Clientes/Clientes.vue'),
+  Estoque: () => import('../assets/pages/Estoque/Estoque.vue'),
+  Financeiro: () => import('../assets/pages/Financeiro/Financeiro.vue'),
+  Colaboradores: () => import('../assets/pages/Colaboradores/Colaboradores.vue'),
+  PacotesProcedimentos: () =>
+    import('../assets/pages/PacotesProcedimentos/PacotesProcedimentos.vue'),
+  ConfiguracoesClinica: () =>
+    import('../assets/pages/Configuracoes/ConfiguracoesClinica.vue'),
+  MeuPerfil: () => import('../assets/pages/Perfil/MeuPerfil.vue'),
+}
 
 const routes = [
   {
@@ -21,68 +26,68 @@ const routes = [
   },
   {
     path: '/app',
-    component: SystemLayout,
+    component: carregadores.SystemLayout,
     meta: { requiresAuth: true },
     redirect: { name: 'Dashboard' },
     children: [
       {
         path: 'dashboard',
         name: 'Dashboard',
-        component: Dashboard,
+        component: carregadores.Dashboard,
         meta: { title: 'Dashboard' },
       },
       {
         path: 'agenda',
         name: 'Agenda',
-        component: Agenda,
+        component: carregadores.Agenda,
         meta: { title: 'Agenda' },
       },
       {
         path: 'atendimentos',
         name: 'Atendimentos',
-        component: Atendimentos,
+        component: carregadores.Atendimentos,
         meta: { title: 'Atendimentos' },
       },
       {
         path: 'clientes',
         name: 'Clientes',
-        component: Clientes,
+        component: carregadores.Clientes,
         meta: { title: 'Clientes', roles: ['ADMIN', 'SECRETARIO'] },
       },
       {
         path: 'estoque',
         name: 'Estoque',
-        component: Estoque,
+        component: carregadores.Estoque,
         meta: { title: 'Estoque', roles: ['ADMIN', 'SECRETARIO'] },
       },
       {
         path: 'financeiro',
         name: 'Financeiro',
-        component: Financeiro,
+        component: carregadores.Financeiro,
         meta: { title: 'Financeiro', roles: ['ADMIN'] },
       },
       {
         path: 'colaboradores',
         name: 'Colaboradores',
-        component: Colaboradores,
+        component: carregadores.Colaboradores,
         meta: { title: 'Colaboradores', roles: ['ADMIN', 'SECRETARIO'] },
       },
       {
         path: 'pacotes-procedimentos',
         name: 'Pacotes/Procedimentos',
-        component: PacotesProcedimentos,
+        component: carregadores.PacotesProcedimentos,
         meta: { title: 'Pacotes/Procedimentos', roles: ['ADMIN', 'SECRETARIO'] },
       },
       {
         path: 'configuracoes-clinica',
         name: 'Configurações da Clínica',
-        component: ConfiguracoesClinica,
+        component: carregadores.ConfiguracoesClinica,
         meta: { title: 'Configurações da Clínica', roles: ['ADMIN'] },
       },
       {
         path: 'meu-perfil',
         name: 'Meu Perfil',
-        component: MeuPerfil,
+        component: carregadores.MeuPerfil,
         meta: { title: 'Meu Perfil' },
       },
     ],
@@ -98,25 +103,18 @@ const router = createRouter({
   routes,
 })
 
-router.beforeEach(async (to) => {
-  document.title = to.meta.title
-    ? `${to.meta.title} | OneClinic`
-    : 'OneClinic'
+const CHAVE_RECARGA_CHUNK = 'oneclinic_recarga_chunk'
 
-  const authStore = useAuthStore()
-  const exigeAutenticacao = to.matched.some(
-    (record) => record.meta.requiresAuth,
+const ehErroDeChunk = (erro) =>
+  /Failed to fetch dynamically imported module|error loading dynamically imported module|Importing a module script failed|Unable to preload CSS/i.test(
+    String(erro?.message || erro),
   )
 
-  if (authStore.token && !authStore.usuario) {
-    const sessaoValida = await authStore.restaurarSessao()
+const rotaExigeAutenticacao = (rota) =>
+  rota.matched.some((record) => record.meta.requiresAuth)
 
-    if (!sessaoValida && exigeAutenticacao) {
-      return { name: 'Home' }
-    }
-  }
-
-  if (!exigeAutenticacao) {
+const avaliarAcesso = (rota, authStore) => {
+  if (!rotaExigeAutenticacao(rota)) {
     return true
   }
 
@@ -125,7 +123,6 @@ router.beforeEach(async (to) => {
   }
 
   if (authStore.vinculos.length === 0) {
-    await authStore.logout()
     return { name: 'Home' }
   }
 
@@ -133,7 +130,7 @@ router.beforeEach(async (to) => {
     return { name: 'Home' }
   }
 
-  const papeisPermitidos = to.matched
+  const papeisPermitidos = rota.matched
     .map((record) => record.meta.roles)
     .filter(Boolean)
     .pop()
@@ -143,6 +140,119 @@ router.beforeEach(async (to) => {
   }
 
   return true
+}
+
+const revalidarEmSegundoPlano = (authStore) => {
+  authStore.restaurarSessao().then(async () => {
+    if (!authStore.token) {
+      return
+    }
+
+    const rotaAtual = router.currentRoute.value
+
+    if (!rotaExigeAutenticacao(rotaAtual)) {
+      return
+    }
+
+    if (authStore.vinculos.length === 0) {
+      await authStore.logout()
+      router.replace({ name: 'Home' })
+      return
+    }
+
+    const destino = avaliarAcesso(rotaAtual, authStore)
+
+    if (destino !== true) {
+      router.replace(destino)
+    }
+  })
+}
+
+let paginasPrecarregadas = false
+
+const precarregarPaginas = () => {
+  if (paginasPrecarregadas) {
+    return
+  }
+
+  paginasPrecarregadas = true
+
+  const iniciar = () => {
+    Object.values(carregadores).forEach((carregar) => {
+      carregar().catch(() => {})
+    })
+  }
+
+  if (typeof window.requestIdleCallback === 'function') {
+    window.requestIdleCallback(iniciar, { timeout: 5000 })
+  } else {
+    window.setTimeout(iniciar, 3000)
+  }
+}
+
+router.beforeEach(async (to) => {
+  document.title = to.meta.title
+    ? `${to.meta.title} | OneClinic`
+    : 'OneClinic'
+
+  const authStore = useAuthStore()
+  const exigeAutenticacao = rotaExigeAutenticacao(to)
+
+  if (authStore.token && !authStore.usuario) {
+    if (exigeAutenticacao) {
+      const sessaoValida = await authStore.restaurarSessao()
+
+      if (!sessaoValida) {
+        return { name: 'Home' }
+      }
+    } else {
+      authStore.restaurarSessao()
+    }
+  } else if (authStore.token && authStore.precisaRevalidar()) {
+    revalidarEmSegundoPlano(authStore)
+  }
+
+  if (
+    exigeAutenticacao &&
+    authStore.autenticado &&
+    authStore.usuario &&
+    authStore.vinculos.length === 0
+  ) {
+    await authStore.logout()
+    return { name: 'Home' }
+  }
+
+  return avaliarAcesso(to, authStore)
+})
+
+router.afterEach((to) => {
+  try {
+    sessionStorage.removeItem(CHAVE_RECARGA_CHUNK)
+  } catch {
+    return
+  }
+
+  if (rotaExigeAutenticacao(to) && useAuthStore().autenticado) {
+    precarregarPaginas()
+  }
+})
+
+router.onError((erro, destino) => {
+  if (!ehErroDeChunk(erro)) {
+    return
+  }
+
+  try {
+    if (sessionStorage.getItem(CHAVE_RECARGA_CHUNK) === destino.fullPath) {
+      return
+    }
+
+    sessionStorage.setItem(CHAVE_RECARGA_CHUNK, destino.fullPath)
+  } catch {
+    return
+  }
+
+  window.location.assign(destino.fullPath)
 })
 
 export default router

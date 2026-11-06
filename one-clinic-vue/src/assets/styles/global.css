@@ -12,3 +12,53 @@ body {
   background: var(--branco);
   font-family: 'Inter', sans-serif;
 }
+
+@keyframes oc-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.oc-spinner,
+.pi.pi-spinner.pi-spin,
+.p-button .p-icon.p-icon-spin {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 1em;
+  height: 1em;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 0.14em solid rgba(128, 128, 128, 0.25);
+  border: 0.14em solid color-mix(in srgb, currentColor 22%, transparent);
+  border-top-color: currentColor;
+  background: none;
+  line-height: 1;
+  vertical-align: -0.15em;
+  animation: oc-spin 0.8s linear infinite;
+}
+
+.oc-spinner,
+.pi.pi-spinner.pi-spin {
+  color: var(--cor-primaria, #1ca4a7);
+}
+
+button .oc-spinner,
+button .pi.pi-spinner.pi-spin {
+  color: inherit;
+}
+
+.pi.pi-spinner.pi-spin::before {
+  content: none;
+}
+
+.p-button .p-icon.p-icon-spin > * {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .oc-spinner,
+  .pi.pi-spinner.pi-spin,
+  .p-button .p-icon.p-icon-spin {
+    animation-duration: 1.8s;
+  }
+}

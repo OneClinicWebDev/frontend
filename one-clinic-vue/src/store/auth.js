@@ -1,6 +1,12 @@
 import { defineStore } from 'pinia'
 import api, { registrarSincronizacaoAuth } from '@/services/api'
 
+const CHAVE_CACHE_SESSAO = 'oneclinic_sessao'
+const VERSAO_CACHE_SESSAO = 1
+const INTERVALO_REVALIDACAO_MS = 10 * 60 * 1000
+
+let sessaoEmAndamento = null
+
 const obterErro = (error, mensagemPadrao) => {
   const data = error.response?.data
 
@@ -25,15 +31,82 @@ const obterErro = (error, mensagemPadrao) => {
   return mensagemPadrao
 }
 
-export const useAuthStore = defineStore('auth', {
-  state: () => ({
-    token: localStorage.getItem('access_token') || null,
+const removerCacheSessao = () => {
+  try {
+    localStorage.removeItem(CHAVE_CACHE_SESSAO)
+  } catch {
+    return
+  }
+}
+
+const lerCacheSessao = () => {
+  try {
+    const bruto = localStorage.getItem(CHAVE_CACHE_SESSAO)
+
+    if (!bruto) {
+      return null
+    }
+
+    const cache = JSON.parse(bruto)
+
+    if (
+      !cache ||
+      cache.versao !== VERSAO_CACHE_SESSAO ||
+      !cache.usuario ||
+      typeof cache.usuario !== 'object' ||
+      !Array.isArray(cache.vinculos)
+    ) {
+      return null
+    }
+
+    return cache
+  } catch {
+    return null
+  }
+}
+
+const gravarCacheSessao = (usuario, vinculos) => {
+  try {
+    if (!localStorage.getItem('access_token') || !usuario) {
+      localStorage.removeItem(CHAVE_CACHE_SESSAO)
+      return
+    }
+
+    localStorage.setItem(
+      CHAVE_CACHE_SESSAO,
+      JSON.stringify({
+        versao: VERSAO_CACHE_SESSAO,
+        usuario,
+        vinculos: Array.isArray(vinculos) ? vinculos : [],
+      }),
+    )
+  } catch {
+    return
+  }
+}
+
+const carregarEstadoInicial = () => {
+  const token = localStorage.getItem('access_token') || null
+
+  if (!token) {
+    removerCacheSessao()
+  }
+
+  const cache = token ? lerCacheSessao() : null
+
+  return {
+    token,
     refreshToken: localStorage.getItem('refresh_token') || null,
-    usuario: null,
-    vinculos: [],
+    usuario: cache ? cache.usuario : null,
+    vinculos: cache ? cache.vinculos : [],
     clinicaAtivaId: localStorage.getItem('clinica_ativa_id') || null,
     carregandoSessao: false,
-  }),
+    validadaEm: 0,
+  }
+}
+
+export const useAuthStore = defineStore('auth', {
+  state: carregarEstadoInicial,
 
   getters: {
     autenticado: (state) => Boolean(state.token),
@@ -92,6 +165,17 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
+    persistirSessao() {
+      gravarCacheSessao(this.usuario, this.vinculos)
+    },
+
+    precisaRevalidar() {
+      return (
+        Boolean(this.token) &&
+        Date.now() - this.validadaEm > INTERVALO_REVALIDACAO_MS
+      )
+    },
+
     definirVinculos(vinculos = []) {
       this.vinculos = Array.isArray(vinculos) ? vinculos : []
 
@@ -127,6 +211,8 @@ export const useAuthStore = defineStore('auth', {
         this.salvarTokens(dados.access, dados.refresh)
         this.usuario = dados.usuario || null
         this.definirVinculos(dados.vinculos || [])
+        this.validadaEm = Date.now()
+        this.persistirSessao()
 
         return dados
       } catch (error) {
@@ -145,29 +231,49 @@ export const useAuthStore = defineStore('auth', {
       this.refreshToken =
         localStorage.getItem('refresh_token') || this.refreshToken
 
-      if (!this.token || this.carregandoSessao) {
+      if (!this.token) {
         return false
+      }
+
+      if (sessaoEmAndamento) {
+        return sessaoEmAndamento
       }
 
       this.carregandoSessao = true
 
-      try {
-        const response = await api.get('/api/auth/me/')
-        const dados = response.data
+      sessaoEmAndamento = (async () => {
+        try {
+          const response = await api.get('/api/auth/me/')
+          const dados = response.data
 
-        this.usuario = dados.usuario || null
-        this.definirVinculos(dados.vinculos || [])
+          this.usuario = dados.usuario || null
+          this.definirVinculos(dados.vinculos || [])
+          this.validadaEm = Date.now()
+          this.persistirSessao()
 
-        return true
-      } catch {
-        if (!localStorage.getItem('access_token')) {
-          this.limparSessao()
+          return true
+        } catch (error) {
+          if (!localStorage.getItem('access_token')) {
+            this.limparSessao()
+            return false
+          }
+
+          const status = error.response?.status
+          const falhaTransitoria = !error.response || status >= 500
+
+          if (this.usuario && falhaTransitoria) {
+            this.validadaEm = Date.now()
+            return true
+          }
+
+          return false
+        } finally {
+          this.carregandoSessao = false
+          sessaoEmAndamento = null
         }
+      })()
 
-        return false
-      } finally {
-        this.carregandoSessao = false
-      }
+      return sessaoEmAndamento
     },
 
     atualizarUsuario(dados = {}) {
@@ -178,6 +284,8 @@ export const useAuthStore = defineStore('auth', {
           dados.data_nascimento ?? this.usuario?.data_nascimento ?? '',
         telefone: dados.telefone ?? this.usuario?.telefone ?? '',
       }
+
+      this.persistirSessao()
     },
 
     atualizarClinicaAtiva(dados = {}) {
@@ -192,6 +300,8 @@ export const useAuthStore = defineStore('auth', {
             }
           : vinculo,
       )
+
+      this.persistirSessao()
     },
 
     setClinicaAtiva(clinicaId) {
@@ -245,10 +355,12 @@ export const useAuthStore = defineStore('auth', {
       this.vinculos = []
       this.clinicaAtivaId = null
       this.carregandoSessao = false
+      this.validadaEm = 0
 
       localStorage.removeItem('access_token')
       localStorage.removeItem('refresh_token')
       localStorage.removeItem('clinica_ativa_id')
+      removerCacheSessao()
     },
 
     async logout() {
