@@ -1,72 +1,93 @@
 <template>
-  <div class="atendimento-card" :class="`card-${atendimento.status}`" @dblclick="emitirAcao('detalhes')">
+  <div
+    class="atendimento-card"
+    :class="`card-${atendimento.status}`"
+    role="button"
+    tabindex="0"
+    :aria-label="`Ver detalhes do atendimento de ${atendimento.cliente}`"
+    @click="emitirAcao('detalhes')"
+    @keydown.enter.self="emitirAcao('detalhes')"
+    @keydown.space.self.prevent="emitirAcao('detalhes')"
+  >
     <div class="card-header">
       <div class="header-datetime">
-        <i class="pi pi-calendar"></i>
-        <span class="date">{{ formatarDataBR(atendimento.dataInicio) }}</span>
+        <span class="date">
+          <i class="pi pi-calendar"></i>
+          {{ formatarDataBR(atendimento.dataInicio) }}
+        </span>
         <span class="time-badge">
           <i class="pi pi-clock"></i>
           {{ atendimento.horaInicio }} – {{ atendimento.horaFim }}
         </span>
       </div>
-
-      <div class="menu-container">
+      <div class="card-actions">
         <button
-          class="btn-dots"
-          aria-label="Ações do atendimento"
-          @click.stop="toggleMenu"
+          v-if="podeEditar && atendimento.editavel"
+          type="button"
+          class="btn-icon btn-edit"
+          title="Editar atendimento"
+          aria-label="Editar atendimento"
+          @click.stop="emitirAcao('editar')"
         >
-          <i class="pi pi-ellipsis-v"></i>
+          <i class="pi pi-pencil"></i>
         </button>
-
-        <div class="dropdown-menu" v-if="isMenuAberto">
-          <button class="dropdown-item" @click.stop="emitirAcao('detalhes')">
-            <i class="pi pi-eye"></i> Ver detalhes
-          </button>
+        <div class="menu-container">
           <button
-            v-if="podeEditar && atendimento.editavel"
-            class="dropdown-item"
-            @click.stop="emitirAcao('editar')"
+            type="button"
+            class="btn-icon btn-dots"
+            aria-label="Mais ações do atendimento"
+            @click.stop="toggleMenu"
           >
-            <i class="pi pi-pencil"></i> Editar
+            <i class="pi pi-ellipsis-v"></i>
           </button>
-
-          <template
-            v-if="podeEncerrar && (atendimento.faltaRegistravel || atendimento.editavel)"
-          >
-            <div class="dropdown-divider"></div>
-
+          <div v-if="isMenuAberto" class="dropdown-menu" @click.stop>
             <button
-              v-if="atendimento.faltaRegistravel"
+              type="button"
               class="dropdown-item"
-              @click.stop="emitirAcao('falta')"
+              @click.stop="emitirAcao('detalhes')"
             >
-              <i class="pi pi-user-minus" style="color: #7e22ce"></i>
-              {{ atendimento.corrigeConcluido ? "Corrigir para falta" : "Registrar falta" }}
+              <i class="pi pi-eye"></i> Ver detalhes
             </button>
-            <button
-              v-if="atendimento.editavel"
-              class="dropdown-item"
-              @click.stop="emitirAcao('cancelar')"
+            <template
+              v-if="
+                podeEncerrar && (atendimento.faltaRegistravel || atendimento.editavel)
+              "
             >
-              <i class="pi pi-ban" style="color: #be123c"></i> Cancelar
-            </button>
-          </template>
+              <div class="dropdown-divider"></div>
+              <button
+                v-if="atendimento.faltaRegistravel"
+                type="button"
+                class="dropdown-item"
+                @click.stop="emitirAcao('falta')"
+              >
+                <i class="pi pi-user-minus" style="color: #7e22ce"></i>
+                {{
+                  atendimento.corrigeConcluido ? "Corrigir para falta" : "Registrar falta"
+                }}
+              </button>
+              <button
+                v-if="atendimento.editavel"
+                type="button"
+                class="dropdown-item"
+                @click.stop="emitirAcao('cancelar')"
+              >
+                <i class="pi pi-ban" style="color: #be123c"></i> Cancelar
+              </button>
+            </template>
+          </div>
         </div>
       </div>
     </div>
-
     <div class="client-info">
       <div class="client-avatar">{{ gerarIniciais(atendimento.cliente) }}</div>
       <div class="client-details">
         <h3 class="client-name">{{ atendimento.cliente }}</h3>
-        <span class="client-phone"
-          ><i class="pi pi-phone"></i>
-          {{ atendimento.clienteTelefone || "Telefone não informado" }}</span
-        >
+        <span class="client-phone">
+          <i class="pi pi-phone"></i>
+          {{ atendimento.clienteTelefone || "Telefone não informado" }}
+        </span>
       </div>
     </div>
-
     <div class="service-details">
       <div class="detail-row">
         <i class="pi pi-file"></i>
@@ -85,27 +106,40 @@
         <span>{{ atendimento.pacoteNome }}</span>
       </div>
     </div>
-
     <hr class="card-divider" />
-
     <div class="card-footer">
       <div class="footer-info">
         <span :class="['status-badge', `badge-${atendimento.status}`]">
           {{ formatarStatus(atendimento.status) }}
         </span>
       </div>
-      <div class="footer-info text-right" v-if="atendimento.valorCobrado !== null">
+      <div v-if="atendimento.valorCobrado !== null" class="footer-info text-right">
         <span class="info-label">
-          {{ atendimento.precoAcordado !== null ? "Valor do agendamento" : "Valor de referência" }}
+          {{
+            atendimento.precoAcordado !== null
+              ? "Valor do agendamento"
+              : "Valor de referência"
+          }}
         </span>
-        <span class="info-value text-sm">{{ formatarMoeda(atendimento.valorCobrado) }}</span>
+        <span class="info-value">{{ formatarMoeda(atendimento.valorCobrado) }}</span>
       </div>
+    </div>
+    <div class="card-datas">
+      <span
+        ><i class="pi pi-calendar-plus"></i> Criado em
+        {{ formatarDataHora(atendimento.criadoEm) }}</span
+      >
+      <span
+        ><i class="pi pi-refresh"></i> Atualizado em
+        {{ formatarDataHora(atendimento.atualizadoEm) }}</span
+      >
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, onUnmounted } from "vue";
+import { formatarDataHora } from "@/utils/datas";
 import {
   formatarDataBR,
   formatarDuracao,
@@ -121,6 +155,7 @@ const props = defineProps({
 });
 
 const emit = defineEmits(["detalhes", "editar", "cancelar", "falta"]);
+
 const isMenuAberto = ref(false);
 
 const toggleMenu = () => {
@@ -141,144 +176,272 @@ onUnmounted(() => window.removeEventListener("click", fecharMenu));
 </script>
 
 <style scoped>
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
-
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap");
 .atendimento-card {
-  background-color: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 16px;
-  padding: 1.25rem;
+  position: relative;
+  box-sizing: border-box;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
+  padding: 16px;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.02);
   cursor: pointer;
-  position: relative;
-  overflow: hidden;
   font-family: "Inter", sans-serif;
-}
-.atendimento-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.12);
-  border-color: #d1d5db;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .atendimento-card::before {
   content: "";
   position: absolute;
-  top: 0;
+  top: 12px;
+  bottom: 12px;
   left: 0;
-  width: 4px;
-  height: 100%;
+  width: 3px;
+  border-radius: 0 4px 4px 0;
   background-color: transparent;
-  transition: all 0.3s ease;
+  transition: background-color 0.25s ease;
+}
+.atendimento-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 20px -4px rgba(28, 164, 167, 0.12);
+  border-color: rgba(28, 164, 167, 0.4);
 }
 .atendimento-card:hover::before {
-  background-color: #1ca4a7;
+  background-color: var(--cor-primaria, #1ca4a7);
+}
+.atendimento-card:focus-visible {
+  outline: 3px solid rgba(28, 164, 167, 0.35);
+  outline-offset: 2px;
+}
+.card-cancelado,
+.card-falta {
+  opacity: 0.85;
 }
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  gap: 8px;
+  margin-bottom: 12px;
 }
 .header-datetime {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  color: #4b5563;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  min-width: 0;
+  color: #475569;
   font-weight: 600;
-  font-size: 0.85rem;
+  font-size: 12px;
 }
-.header-datetime i {
-  color: #1ca4a7;
+.date {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.date i {
+  color: var(--cor-primaria, #1ca4a7);
+  font-size: 12px;
 }
 .time-badge {
-  background-color: #f3f4f6;
-  padding: 0.2rem 0.4rem;
-  border-radius: 6px;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 8px;
+  background-color: #f1f5f9;
+  font-size: 11px;
+  white-space: nowrap;
 }
 .time-badge i {
-  color: #6b7280;
-  font-size: 0.75rem;
+  color: #64748b;
+  font-size: 10px;
+}
+.card-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.btn-icon {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-icon:hover {
+  color: #334155;
+  background-color: #f1f5f9;
+}
+.btn-edit {
+  color: var(--cor-primaria, #1ca4a7);
+  background-color: #f0fdfa;
+  border-color: #ccfbf1;
+}
+.btn-edit:hover {
+  color: #ffffff;
+  background-color: var(--cor-primaria, #1ca4a7);
+  border-color: var(--cor-primaria, #1ca4a7);
+}
+.btn-icon:focus-visible {
+  outline: 3px solid rgba(28, 164, 167, 0.3);
+  outline-offset: 1px;
+}
+.menu-container {
+  position: relative;
+}
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 20;
+  min-width: 180px;
+  padding: 6px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.14);
+  transform-origin: top right;
+}
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  text-align: left;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.dropdown-item:hover {
+  background-color: #f0fdfa;
+  color: var(--cor-primaria, #1ca4a7);
+}
+.dropdown-divider {
+  height: 1px;
+  margin: 4px 6px;
+  background-color: #f1f5f9;
 }
 .client-info {
   display: flex;
-  gap: 0.75rem;
   align-items: center;
-  margin-bottom: 1rem;
+  gap: 10px;
+  min-width: 0;
+  margin-bottom: 12px;
 }
 .client-avatar {
-  width: 40px;
-  height: 40px;
-  background-color: #e0f2f1;
-  color: #00796b;
-  border-radius: 10px;
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
   display: flex;
   justify-content: center;
   align-items: center;
-  font-weight: 700;
-  font-size: 1rem;
-  flex-shrink: 0;
+  background-color: #f0fdfa;
+  color: #0f766e;
+  border: 1px solid #ccfbf1;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 13px;
+}
+.client-details {
+  min-width: 0;
+  flex: 1;
 }
 .client-name {
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: #1f2937;
-  margin: 0 0 0.15rem 0;
+  margin: 0 0 2px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .client-phone {
-  font-size: 0.8rem;
-  color: #6b7280;
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: 4px;
+  font-size: 11px;
+  color: #64748b;
 }
 .service-details {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-  background-color: #f9fafb;
-  padding: 0.75rem;
-  border-radius: 8px;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  background-color: #f8fafc;
+  border: 1px solid #f1f5f9;
+  border-radius: 12px;
 }
 .detail-row {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  color: #4b5563;
-  font-size: 0.85rem;
+  gap: 8px;
+  min-width: 0;
+  color: #475569;
+  font-size: 12px;
+}
+.detail-row span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.detail-row i {
+  width: 14px;
+  flex-shrink: 0;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 12px;
 }
 .font-semibold {
   font-weight: 600;
-  color: #1f2937;
-}
-.detail-row i {
-  color: #9ca3af;
-  font-size: 0.9rem;
-  width: 14px;
-  text-align: center;
+  color: #334155;
 }
 .card-divider {
   border: 0;
-  border-top: 1px solid #e5e7eb;
-  margin: 0 0 1rem 0;
+  border-top: 1px dashed #e2e8f0;
+  margin: 0 0 12px;
 }
 .card-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 8px;
+}
+.footer-info {
+  display: flex;
+  flex-direction: column;
+}
+.text-right {
+  align-items: flex-end;
 }
 .status-badge {
-  font-size: 0.7rem;
-  font-weight: 700;
-  padding: 0.25rem 0.6rem;
-  border-radius: 20px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
 }
 .badge-pendente {
   background-color: #ffedd5;
@@ -297,93 +460,43 @@ onUnmounted(() => window.removeEventListener("click", fecharMenu));
   color: #475569;
 }
 .badge-concluido {
-  background-color: #def7ec;
-  color: #03543f;
+  background-color: #ecfdf5;
+  color: #047857;
 }
 .badge-falta {
   background-color: #f3e8ff;
   color: #7e22ce;
 }
 .badge-cancelado {
-  background-color: #ffe4e6;
-  color: #be123c;
-}
-.card-cancelado,
-.card-falta {
-  opacity: 0.85;
-}
-
-.footer-info {
-  display: flex;
-  flex-direction: column;
-}
-.text-right {
-  align-items: flex-end;
+  background-color: #fef2f2;
+  color: #b91c1c;
 }
 .info-label {
-  font-size: 0.7rem;
-  font-weight: 500;
-  color: #6b7280;
-  margin-bottom: 0.15rem;
+  margin-bottom: 2px;
+  font-size: 9px;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 .info-value {
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: #1f2937;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--cor-primaria, #1ca4a7);
 }
-
-.menu-container {
-  position: relative;
-}
-.btn-dots {
-  background: none;
-  border: none;
-  color: #6b7280;
-  cursor: pointer;
-  padding: 0.25rem;
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: all 0.3s ease;
-}
-.btn-dots:hover {
-  color: #1f2937;
-  background-color: #f9fafb;
-}
-.dropdown-menu {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-  padding: 0.5rem 0;
-  min-width: 160px;
-  z-index: 10;
-  transform-origin: top right;
-}
-.dropdown-item {
+.card-datas {
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  width: 100%;
-  padding: 0.75rem 1rem;
-  background: none;
-  border: none;
-  text-align: left;
-  font-size: 0.85rem;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px dashed #e2e8f0;
+  font-size: 10px;
   font-weight: 500;
-  color: #1f2937;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  color: #94a3b8;
 }
-.dropdown-item:hover {
-  background-color: #f9fafb;
-  color: #1ca4a7;
-}
-.dropdown-divider {
-  height: 1px;
-  background-color: #e5e7eb;
-  margin: 0.25rem 0;
+.card-datas i {
+  margin-right: 4px;
+  font-size: 10px;
 }
 </style>

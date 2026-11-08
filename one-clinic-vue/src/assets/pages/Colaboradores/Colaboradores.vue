@@ -76,12 +76,7 @@
         <i class="pi pi-spin pi-spinner"></i>
         <span>Carregando colaboradores...</span>
       </div>
-      <TransitionGroup
-        v-else
-        name="list"
-        tag="div"
-        class="collaborators-grid"
-      >
+      <TransitionGroup v-else name="list" tag="div" class="collaborators-grid">
         <ColaboradorCard
           v-for="colaborador in colaboradoresFiltrados"
           :key="colaborador.id"
@@ -98,9 +93,11 @@
         <i class="pi pi-users empty-icon"></i>
         <h3>Nenhum colaborador encontrado</h3>
         <p>
-          {{ searchQuery || filtroStatus !== 'todos'
-            ? 'Tente alterar os filtros da sua busca.'
-            : 'Cadastre o primeiro colaborador desta clínica.' }}
+          {{
+            searchQuery || filtroStatus !== "todos"
+              ? "Tente alterar os filtros da sua busca."
+              : "Cadastre o primeiro colaborador desta clínica."
+          }}
         </p>
         <button
           v-if="!searchQuery && filtroStatus === 'todos'"
@@ -124,16 +121,18 @@
       @save="salvarColaborador"
     />
     <Transition name="toast">
-      <div
-        v-if="toast.show"
-        :class="['toast-notification', toast.type]"
-        role="status"
-      >
-        <i :class="toast.type === 'error'
-          ? 'pi pi-exclamation-circle'
-          : 'pi pi-check-circle'"></i>
+      <div v-if="toast.show" :class="['toast-notification', toast.type]" role="status">
+        <i
+          :class="
+            toast.type === 'error' ? 'pi pi-exclamation-circle' : 'pi pi-check-circle'
+          "
+        ></i>
         <span>{{ toast.message }}</span>
-        <button class="toast-close" aria-label="Fechar notificação" @click="toast.show = false">
+        <button
+          class="toast-close"
+          aria-label="Fechar notificação"
+          @click="toast.show = false"
+        >
           <i class="pi pi-times"></i>
         </button>
       </div>
@@ -147,19 +146,16 @@ import api from "@/services/api.js";
 import StatCard from "../../layouts/Components/StatCard.vue";
 import ColaboradorCard from "./components/ColaboradorCard.vue";
 import ColaboradorModal from "./components/ColaboradorModal.vue";
-
 const ROLES = {
   ADMIN: 1,
   SECRETARIO: 2,
   PROFISSIONAL: 3,
 };
-
 const nomesFuncoes = {
   ADMIN: "Administrador",
   SECRETARIO: "Secretário(a)",
   PROFISSIONAL: "Profissional",
 };
-
 const colaboradores = ref([]);
 const carregando = ref(false);
 const erroCarregamento = ref("");
@@ -171,36 +167,30 @@ const modalMode = ref("criar");
 const colaboradorSelecionado = ref(null);
 const toast = ref({ show: false, message: "", type: "success" });
 let toastTimeout;
-
 const camposBusca = [
   { label: "Nome", value: "nome" },
   { label: "Especialidade", value: "especialidades" },
 ];
-
 const statusBusca = [
   { label: "Todos", value: "todos" },
   { label: "Ativos", value: "ativo" },
   { label: "Inativos", value: "inativo" },
 ];
-
 const colaboradoresAtivos = computed(
-  () => colaboradores.value.filter((c) => c.status === "ativo").length,
+  () => colaboradores.value.filter((c) => c.status === "ativo").length
 );
-
 const colaboradoresInativos = computed(
-  () => colaboradores.value.filter((c) => c.status === "inativo").length,
+  () => colaboradores.value.filter((c) => c.status === "inativo").length
 );
-
 const tagsDisponiveis = computed(() => {
   const tags = new Set();
-  colaboradores.value.forEach(c => {
+  colaboradores.value.forEach((c) => {
     if (Array.isArray(c.especialidades)) {
-      c.especialidades.forEach(tag => tags.add(tag));
+      c.especialidades.forEach((tag) => tags.add(tag));
     }
   });
   return Array.from(tags).sort();
 });
-
 const placeholderBusca = computed(() => {
   const campos = camposBusca
     .filter((campo) => camposAtivos.value.includes(campo.value))
@@ -209,35 +199,38 @@ const placeholderBusca = computed(() => {
     ? `Buscar por ${campos.join(" ou ")}...`
     : "Selecione um campo para pesquisar...";
 });
-
 const temFiltroAtivo = computed(
   () =>
     searchQuery.value.length > 0 ||
     camposAtivos.value.length !== 2 ||
-    filtroStatus.value !== "todos",
+    filtroStatus.value !== "todos"
 );
-
 const colaboradoresFiltrados = computed(() => {
   let resultado = colaboradores.value;
   if (filtroStatus.value !== "todos") {
-    resultado = resultado.filter((colaborador) => colaborador.status === filtroStatus.value);
+    resultado = resultado.filter(
+      (colaborador) => colaborador.status === filtroStatus.value
+    );
   }
   const consulta = searchQuery.value.trim().toLocaleLowerCase("pt-BR");
   if (!consulta || camposAtivos.value.length === 0) {
     return resultado;
   }
   return resultado.filter((colaborador) => {
-    const searchInNome = camposAtivos.value.includes("nome") &&
-      String(colaborador.nome || "").toLocaleLowerCase("pt-BR").includes(consulta);
-      
-    const searchInTags = camposAtivos.value.includes("especialidades") &&
+    const searchInNome =
+      camposAtivos.value.includes("nome") &&
+      String(colaborador.nome || "")
+        .toLocaleLowerCase("pt-BR")
+        .includes(consulta);
+    const searchInTags =
+      camposAtivos.value.includes("especialidades") &&
       Array.isArray(colaborador.especialidades) &&
-      colaborador.especialidades.some(esp => esp.toLocaleLowerCase("pt-BR").includes(consulta));
-      
+      colaborador.especialidades.some((esp) =>
+        esp.toLocaleLowerCase("pt-BR").includes(consulta)
+      );
     return searchInNome || searchInTags;
   });
 });
-
 function obterMensagemErro(error) {
   const data = error?.response?.data;
   if (typeof data === "string") return data;
@@ -266,14 +259,11 @@ function obterMensagemErro(error) {
   }
   return "Ocorreu um erro inesperado. Tente novamente.";
 }
-
 function normalizarColaborador(item) {
   const roleId = Number(item.role);
   const roleNome = String(item.role_nome || "").toUpperCase();
   const roleChave =
-    roleNome ||
-    Object.keys(ROLES).find((chave) => ROLES[chave] === roleId) ||
-    "";
+    roleNome || Object.keys(ROLES).find((chave) => ROLES[chave] === roleId) || "";
   const nome = item.usuario_nome || "Nome não informado";
   const iniciais = nome
     .trim()
@@ -293,10 +283,11 @@ function normalizarColaborador(item) {
     status: item.ativo ? "ativo" : "inativo",
     ativo: Boolean(item.ativo),
     pode_editar_agenda: Boolean(item.pode_editar_agenda),
-    especialidades: item.especialidades || []
+    especialidades: item.especialidades || [],
+    criadoEm: item.created_at || "",
+    atualizadoEm: item.updated_at || "",
   };
 }
-
 async function carregarColaboradores() {
   carregando.value = true;
   erroCarregamento.value = "";
@@ -314,7 +305,6 @@ async function carregarColaboradores() {
     carregando.value = false;
   }
 }
-
 function dispararToast(message, type = "success") {
   if (toastTimeout) clearTimeout(toastTimeout);
   toast.value = { show: true, message, type };
@@ -322,7 +312,6 @@ function dispararToast(message, type = "success") {
     toast.value.show = false;
   }, 4000);
 }
-
 function toggleCampo(campo) {
   const index = camposAtivos.value.indexOf(campo);
   if (index === -1) {
@@ -331,36 +320,30 @@ function toggleCampo(campo) {
     camposAtivos.value.splice(index, 1);
   }
 }
-
 function limparFiltros() {
   camposAtivos.value = ["nome", "especialidades"];
   filtroStatus.value = "todos";
   searchQuery.value = "";
 }
-
 function abrirModalCriacao() {
   modalMode.value = "criar";
   colaboradorSelecionado.value = null;
   isModalOpen.value = true;
 }
-
 function abrirModalEdicao(colaborador) {
   modalMode.value = "editar";
   colaboradorSelecionado.value = { ...colaborador };
   isModalOpen.value = true;
 }
-
 function abrirModalDetalhes(colaborador) {
   modalMode.value = "detalhes";
   colaboradorSelecionado.value = { ...colaborador };
   isModalOpen.value = true;
 }
-
 function fecharModal() {
   isModalOpen.value = false;
   colaboradorSelecionado.value = null;
 }
-
 async function salvarColaborador(dados) {
   try {
     if (dados.id) {
@@ -370,7 +353,8 @@ async function salvarColaborador(dados) {
           Number(dados.roleId) === ROLES.PROFISSIONAL
             ? Boolean(dados.pode_editar_agenda)
             : false,
-        especialidades: Number(dados.roleId) === ROLES.PROFISSIONAL ? dados.especialidades : []
+        especialidades:
+          Number(dados.roleId) === ROLES.PROFISSIONAL ? dados.especialidades : [],
       };
       await api.patch(`/api/colaboradores/${dados.id}/`, payload);
       dispararToast(`Colaborador "${dados.nome}" atualizado com sucesso.`);
@@ -383,7 +367,8 @@ async function salvarColaborador(dados) {
           Number(dados.roleId) === ROLES.PROFISSIONAL
             ? Boolean(dados.pode_editar_agenda)
             : false,
-        especialidades: Number(dados.roleId) === ROLES.PROFISSIONAL ? dados.especialidades : []
+        especialidades:
+          Number(dados.roleId) === ROLES.PROFISSIONAL ? dados.especialidades : [],
       };
       await api.post("/api/colaboradores/", payload);
       dispararToast(`Colaborador "${dados.nome}" cadastrado com sucesso.`);
@@ -394,7 +379,6 @@ async function salvarColaborador(dados) {
     dispararToast(obterMensagemErro(error), "error");
   }
 }
-
 async function alternarStatus(colaborador) {
   if (carregando.value) return;
   const ativar = colaborador.status === "inativo";
@@ -411,53 +395,57 @@ async function alternarStatus(colaborador) {
     } else {
       await api.delete(`/api/colaboradores/${colaborador.id}/`);
     }
-    dispararToast(`Colaborador "${colaborador.nome}" ${acao === "reativar" ? "reativado" : "desativado"} com sucesso.`);
+    dispararToast(
+      `Colaborador "${colaborador.nome}" ${
+        acao === "reativar" ? "reativado" : "desativado"
+      } com sucesso.`
+    );
     await carregarColaboradores();
   } catch (error) {
     dispararToast(obterMensagemErro(error), "error");
   }
 }
-
 onMounted(carregarColaboradores);
-
 onUnmounted(() => {
   if (toastTimeout) clearTimeout(toastTimeout);
 });
 </script>
 
 <style scoped>
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
-
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap");
 .page-container {
   min-height: 100vh;
-  background-color: #f8fafc;
+  background-color: var(--cor-fundo, #f5f7fa);
   display: flex;
   flex-direction: column;
   font-family: "Inter", sans-serif;
 }
 .page-content {
-  padding: 2rem;
+  padding: 28px;
   flex-grow: 1;
-  max-width: 1440px;
+  max-width: 1600px;
   margin: 0 auto;
   width: 100%;
-}
-.action-panel {
-  background-color: #fff;
-  border-radius: 16px;
-  padding: 1.5rem;
-  margin-bottom: 2rem;
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 5%), 0 2px 4px -1px rgb(0 0 0 / 3%);
-  border: 1px solid #f1f5f9;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 24px;
+}
+.action-panel {
+  background: linear-gradient(180deg, #fff 0%, #fcfdff 100%);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.05);
+  border: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 .top-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 1.5rem;
+  gap: 20px;
   flex-wrap: wrap;
 }
 .search-input-wrapper {
@@ -468,45 +456,47 @@ onUnmounted(() => {
 }
 .search-icon {
   position: absolute;
-  left: 1.25rem;
+  left: 18px;
   top: 50%;
   transform: translateY(-50%);
   color: #94a3b8;
-  font-size: 1.1rem;
+  font-size: 15px;
 }
 .search-input {
   width: 100%;
   box-sizing: border-box;
-  padding: 0.85rem 1rem 0.85rem 3rem;
-  border: 1px solid #e2e8f0;
+  height: 48px;
+  padding: 0 16px 0 46px;
+  border: 1px solid #cbd5e1;
   border-radius: 12px;
   outline: none;
-  font-size: 1rem;
+  font-size: 14px;
   color: #334155;
   background-color: #f8fafc;
-  transition: border-color 0.25s ease, background-color 0.25s ease, box-shadow 0.25s ease;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   font-family: inherit;
 }
 .search-input:focus {
-  border-color: #1ca4a7;
+  border-color: var(--cor-primaria, #1ca4a7);
   background-color: #fff;
-  box-shadow: 0 0 0 4px rgb(28 164 167 / 10%);
+  box-shadow: 0 0 0 4px rgba(28, 164, 167, 0.12);
 }
 .btn-novo,
 .btn-empty {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  background-color: #1ca4a7;
+  gap: 8px;
+  background-color: var(--cor-primaria, #1ca4a7);
   color: #fff;
-  padding: 0.85rem 1.5rem;
+  height: 48px;
+  padding: 0 24px;
   border: none;
   border-radius: 12px;
-  font-size: 0.95rem;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   white-space: nowrap;
   font-family: inherit;
 }
@@ -514,7 +504,7 @@ onUnmounted(() => {
 .btn-empty:hover {
   background-color: #158a8d;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgb(28 164 167 / 20%);
+  box-shadow: 0 8px 16px -4px rgba(28, 164, 167, 0.3);
 }
 .btn-novo:disabled {
   opacity: 0.55;
@@ -526,47 +516,49 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 1.5rem;
+  gap: 24px;
 }
 .filter-group {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 12px;
 }
 .filter-label {
-  font-size: 0.85rem;
+  font-size: 11px;
   font-weight: 600;
   color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 6px;
   white-space: nowrap;
 }
 .chips-container {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 8px;
 }
 .chip {
   background-color: #f8fafc;
   border: 1px solid #e2e8f0;
   color: #64748b;
-  padding: 0.4rem 1rem;
+  padding: 7px 16px;
   border-radius: 20px;
-  font-size: 0.85rem;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   font-family: inherit;
 }
 .chip:hover {
-  border-color: #1ca4a7;
-  color: #1ca4a7;
-  background-color: #f0fdfd;
+  border-color: var(--cor-primaria, #1ca4a7);
+  color: #0f766e;
+  background-color: #f0fdfa;
 }
 .chip.active {
-  background-color: #1ca4a7;
-  border-color: #1ca4a7;
+  background-color: var(--cor-primaria, #1ca4a7);
+  border-color: var(--cor-primaria, #1ca4a7);
   color: #fff;
 }
 .chip-status.active {
@@ -582,17 +574,17 @@ onUnmounted(() => {
 .btn-limpar {
   background: none;
   border: none;
-  color: #ef4444;
-  font-size: 0.85rem;
+  color: #dc2626;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  padding: 0.4rem 0.8rem;
-  border-radius: 8px;
+  padding: 7px 14px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 6px;
   margin-left: auto;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.25s ease;
   font-family: inherit;
 }
 .btn-limpar:hover {
@@ -601,41 +593,41 @@ onUnmounted(() => {
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
+  gap: 20px;
 }
 .collaborators-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 1.5rem;
+  gap: 20px;
 }
 .loading-state {
   min-height: 220px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.85rem;
+  gap: 12px;
   color: #64748b;
+  font-size: 14px;
   background: #fff;
   border: 1px solid #e2e8f0;
   border-radius: 16px;
 }
 .loading-state i {
-  color: #1ca4a7;
-  font-size: 1.3rem;
+  color: var(--cor-primaria, #1ca4a7);
+  font-size: 20px;
 }
 .empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 4rem 2rem;
+  padding: 56px 24px;
   color: #64748b;
-  gap: 0.75rem;
+  gap: 10px;
   text-align: center;
-  background: #fff;
-  border-radius: 16px;
-  border: 1px dashed #cbd5e1;
+  background: #f8fafc;
+  border-radius: 14px;
+  border: 2px dashed #cbd5e1;
 }
 .empty-state h3,
 .empty-state p {
@@ -643,20 +635,21 @@ onUnmounted(() => {
 }
 .empty-state h3 {
   color: #334155;
-  font-size: 1.05rem;
+  font-size: 16px;
+  font-weight: 600;
 }
 .empty-state p {
   max-width: 440px;
-  font-size: 0.9rem;
+  font-size: 13px;
   line-height: 1.6;
 }
 .empty-icon {
-  font-size: 3rem;
+  font-size: 44px;
   color: #cbd5e1;
-  margin-bottom: 0.25rem;
+  margin-bottom: 4px;
 }
 .btn-empty {
-  margin-top: 0.75rem;
+  margin-top: 10px;
 }
 .btn-empty-secondary {
   color: #475569;
@@ -670,68 +663,76 @@ onUnmounted(() => {
 .error-panel {
   display: flex;
   align-items: flex-start;
-  gap: 1rem;
-  padding: 1.5rem;
-  color: #991b1b;
-  background: #fff7f7;
+  gap: 16px;
+  padding: 24px;
+  color: #b91c1c;
+  background: #fef2f2;
   border: 1px solid #fecaca;
   border-radius: 16px;
 }
 .error-panel > i {
-  font-size: 1.5rem;
-  margin-top: 0.1rem;
+  font-size: 22px;
+  margin-top: 2px;
 }
 .error-panel strong {
   display: block;
-  margin-bottom: 0.35rem;
+  margin-bottom: 6px;
+  font-weight: 600;
 }
 .error-panel p {
   margin: 0;
-  font-size: 0.9rem;
+  font-size: 13px;
   line-height: 1.5;
 }
 .btn-retry {
-  margin-top: 0.9rem;
-  padding: 0.6rem 0.9rem;
-  border: 1px solid #fca5a5;
-  border-radius: 8px;
-  color: #991b1b;
+  margin-top: 14px;
+  height: 38px;
+  padding: 0 16px;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  color: #b91c1c;
   background: #fff;
   cursor: pointer;
   font: inherit;
-  font-size: 0.85rem;
+  font-size: 13px;
   font-weight: 600;
+  transition: all 0.25s ease;
+}
+.btn-retry:hover {
+  background: #fee2e2;
 }
 .toast-notification {
   position: fixed;
-  bottom: 2rem;
-  right: 2rem;
-  max-width: min(480px, calc(100vw - 2rem));
-  background: #334155;
-  color: #fff;
-  padding: 1rem 1.1rem;
-  border-radius: 12px;
+  bottom: 28px;
+  right: 28px;
+  max-width: min(480px, calc(100vw - 32px));
+  background: #fff;
+  color: #334155;
+  padding: 14px 16px;
+  border-radius: 14px;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  box-shadow: 0 10px 25px -5px rgb(0 0 0 / 20%);
-  border-left: 4px solid #1ca4a7;
+  gap: 12px;
+  box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.12);
+  border: 1px solid #a7f3d0;
   z-index: 3000;
+  font-size: 14px;
   font-weight: 500;
   line-height: 1.5;
 }
 .toast-notification.error {
-  background: #7f1d1d;
-  border-left-color: #f87171;
+  background: #fef2f2;
+  color: #b91c1c;
+  border-color: #fecaca;
 }
 .toast-close {
   margin-left: auto;
   border: none;
   background: transparent;
   color: inherit;
-  opacity: 0.75;
+  opacity: 0.6;
   cursor: pointer;
-  padding: 0.25rem;
+  padding: 4px;
 }
 .toast-close:hover {
   opacity: 1;
@@ -771,15 +772,16 @@ onUnmounted(() => {
 }
 @media (max-width: 768px) {
   .page-content {
-    padding: 1rem;
+    padding: 16px;
+    gap: 16px;
   }
   .action-panel {
-    padding: 1rem;
+    padding: 16px;
   }
   .filters-row {
     flex-direction: column;
     align-items: flex-start;
-    gap: 1.25rem;
+    gap: 20px;
   }
   .filter-group {
     flex-direction: column;
@@ -798,8 +800,8 @@ onUnmounted(() => {
     grid-template-columns: 1fr;
   }
   .toast-notification {
-    right: 1rem;
-    bottom: 1rem;
+    right: 16px;
+    bottom: 16px;
   }
 }
 </style>

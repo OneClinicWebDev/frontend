@@ -3,7 +3,6 @@
     <div class="top-row">
       <div class="search-input-wrapper">
         <i class="pi pi-search search-icon"></i>
-
         <input
           v-model="filters.search"
           type="text"
@@ -11,7 +10,6 @@
           placeholder="Buscar cliente, CPF, procedimento ou profissional..."
           aria-label="Buscar agendamentos"
         />
-
         <button
           v-if="filters.search"
           type="button"
@@ -22,11 +20,9 @@
           <i class="pi pi-times"></i>
         </button>
       </div>
-
       <div class="action-buttons">
         <div class="control-group">
           <span class="control-caption">Visualização</span>
-
           <div class="view-toggle" role="group" aria-label="Modo de visualização">
             <button
               type="button"
@@ -39,7 +35,6 @@
               <i class="pi pi-calendar"></i>
               <span>Calendário</span>
             </button>
-
             <button
               type="button"
               class="btn-view"
@@ -53,11 +48,9 @@
             </button>
           </div>
         </div>
-
         <div v-if="displayMode === 'calendar'" class="control-group">
           <span class="control-caption">Período da agenda</span>
-
-          <div class="view-toggle period-toggle" role="group" aria-label="Período do calendário">
+          <div class="view-toggle" role="group" aria-label="Período do calendário">
             <button
               v-for="view in calendarViews"
               :key="view.value"
@@ -71,97 +64,91 @@
             </button>
           </div>
         </div>
-
         <button type="button" class="btn-novo" @click="$emit('openCreateModal')">
           <i class="pi pi-plus"></i>
           <span>Novo Agendamento</span>
         </button>
       </div>
     </div>
-
+    <div class="filters-divider"></div>
     <div class="filters-heading">
       <div class="filters-heading-title">
         <i class="pi pi-sliders-h"></i>
         <span>Filtros da agenda</span>
       </div>
-
-      <span class="filters-description">
-        Refine os agendamentos exibidos
-      </span>
+      <span class="filters-description">Refine os agendamentos exibidos</span>
     </div>
-
     <div class="filters-row">
       <div class="filter-group">
         <label for="filtro-profissional" class="filter-label">
           <i class="pi pi-user"></i>
           Profissional
         </label>
-
-        <select
-          id="filtro-profissional"
-          v-model="filters.profissional"
-          class="filter-select"
-        >
-          <option value="">Todos os profissionais</option>
-
-          <option
-            v-for="profissional in profissionaisBD"
-            :key="profissional.id"
-            :value="profissional.id"
+        <div class="select-wrapper">
+          <i class="pi pi-id-card select-icon"></i>
+          <select
+            id="filtro-profissional"
+            v-model="filters.profissional"
+            class="filter-select"
           >
-            {{ profissional.nome }}
-          </option>
-        </select>
+            <option value="">Todos os profissionais</option>
+            <option
+              v-for="profissional in profissionaisBD"
+              :key="profissional.id"
+              :value="profissional.id"
+            >
+              {{ profissional.nome }}
+            </option>
+          </select>
+        </div>
       </div>
-
       <div class="filter-group">
         <label for="filtro-status" class="filter-label">
           <i class="pi pi-check-circle"></i>
           Status
         </label>
-
-        <select
-          id="filtro-status"
-          v-model="filters.status"
-          class="filter-select"
-        >
-          <option value="">Todos os status</option>
-          <option value="confirmado">Confirmado</option>
-          <option value="pendente">Pendente</option>
-          <option value="em_andamento">Em andamento</option>
-          <option value="aguardando">Aguardando conclusão</option>
-          <option value="concluido">Concluído</option>
-          <option value="falta">Falta</option>
-          <option value="cancelado">Cancelado</option>
-        </select>
+        <div class="select-wrapper">
+          <i class="pi pi-flag select-icon"></i>
+          <select id="filtro-status" v-model="filters.status" class="filter-select">
+            <option value="">Todos os status</option>
+            <option value="confirmado">Confirmado</option>
+            <option value="pendente">Pendente</option>
+            <option value="em_andamento">Em andamento</option>
+            <option value="aguardando">Aguardando conclusão</option>
+            <option value="concluido">Concluído</option>
+            <option value="falta">Falta</option>
+            <option value="cancelado">Cancelado</option>
+          </select>
+        </div>
       </div>
-
       <div class="filter-group filter-period">
         <label for="filtro-data-inicio" class="filter-label">
           <i class="pi pi-calendar"></i>
           Período
         </label>
-
         <div class="date-range-inputs">
-          <input
-            id="filtro-data-inicio"
-            v-model="filters.dataInicio"
-            type="date"
-            class="filter-select date-input"
-            aria-label="Data inicial"
-          />
-
+          <div class="select-wrapper">
+            <i class="pi pi-calendar select-icon"></i>
+            <input
+              id="filtro-data-inicio"
+              v-model="filters.dataInicio"
+              type="date"
+              class="filter-select date-input"
+              aria-label="Data inicial"
+            />
+          </div>
           <span class="date-separator">até</span>
-
-          <input
-            v-model="filters.dataFim"
-            type="date"
-            class="filter-select date-input"
-            aria-label="Data final"
-          />
+          <div class="select-wrapper">
+            <i class="pi pi-calendar select-icon"></i>
+            <input
+              v-model="filters.dataFim"
+              type="date"
+              class="filter-select date-input"
+              aria-label="Data final"
+            />
+          </div>
         </div>
       </div>
-
       <button
         v-if="hasActiveFilters"
         type="button"
@@ -199,12 +186,7 @@ defineProps({
   },
 });
 
-defineEmits([
-  "update:displayMode",
-  "changeView",
-  "openCreateModal",
-  "clearFilters",
-]);
+defineEmits(["update:displayMode", "changeView", "openCreateModal", "clearFilters"]);
 
 const calendarViews = [
   { label: "Dia", value: "timeGridDay" },
@@ -220,90 +202,83 @@ const calendarViews = [
   padding: 24px;
   display: flex;
   flex-direction: column;
-  gap: 22px;
-  background: var(--branco, #fff);
-  border: 1px solid var(--cor-clara, #e5e7eb);
-  border-radius: 16px;
-  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.035);
-  animation: panel-enter 0.35s ease both;
+  gap: 20px;
+  background: linear-gradient(135deg, #ffffff 0%, #fdfdfe 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02);
 }
-
 .top-row {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 24px;
+  gap: 20px;
   min-width: 0;
 }
-
 .search-input-wrapper {
   position: relative;
-  flex: 1 1 300px;
+  flex: 1 1 340px;
   min-width: 0;
-  max-width: 500px;
+  max-width: 480px;
 }
-
 .search-icon {
   position: absolute;
   top: 50%;
-  left: 15px;
+  left: 16px;
   transform: translateY(-50%);
-  color: #8994a5;
+  color: #94a3b8;
   font-size: 16px;
   pointer-events: none;
 }
-
 .search-input {
   box-sizing: border-box;
   width: 100%;
-  height: 46px;
-  padding: 0 44px 0 44px;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
+  height: 48px;
+  padding: 0 44px 0 46px;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
   outline: none;
-  color: #1f2937;
+  color: #0f172a;
   background: #f8fafc;
   font: inherit;
-  font-size: 13px;
-  transition:
-    border-color 0.2s ease,
-    background-color 0.2s ease,
-    box-shadow 0.2s ease;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
-
 .search-input::placeholder {
-  color: #98a2b3;
+  color: #94a3b8;
+  font-weight: 400;
 }
-
+.search-input:hover {
+  border-color: #94a3b8;
+  background: #ffffff;
+}
 .search-input:focus {
-  background: #fff;
+  background: #ffffff;
   border-color: var(--cor-primaria, #1ca4a7);
-  box-shadow: 0 0 0 3px rgba(28, 164, 167, 0.11);
+  box-shadow: 0 0 0 4px rgba(28, 164, 167, 0.12);
 }
-
 .clear-search {
   position: absolute;
-  right: 9px;
+  right: 10px;
   top: 50%;
   transform: translateY(-50%);
   display: grid;
   place-items: center;
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   padding: 0;
   border: 0;
-  border-radius: 7px;
+  border-radius: 8px;
   color: #64748b;
   background: transparent;
   cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease;
+  transition: all 0.2s ease;
 }
-
 .clear-search:hover {
-  color: #1f2937;
-  background: #eaf0f5;
+  color: #0f172a;
+  background: #f1f5f9;
 }
-
 .action-buttons {
   display: flex;
   align-items: flex-end;
@@ -312,352 +287,285 @@ const calendarViews = [
   gap: 16px;
   min-width: 0;
 }
-
 .control-group {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 7px;
+  gap: 6px;
   min-width: 0;
 }
-
 .control-caption {
-  padding-left: 3px;
-  color: #8490a2;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.07em;
+  padding-left: 2px;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
-
 .view-toggle {
   box-sizing: border-box;
   display: inline-flex;
   align-items: stretch;
-  gap: 3px;
+  gap: 4px;
   min-width: 0;
   padding: 4px;
-  border: 1px solid #e5eaf0;
-  border-radius: 11px;
-  background: #f3f6f9;
-  overflow: hidden;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  background: #f1f5f9;
 }
-
 .btn-view {
   box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 34px;
-  padding: 0 12px;
+  min-height: 38px;
+  padding: 0 16px;
   border: 1px solid transparent;
-  border-radius: 7px;
+  border-radius: 9px;
   background: transparent;
-  color: #718096;
+  color: #475569;
   font-family: inherit;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
-  line-height: 1;
   white-space: nowrap;
   cursor: pointer;
-  transition:
-    color 0.2s ease,
-    background-color 0.2s ease,
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
+  transition: all 0.2s ease;
 }
-
 .btn-view i {
   font-size: 14px;
-  line-height: 1;
 }
-
 .btn-view:hover:not(.active) {
-  color: #344054;
-  background: rgba(255, 255, 255, 0.65);
+  color: #0f172a;
+  background: rgba(255, 255, 255, 0.7);
 }
-
 .btn-view.active {
   color: var(--cor-primaria, #168f92);
-  background: #fff;
-  border-color: #e5eaf0;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+  background: #ffffff;
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
 }
-
-.period-toggle .period-button {
-  min-width: 48px;
-  padding-inline: 11px;
+.period-button {
+  min-width: 52px;
+  padding: 0 12px;
 }
-
 .btn-view:focus-visible,
 .btn-novo:focus-visible,
 .btn-limpar:focus-visible {
-  outline: 3px solid rgba(28, 164, 167, 0.25);
+  outline: 3px solid rgba(28, 164, 167, 0.3);
   outline-offset: 2px;
 }
-
 .btn-novo {
   box-sizing: border-box;
-  min-height: 42px;
+  min-height: 48px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 9px;
-  padding: 0 17px;
+  gap: 10px;
+  padding: 0 22px;
   border: 1px solid transparent;
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--cor-primaria, #1ca4a7);
-  color: #fff;
+  color: #ffffff;
   font-family: inherit;
-  font-size: 12px;
-  font-weight: 700;
+  font-size: 13px;
+  font-weight: 600;
   white-space: nowrap;
   cursor: pointer;
-  box-shadow: 0 3px 7px rgba(28, 164, 167, 0.12);
-  transition:
-    background-color 0.2s ease,
-    box-shadow 0.2s ease,
-    transform 0.2s ease;
+  box-shadow: 0 4px 12px rgba(28, 164, 167, 0.25);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
-
-.btn-novo i {
-  font-size: 13px;
-}
-
 .btn-novo:hover {
   background: #158a8d;
-  box-shadow: 0 5px 12px rgba(28, 164, 167, 0.2);
-  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(28, 164, 167, 0.35);
+  transform: translateY(-2px);
 }
-
+.filters-divider {
+  width: 100%;
+  height: 1px;
+  background: #e2e8f0;
+}
 .filters-heading {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
+  justify-content: space-between;
   gap: 12px;
-  padding-top: 19px;
-  border-top: 1px solid #edf0f4;
 }
-
 .filters-heading-title {
   display: flex;
   align-items: center;
-  gap: 9px;
-  color: #344054;
+  gap: 8px;
+  color: #1e293b;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
 }
-
 .filters-heading-title i {
   color: var(--cor-primaria, #1ca4a7);
   font-size: 15px;
 }
-
 .filters-description {
-  color: #98a2b3;
-  font-size: 11px;
+  color: #64748b;
+  font-size: 12px;
 }
-
 .filters-row {
   display: grid;
-  grid-template-columns: minmax(180px, 1fr) minmax(165px, 0.8fr) minmax(290px, 1.35fr) auto;
+  grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr) minmax(300px, 1.5fr) auto;
   align-items: end;
-  gap: 18px;
+  gap: 16px;
 }
-
 .filter-group {
   display: flex;
   flex-direction: column;
-  align-items: stretch;
   gap: 8px;
   min-width: 0;
 }
-
 .filter-label {
   display: flex;
   align-items: center;
   gap: 7px;
-  color: #667085;
+  color: #64748b;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
-
 .filter-label i {
-  color: #96a0af;
+  color: #94a3b8;
   font-size: 13px;
 }
-
+.select-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1 1 0;
+  min-width: 0;
+}
+.select-icon {
+  position: absolute;
+  left: 14px;
+  z-index: 1;
+  color: #94a3b8;
+  font-size: 13px;
+  pointer-events: none;
+}
 .filter-select {
   box-sizing: border-box;
   width: 100%;
-  height: 40px;
+  height: 44px;
   min-width: 0;
-  padding: 0 11px;
-  border: 1px solid #e2e8f0;
-  border-radius: 9px;
+  padding: 0 14px 0 38px;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
   outline: none;
-  color: #344054;
+  color: #0f172a;
   background-color: #f8fafc;
   font-family: inherit;
-  font-size: 12px;
-  transition:
-    border-color 0.2s ease,
-    background-color 0.2s ease,
-    box-shadow 0.2s ease;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.25s ease;
 }
-
+select.filter-select {
+  appearance: none;
+  padding-right: 38px;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+}
+.filter-select:hover {
+  border-color: #94a3b8;
+  background-color: #ffffff;
+}
 .filter-select:focus {
   border-color: var(--cor-primaria, #1ca4a7);
-  background: #fff;
-  box-shadow: 0 0 0 3px rgba(28, 164, 167, 0.09);
+  background-color: #ffffff;
+  box-shadow: 0 0 0 4px rgba(28, 164, 167, 0.12);
 }
-
 .date-range-inputs {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 10px;
   min-width: 0;
 }
-
-.date-input {
-  flex: 1 1 0;
-  width: 0;
-  padding-inline: 8px;
-}
-
 .date-separator {
   flex: 0 0 auto;
-  color: #98a2b3;
-  font-size: 11px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 500;
 }
-
 .btn-limpar {
   box-sizing: border-box;
-  min-height: 40px;
+  min-height: 44px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 7px;
-  padding: 0 12px;
-  border: 1px solid #fee2e2;
-  border-radius: 9px;
-  background: #fff;
-  color: #dc4545;
+  padding: 0 16px;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #dc2626;
   font-family: inherit;
-  font-size: 11px;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 600;
   white-space: nowrap;
   cursor: pointer;
-  transition: background 0.2s ease, border-color 0.2s ease;
+  transition: all 0.2s ease;
 }
-
 .btn-limpar:hover {
-  background: #fff5f5;
-  border-color: #fecaca;
+  background: #fef2f2;
+  border-color: #fca5a5;
 }
-
-@keyframes panel-enter {
-  from {
-    opacity: 0;
-    transform: translateY(5px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 @media (max-width: 1200px) {
   .top-row {
     align-items: stretch;
     flex-direction: column;
   }
-
   .search-input-wrapper {
     max-width: none;
     flex-basis: auto;
   }
-
   .action-buttons {
     justify-content: flex-start;
   }
-
   .filters-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-
   .filter-period {
     grid-column: 1 / -1;
   }
-
   .btn-limpar {
     justify-self: start;
   }
 }
-
 @media (max-width: 640px) {
   .action-panel {
-    padding: 16px;
-    gap: 18px;
-    border-radius: 13px;
+    padding: 18px;
   }
-
   .action-buttons {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
     gap: 12px;
   }
-
-  .control-group {
-    width: 100%;
-  }
-
+  .control-group,
   .view-toggle {
     width: 100%;
   }
-
   .btn-view {
     flex: 1 1 0;
-    padding-inline: 7px;
+    padding: 0 8px;
   }
-
-  .btn-view span {
-    font-size: 11px;
-  }
-
-  .period-toggle .period-button {
-    min-width: 0;
-  }
-
   .btn-novo {
-    grid-column: 1 / -1;
     width: 100%;
-    margin-top: 2px;
   }
-
   .filters-row {
     grid-template-columns: minmax(0, 1fr);
-    gap: 15px;
   }
-
   .filter-period {
     grid-column: auto;
   }
-
-  .filters-heading {
-    gap: 6px;
-  }
-
-  .filters-description {
-    width: 100%;
-  }
-
-  .date-range-inputs {
-    gap: 7px;
-  }
 }
-
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

@@ -15,7 +15,12 @@
               <h3>{{ tituloModal }}</h3>
               <p>{{ subtituloModal }}</p>
             </div>
-            <button class="btn-close" type="button" aria-label="Fechar modal" @click="fechar">
+            <button
+              class="btn-close"
+              type="button"
+              aria-label="Fechar modal"
+              @click="fechar"
+            >
               <i class="pi pi-times"></i>
             </button>
           </header>
@@ -43,7 +48,8 @@
                 placeholder="Ex.: Carlos Mendes"
               />
               <span v-if="isEdicao" class="field-hint">
-                O nome pertence à identidade global do usuário e não é alterado nesta tela.
+                O nome pertence à identidade global do usuário e não é alterado nesta
+                tela.
               </span>
             </div>
             <div v-if="isCriacao" class="form-group">
@@ -67,8 +73,9 @@
             <div v-if="isEdicao || isDetalhes" class="identity-notice">
               <i class="pi pi-lock"></i>
               <p>
-                CPF e demais dados pessoais não são retornados pelo endpoint de colaboradores.
-                A identidade global não pode ser alterada por este formulário.
+                CPF e demais dados pessoais não são retornados pelo endpoint de
+                colaboradores. A identidade global não pode ser alterada por este
+                formulário.
               </p>
             </div>
             <div class="section-divider"></div>
@@ -116,7 +123,10 @@
                       </button>
                     </span>
                   </div>
-                  <div v-if="isDetalhes && form.especialidades.length === 0" class="no-tags">
+                  <div
+                    v-if="isDetalhes && form.especialidades.length === 0"
+                    class="no-tags"
+                  >
                     Nenhuma especialidade associada.
                   </div>
                   <div v-if="!isDetalhes" class="tag-input-row">
@@ -128,19 +138,30 @@
                       @keydown.enter.prevent="adicionarEspecialidade"
                     />
                     <datalist id="tags-suggestions">
-                      <option v-for="tag in tagsDisponiveisFiltradas" :key="tag" :value="tag"></option>
+                      <option
+                        v-for="tag in tagsDisponiveisFiltradas"
+                        :key="tag"
+                        :value="tag"
+                      ></option>
                     </datalist>
-                    <button type="button" class="btn-add-tag" @click="adicionarEspecialidade">
+                    <button
+                      type="button"
+                      class="btn-add-tag"
+                      @click="adicionarEspecialidade"
+                    >
                       <i class="pi pi-plus"></i> Adicionar
                     </button>
                   </div>
-                  <div v-if="!isDetalhes && tagsDisponiveisFiltradas.length > 0" class="quick-tags">
+                  <div
+                    v-if="!isDetalhes && tagsDisponiveisFiltradas.length > 0"
+                    class="quick-tags"
+                  >
                     <span class="hint">Adicionar rápido:</span>
-                    <button 
-                      v-for="tag in tagsDisponiveisFiltradas" 
-                      :key="tag" 
-                      type="button" 
-                      class="quick-tag-btn" 
+                    <button
+                      v-for="tag in tagsDisponiveisFiltradas"
+                      :key="tag"
+                      type="button"
+                      class="quick-tag-btn"
                       @click="adicionarEspecialidadePronta(tag)"
                     >
                       + {{ tag }}
@@ -157,7 +178,8 @@
                 <div class="permission-content">
                   <strong>Editar agenda</strong>
                   <p>
-                    Permite editar a agenda conforme as regras de autonomia configuradas pela clínica.
+                    Permite editar a agenda conforme as regras de autonomia configuradas
+                    pela clínica.
                   </p>
                 </div>
                 <label class="switch" aria-label="Permitir edição da agenda">
@@ -177,13 +199,15 @@
               <div class="status-panel-content">
                 <strong>Estado do vínculo</strong>
                 <p>
-                  {{ ativo
-                    ? 'Este colaborador está ativo nesta clínica.'
-                    : 'Este colaborador está inativo nesta clínica.' }}
+                  {{
+                    ativo
+                      ? "Este colaborador está ativo nesta clínica."
+                      : "Este colaborador está inativo nesta clínica."
+                  }}
                 </p>
               </div>
               <span :class="['status-pill', ativo ? 'status-active' : 'status-inactive']">
-                {{ ativo ? 'Ativo' : 'Inativo' }}
+                {{ ativo ? "Ativo" : "Inativo" }}
               </span>
             </div>
             <div v-if="isDetalhes" class="details-summary">
@@ -193,20 +217,32 @@
               </div>
               <div class="summary-item">
                 <span>Edição de agenda</span>
-                <strong>{{ form.pode_editar_agenda ? 'Habilitada' : 'Não habilitada' }}</strong>
+                <strong>{{
+                  form.pode_editar_agenda ? "Habilitada" : "Não habilitada"
+                }}</strong>
               </div>
               <div class="summary-item">
                 <span>Identificador do vínculo</span>
-                <strong class="identifier-value">{{ colaboradorEdicao?.id || 'Indisponível' }}</strong>
+                <strong class="identifier-value">{{
+                  colaboradorEdicao?.id || "Indisponível"
+                }}</strong>
+              </div>
+              <div class="summary-item">
+                <span>Criado em</span>
+                <strong>{{ formatarDataHora(colaboradorEdicao?.criadoEm) }}</strong>
+              </div>
+              <div class="summary-item">
+                <span>Atualizado em</span>
+                <strong>{{ formatarDataHora(colaboradorEdicao?.atualizadoEm) }}</strong>
               </div>
             </div>
             <footer class="modal-footer">
               <button class="btn-cancelar" type="button" @click="fechar">
-                {{ isDetalhes ? 'Fechar' : 'Cancelar' }}
+                {{ isDetalhes ? "Fechar" : "Cancelar" }}
               </button>
               <button v-if="!isDetalhes" class="btn-salvar" type="submit">
                 <i :class="isEdicao ? 'pi pi-check' : 'pi pi-plus'"></i>
-                {{ isEdicao ? 'Salvar alterações' : 'Cadastrar colaborador' }}
+                {{ isEdicao ? "Salvar alterações" : "Cadastrar colaborador" }}
               </button>
             </footer>
           </form>
@@ -217,15 +253,14 @@
 </template>
 
 <script setup>
+import { formatarDataHora } from "@/utils/datas";
 import { ref, computed, watch } from "vue";
 import api from "@/services/api.js";
-
 const ROLES = {
   ADMIN: 1,
   SECRETARIO: 2,
   PROFISSIONAL: 3,
 };
-
 const props = defineProps({
   isOpen: {
     type: Boolean,
@@ -241,40 +276,30 @@ const props = defineProps({
   },
   tagsDisponiveis: {
     type: Array,
-    default: () => []
-  }
+    default: () => [],
+  },
 });
-
 const emit = defineEmits(["close", "save"]);
-
 const form = ref({
   id: null,
   nome: "",
   cpf: "",
   roleId: "",
   pode_editar_agenda: false,
-  especialidades: []
+  especialidades: [],
 });
-
 const exibicaoCpf = ref("");
 const novaEspecialidade = ref("");
 const usuarioExistente = ref(false);
-
 const isDetalhes = computed(() => props.mode === "detalhes");
 const isEdicao = computed(() => props.mode === "editar");
 const isCriacao = computed(() => props.mode === "criar");
-
-const isProfissional = computed(
-  () => Number(form.value.roleId) === ROLES.PROFISSIONAL,
-);
-
+const isProfissional = computed(() => Number(form.value.roleId) === ROLES.PROFISSIONAL);
 const ativo = computed(() => Boolean(props.colaboradorEdicao?.ativo));
-
 const tagsDisponiveisFiltradas = computed(() => {
   const currentTags = form.value.especialidades || [];
-  return props.tagsDisponiveis.filter(tag => !currentTags.includes(tag));
+  return props.tagsDisponiveis.filter((tag) => !currentTags.includes(tag));
 });
-
 const funcaoAtual = computed(() => {
   const funcoes = {
     [ROLES.ADMIN]: "Administrador",
@@ -283,27 +308,25 @@ const funcaoAtual = computed(() => {
   };
   return funcoes[Number(form.value.roleId)] || "Não definida";
 });
-
 const tituloModal = computed(() => {
   if (isDetalhes.value) return "Detalhes do colaborador";
   if (isEdicao.value) return "Editar colaborador";
   return "Novo colaborador";
 });
-
 const subtituloModal = computed(() => {
   if (isDetalhes.value) return "Consulte as informações deste vínculo.";
   if (isEdicao.value) return "Atualize a função e as permissões disponíveis.";
   return "Cadastre uma pessoa para integrar a equipe da clínica.";
 });
-
 function aplicarMascaraCpf(valor) {
-  const numeros = String(valor || "").replace(/\D/g, "").slice(0, 11);
+  const numeros = String(valor || "")
+    .replace(/\D/g, "")
+    .slice(0, 11);
   return numeros
     .replace(/^(\d{3})(\d)/, "$1.$2")
     .replace(/^(\d{3})\.(\d{3})(\d)/, "$1.$2.$3")
     .replace(/\.(\d{3})(\d{1,2})$/, ".$1-$2");
 }
-
 async function verificarCpfUsuario(cpfLimpo) {
   if (cpfLimpo.length !== 11) {
     usuarioExistente.value = false;
@@ -321,7 +344,6 @@ async function verificarCpfUsuario(cpfLimpo) {
     usuarioExistente.value = false;
   }
 }
-
 function processarCpf(event) {
   exibicaoCpf.value = aplicarMascaraCpf(event.target.value);
   form.value.cpf = exibicaoCpf.value.replace(/\D/g, "");
@@ -329,7 +351,6 @@ function processarCpf(event) {
     verificarCpfUsuario(form.value.cpf);
   }
 }
-
 function adicionarEspecialidade() {
   const tag = novaEspecialidade.value.trim();
   if (tag && !form.value.especialidades.includes(tag)) {
@@ -337,17 +358,14 @@ function adicionarEspecialidade() {
   }
   novaEspecialidade.value = "";
 }
-
 function adicionarEspecialidadePronta(tag) {
   if (tag && !form.value.especialidades.includes(tag)) {
     form.value.especialidades.push(tag);
   }
 }
-
 function removerEspecialidade(index) {
   form.value.especialidades.splice(index, 1);
 }
-
 function carregarFormulario() {
   const colaborador = props.colaboradorEdicao;
   if (colaborador && !isCriacao.value) {
@@ -357,7 +375,9 @@ function carregarFormulario() {
       cpf: "",
       roleId: String(colaborador.roleId || ""),
       pode_editar_agenda: Boolean(colaborador.pode_editar_agenda),
-      especialidades: Array.isArray(colaborador.especialidades) ? [...colaborador.especialidades] : []
+      especialidades: Array.isArray(colaborador.especialidades)
+        ? [...colaborador.especialidades]
+        : [],
     };
     exibicaoCpf.value = "";
     novaEspecialidade.value = "";
@@ -369,21 +389,19 @@ function carregarFormulario() {
     cpf: "",
     roleId: "",
     pode_editar_agenda: false,
-    especialidades: []
+    especialidades: [],
   };
   exibicaoCpf.value = "";
   novaEspecialidade.value = "";
   usuarioExistente.value = false;
 }
-
 watch(
   () => [props.isOpen, props.mode, props.colaboradorEdicao],
   ([aberto]) => {
     if (aberto) carregarFormulario();
   },
-  { immediate: true },
+  { immediate: true }
 );
-
 watch(
   () => form.value.roleId,
   (roleId) => {
@@ -391,13 +409,11 @@ watch(
       form.value.pode_editar_agenda = false;
       form.value.especialidades = [];
     }
-  },
+  }
 );
-
 function fechar() {
   emit("close");
 }
-
 function salvar() {
   if (isDetalhes.value) return;
   const nome = form.value.nome.trim();
@@ -405,16 +421,15 @@ function salvar() {
   const roleId = Number(form.value.roleId);
   if (![ROLES.ADMIN, ROLES.SECRETARIO, ROLES.PROFISSIONAL].includes(roleId)) return;
   if (isCriacao.value && form.value.cpf.replace(/\D/g, "").length !== 11) return;
-  
-  const especialidadesPayload = roleId === ROLES.PROFISSIONAL ? form.value.especialidades : [];
-
+  const especialidadesPayload =
+    roleId === ROLES.PROFISSIONAL ? form.value.especialidades : [];
   if (isCriacao.value) {
     emit("save", {
       nome,
       cpf: form.value.cpf.replace(/\D/g, ""),
       roleId,
       pode_editar_agenda: roleId === ROLES.PROFISSIONAL && form.value.pode_editar_agenda,
-      especialidades: especialidadesPayload
+      especialidades: especialidadesPayload,
     });
     return;
   }
@@ -423,14 +438,13 @@ function salvar() {
     nome,
     roleId,
     pode_editar_agenda: roleId === ROLES.PROFISSIONAL && form.value.pode_editar_agenda,
-    especialidades: especialidadesPayload
+    especialidades: especialidadesPayload,
   });
 }
 </script>
 
 <style scoped>
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
-
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -472,7 +486,7 @@ function salvar() {
   display: block;
   margin-bottom: 0.45rem;
   font-size: 0.68rem;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.12em;
   color: #0f999b;
 }
@@ -480,7 +494,7 @@ function salvar() {
   margin: 0;
   font-size: 1.25rem;
   line-height: 1.4;
-  font-weight: 700;
+  font-weight: 600;
   color: #1e293b;
 }
 .modal-header p {
@@ -536,7 +550,7 @@ function salvar() {
   margin: 0;
   color: #334155;
   font-size: 0.93rem;
-  font-weight: 700;
+  font-weight: 600;
 }
 .section-heading p {
   margin: 0.25rem 0 0;
@@ -833,7 +847,7 @@ function salvar() {
   padding: 0.3rem 0.65rem;
   border-radius: 20px;
   font-size: 0.72rem;
-  font-weight: 700;
+  font-weight: 600;
   flex-shrink: 0;
 }
 .status-active {
@@ -896,7 +910,8 @@ function salvar() {
   cursor: pointer;
   font-size: 0.86rem;
   font-weight: 600;
-  transition: background-color 0.22s ease, color 0.22s ease, border-color 0.22s ease, transform 0.22s ease, box-shadow 0.22s ease;
+  transition: background-color 0.22s ease, color 0.22s ease, border-color 0.22s ease,
+    transform 0.22s ease, box-shadow 0.22s ease;
   font-family: inherit;
 }
 .btn-cancelar {

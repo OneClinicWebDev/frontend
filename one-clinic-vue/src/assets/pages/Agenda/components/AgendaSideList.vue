@@ -2,18 +2,25 @@
   <aside class="side-panel action-panel">
     <div class="panel-header">
       <h3><i class="pi pi-clock"></i> Próximos Atendimentos</h3>
+      <span class="results-count">{{ appointments.length }}</span>
     </div>
     <div class="appointments-list">
       <div
         v-for="item in appointments"
         :key="item.id"
         class="appointment-card"
+        tabindex="0"
+        role="button"
+        :aria-label="`Abrir agendamento de ${item.cliente}`"
         @click="$emit('edit', item)"
+        @keydown.enter.self="$emit('edit', item)"
+        @keydown.space.self.prevent="$emit('edit', item)"
       >
         <div class="appointment-header">
-          <span class="appointment-time"
-            >{{ formatarDataBR(item.dataInicio) }} • {{ item.horaInicio }}</span
-          >
+          <span class="appointment-time">
+            <i class="pi pi-calendar"></i>
+            {{ formatarDataBR(item.dataInicio) }} • {{ item.horaInicio }}
+          </span>
           <span :class="['status-badge', `badge-${item.status}`]">{{
             formatStatus(item.status)
           }}</span>
@@ -25,7 +32,9 @@
         </div>
       </div>
       <div v-if="appointments.length === 0" class="empty-state">
-        <i class="pi pi-calendar-times"></i>
+        <div class="empty-icon-wrapper">
+          <i class="pi pi-calendar-times"></i>
+        </div>
         <p>Nenhum agendamento.</p>
       </div>
     </div>
@@ -65,135 +74,153 @@ const formatStatus = (status) => {
 
 <style scoped>
 .action-panel {
-  background-color: var(--branco);
-  border-radius: 12px;
-  padding: 1.25rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03);
-  border: 1px solid var(--cor-clara);
+  box-sizing: border-box;
+  background-color: #ffffff;
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02);
+  border: 1px solid #e2e8f0;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 16px;
 }
-
 .panel-header {
-  margin-bottom: 1rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid var(--cor-clara);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #e2e8f0;
 }
-
 .panel-header h3 {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--cor-escura);
   margin: 0;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1e293b;
 }
-
+.panel-header h3 i {
+  color: var(--cor-primaria, #1ca4a7);
+}
+.results-count {
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+}
 .appointments-list {
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  gap: 12px;
   max-height: 600px;
   overflow-y: auto;
-  padding-right: 0.5rem;
+  padding-right: 6px;
 }
-
 .appointments-list::-webkit-scrollbar {
   width: 4px;
 }
 .appointments-list::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.1);
+  background: rgba(15, 23, 42, 0.12);
   border-radius: 4px;
 }
-
 .appointment-card {
-  background-color: var(--branco);
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  border-radius: 12px;
-  padding: 1rem;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
-  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+  padding: 14px;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.02);
   cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
-
 .appointment-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 10px 15px -3px rgba(28, 164, 167, 0.1);
-  border-color: var(--cor-clara);
+  box-shadow: 0 12px 20px -4px rgba(28, 164, 167, 0.12);
+  border-color: rgba(28, 164, 167, 0.4);
 }
-
+.appointment-card:focus-visible {
+  outline: 3px solid rgba(28, 164, 167, 0.35);
+  outline-offset: 2px;
+}
 .appointment-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.75rem;
+  gap: 8px;
+  margin-bottom: 10px;
 }
-
 .appointment-time {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--cor-escura);
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-}
-
-.appointment-client {
-  font-size: 1rem;
+  gap: 6px;
+  font-size: 11px;
   font-weight: 600;
-  color: var(--cor-escura);
-  margin-bottom: 0.5rem;
+  color: #64748b;
+  white-space: nowrap;
 }
-
+.appointment-time i {
+  color: var(--cor-primaria, #1ca4a7);
+  font-size: 11px;
+}
+.appointment-client {
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+}
 .appointment-details {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
-  font-size: 0.85rem;
-  color: var(--cor-secundaria);
+  gap: 4px;
+  font-size: 12px;
+  color: #64748b;
 }
-
 .appointment-details span {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 6px;
 }
-
+.appointment-details i {
+  color: #94a3b8;
+  font-size: 11px;
+}
 .status-badge {
-  font-size: 0.7rem;
-  font-weight: 600;
-  padding: 0.2rem 0.6rem;
-  border-radius: 6px;
+  padding: 3px 9px;
+  border-radius: 999px;
   border: 1px solid transparent;
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
 }
-
 .badge-confirmado {
   background-color: #ecfdf5;
-  color: #10b981;
+  color: #047857;
   border-color: #a7f3d0;
 }
 .badge-pendente {
   background-color: #fff7ed;
-  color: #f97316;
+  color: #c2410c;
   border-color: #fed7aa;
 }
 .badge-em_andamento {
   background-color: #eff6ff;
-  color: #3b82f6;
+  color: #1d4ed8;
   border-color: #bfdbfe;
 }
 .badge-cancelado {
   background-color: #fef2f2;
-  color: #ef4444;
+  color: #b91c1c;
   border-color: #fecaca;
 }
 .badge-aguardando {
   background-color: #f1f5f9;
-  color: #64748b;
+  color: #475569;
   border-color: #cbd5e1;
 }
 .badge-concluido {
@@ -206,23 +233,33 @@ const formatStatus = (status) => {
   color: #7e22ce;
   border-color: #e9d5ff;
 }
-
 .empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 3rem 1rem;
-  color: var(--cor-secundaria);
-  opacity: 0.6;
-  gap: 0.5rem;
+  padding: 32px 16px;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 14px;
   text-align: center;
 }
-
-.empty-state i {
-  font-size: 2rem;
+.empty-icon-wrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: #e2e8f0;
+  display: grid;
+  place-items: center;
+  color: #64748b;
+  font-size: 20px;
+  margin-bottom: 10px;
 }
-
+.empty-state p {
+  margin: 0;
+  font-size: 12px;
+  color: #64748b;
+}
 @media (max-width: 1200px) {
   .side-panel {
     order: -1;

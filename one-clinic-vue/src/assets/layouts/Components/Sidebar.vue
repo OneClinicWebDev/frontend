@@ -5,7 +5,6 @@
     :class="{ active: !isCollapsed && isMobile }"
     @click="isCollapsed = true"
   ></div>
-
   <button
     data-cy="mobile-toggle"
     v-show="isCollapsed && isMobile"
@@ -14,7 +13,6 @@
   >
     <i class="pi pi-bars"></i>
   </button>
-
   <aside data-cy="sidebar" :class="['sidebar', { collapsed: isCollapsed }]">
     <div
       data-cy="sidebar-header"
@@ -25,7 +23,6 @@
       <div v-if="isCollapsed && !isMobile" class="logo-wrapper">
         <img :src="LOGO_URL" alt="Logo" class="logo-img" />
       </div>
-
       <div v-else class="logo-text-wrapper">
         <div class="logo-text">
           <span class="logo-one">ONE</span>
@@ -33,7 +30,6 @@
         </div>
       </div>
     </div>
-
     <nav class="sidebar-nav">
       <router-link
         data-cy="menu-dashboard"
@@ -44,7 +40,6 @@
         <div class="icon-wrapper"><i class="pi pi-th-large"></i></div>
         <span>Dashboard</span>
       </router-link>
-
       <router-link
         data-cy="menu-agenda"
         to="/app/agenda"
@@ -54,7 +49,6 @@
         <div class="icon-wrapper"><i class="pi pi-calendar"></i></div>
         <span>Agenda</span>
       </router-link>
-
       <router-link
         v-if="podeGerenciar"
         data-cy="menu-clientes"
@@ -65,7 +59,6 @@
         <div class="icon-wrapper"><i class="pi pi-users"></i></div>
         <span>Clientes</span>
       </router-link>
-
       <router-link
         v-if="podeGerenciar"
         data-cy="menu-colaboradores"
@@ -76,7 +69,6 @@
         <div class="icon-wrapper"><i class="pi pi-id-card"></i></div>
         <span>Colaboradores</span>
       </router-link>
-
       <router-link
         data-cy="menu-atendimentos"
         to="/app/atendimentos"
@@ -86,7 +78,6 @@
         <div class="icon-wrapper"><i class="pi pi-list"></i></div>
         <span>Atendimentos</span>
       </router-link>
-
       <router-link
         v-if="podeGerenciar"
         data-cy="menu-pacotes-procedimentos"
@@ -97,7 +88,6 @@
         <div class="icon-wrapper"><i class="pi pi-briefcase"></i></div>
         <span>Pacotes/Procedimentos</span>
       </router-link>
-
       <router-link
         v-if="isAdmin"
         data-cy="menu-financeiro"
@@ -108,7 +98,6 @@
         <div class="icon-wrapper"><i class="pi pi-dollar"></i></div>
         <span>Financeiro</span>
       </router-link>
-
       <router-link
         v-if="podeGerenciar"
         data-cy="menu-estoque"
@@ -119,9 +108,7 @@
         <div class="icon-wrapper"><i class="pi pi-box"></i></div>
         <span>Estoque</span>
       </router-link>
-
     </nav>
-
     <div class="sidebar-footer">
       <router-link
         v-if="isAdmin"
@@ -141,30 +128,23 @@
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { LOGO_URL } from "@/config.js";
 import { useAuthStore } from "@/store/auth";
-
 const authStore = useAuthStore();
-
 const isCollapsed = ref(true);
 const isMobile = ref(false);
-
 const isAdmin = computed(() => authStore.isAdmin);
 const podeGerenciar = computed(() => authStore.podeGerenciar);
-
 const checkScreenSize = () => {
   isMobile.value = window.innerWidth <= 768;
 };
-
 const closeOnMobile = () => {
   if (isMobile.value) {
     isCollapsed.value = true;
   }
 };
-
 onMounted(() => {
   checkScreenSize();
   window.addEventListener("resize", checkScreenSize);
 });
-
 onUnmounted(() => {
   window.removeEventListener("resize", checkScreenSize);
 });
@@ -172,11 +152,12 @@ onUnmounted(() => {
 
 <style scoped>
 .sidebar {
+  font-family: "Inter", sans-serif;
   position: sticky;
   top: 0;
   height: 100vh;
   width: 250px;
-  background-color: var(--cor-escura, #1f2937);
+  background-color: var(--cor-escura, #0f172a);
   color: var(--branco, #ffffff);
   display: flex;
   flex-direction: column;
@@ -186,11 +167,9 @@ onUnmounted(() => {
   overflow: hidden;
   z-index: 1000;
 }
-
 .sidebar.collapsed {
   width: 70px;
 }
-
 .sidebar-header {
   height: 72px;
   display: flex;
@@ -200,11 +179,9 @@ onUnmounted(() => {
   user-select: none;
   transition: background-color 0.4s ease;
 }
-
 .sidebar-header:hover {
   background-color: rgba(0, 0, 0, 0.25);
 }
-
 .logo-wrapper {
   width: 70px;
   display: flex;
@@ -213,17 +190,14 @@ onUnmounted(() => {
   flex-shrink: 0;
   animation: fadeIn 0.4s ease-in-out;
 }
-
 .logo-img {
   width: 32px;
   height: 32px;
   transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
-
 .sidebar-header:hover .logo-img {
   transform: scale(1.08) rotate(3deg);
 }
-
 .logo-text-wrapper {
   width: 100%;
   height: 100%;
@@ -232,7 +206,6 @@ onUnmounted(() => {
   align-items: center;
   animation: fadeIn 0.4s ease-in-out;
 }
-
 .logo-text {
   display: flex;
   flex-direction: row;
@@ -242,18 +215,15 @@ onUnmounted(() => {
   font-size: 1.5rem;
   width: 100%;
 }
-
 .logo-one {
-  font-weight: 800;
+  font-weight: 600;
   letter-spacing: 0.5px;
   color: var(--branco, #ffffff);
 }
-
 .logo-clinic {
   font-weight: 300;
   color: var(--branco, #ffffff);
 }
-
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -264,7 +234,6 @@ onUnmounted(() => {
     transform: scale(1);
   }
 }
-
 .sidebar-nav {
   padding: 1.5rem 0;
   display: flex;
@@ -275,11 +244,9 @@ onUnmounted(() => {
   overflow-x: hidden;
   scrollbar-width: none;
 }
-
 .sidebar-nav::-webkit-scrollbar {
   display: none;
 }
-
 .nav-item {
   display: flex;
   align-items: center;
@@ -287,11 +254,10 @@ onUnmounted(() => {
   margin: 0 0.5rem;
   color: rgba(255, 255, 255, 0.7);
   text-decoration: none;
-  border-radius: 8px;
+  border-radius: 12px;
   transition: background-color 0.45s ease, color 0.45s ease;
   overflow: hidden;
 }
-
 .icon-wrapper {
   width: 54px;
   display: flex;
@@ -299,12 +265,10 @@ onUnmounted(() => {
   align-items: center;
   flex-shrink: 0;
 }
-
 .icon-wrapper i {
   font-size: 1.15rem;
   transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
-
 .nav-item span {
   font-size: 0.95rem;
   font-weight: 500;
@@ -312,37 +276,30 @@ onUnmounted(() => {
   transition: opacity 0.4s ease, transform 0.4s ease;
   opacity: 1;
 }
-
 .nav-item:hover,
 .nav-item.router-link-active {
   background-color: var(--cor-primaria, #1ca4a7);
   color: var(--branco, #ffffff);
 }
-
 .nav-item:hover .icon-wrapper i,
 .nav-item.router-link-active .icon-wrapper i {
   transform: scale(1.15);
 }
-
 .nav-item:hover span {
   transform: translateX(4px);
 }
-
 .sidebar-footer {
   padding: 1rem 0;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   background-color: var(--cor-escura, #1f2937);
   z-index: 10;
 }
-
 .sidebar-overlay {
   display: none;
 }
-
 .mobile-toggle {
   display: none;
 }
-
 @media (max-width: 768px) {
   .mobile-toggle {
     display: flex;
@@ -363,11 +320,9 @@ onUnmounted(() => {
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
     transition: transform 0.2s ease;
   }
-
   .mobile-toggle:active {
     transform: scale(0.95);
   }
-
   .sidebar-overlay.active {
     display: block;
     position: fixed;
@@ -379,8 +334,8 @@ onUnmounted(() => {
     backdrop-filter: blur(2px);
     z-index: 999;
   }
-
   .sidebar {
+    font-family: "Inter", sans-serif;
     position: fixed;
     top: 0;
     left: 0;
@@ -388,7 +343,6 @@ onUnmounted(() => {
     box-shadow: 4px 0 15px rgba(0, 0, 0, 0.3);
     transform: translateX(0);
   }
-
   .sidebar.collapsed {
     width: 250px;
     transform: translateX(-105%);

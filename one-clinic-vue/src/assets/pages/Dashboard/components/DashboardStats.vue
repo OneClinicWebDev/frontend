@@ -3,32 +3,28 @@
     <div class="stat-card">
       <div class="stat-header">
         <i class="pi pi-calendar stat-icon"></i>
-        <span v-if="emAndamento" class="trend positive">{{ emAndamento }} em andamento</span>
+        <span v-if="emAndamento" class="trend positive"
+          >{{ emAndamento }} em andamento</span
+        >
       </div>
-
-      <div class="stat-value">{{ carregando ? '...' : agendamentosHoje }}</div>
+      <div class="stat-value">{{ carregando ? "..." : agendamentosHoje }}</div>
       <div class="stat-label">Agendamentos Hoje</div>
     </div>
-
     <div class="stat-card">
       <div class="stat-header">
         <i class="pi pi-users stat-icon"></i>
       </div>
-
       <div class="stat-value">{{ valorClientes }}</div>
       <div class="stat-label">Clientes Ativos</div>
     </div>
-
     <div class="stat-card">
       <div class="stat-header">
         <i class="pi pi-dollar stat-icon"></i>
         <span class="trend neutral">Módulo financeiro</span>
       </div>
-
       <div class="stat-value stat-value-dev">Em desenvolvimento</div>
       <div class="stat-label">Receita do Mês</div>
     </div>
-
     <div class="stat-card">
       <div class="stat-header">
         <i class="pi pi-chart-line stat-icon"></i>
@@ -36,7 +32,6 @@
           {{ atendimentosConsiderados }} atendimentos
         </span>
       </div>
-
       <div class="stat-value">{{ valorTaxa }}</div>
       <div class="stat-label">Comparecimento (30 dias)</div>
     </div>
@@ -44,8 +39,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-
+import { computed } from "vue";
 const props = defineProps({
   agendamentosHoje: { type: Number, default: 0 },
   emAndamento: { type: Number, default: 0 },
@@ -53,92 +47,97 @@ const props = defineProps({
   taxaComparecimento: { type: Number, default: null },
   atendimentosConsiderados: { type: Number, default: 0 },
   carregando: Boolean,
-})
-
+});
 const valorClientes = computed(() =>
-  props.clientesAtivos === null ? '—' : props.clientesAtivos
-)
-
+  props.clientesAtivos === null ? "—" : props.clientesAtivos
+);
 const valorTaxa = computed(() => {
-  if (props.carregando) return '...'
-
-  return props.taxaComparecimento === null ? '—' : `${props.taxaComparecimento}%`
-})
+  if (props.carregando) return "...";
+  return props.taxaComparecimento === null ? "—" : `${props.taxaComparecimento}%`;
+});
 </script>
 
 <style scoped>
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 1.5rem;
+  gap: 20px;
+  font-family: "Inter", sans-serif;
 }
-
 .stat-card {
-  background: var(--branco, #ffffff);
-  padding: 1.5rem;
-  border-radius: 12px;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  background: #ffffff;
+  padding: 24px;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.02);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
-
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 20px -4px rgba(28, 164, 167, 0.12);
+  border-color: rgba(28, 164, 167, 0.4);
+}
 .stat-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  min-height: 1.5rem;
-  margin-bottom: 1rem;
+  min-height: 28px;
+  margin-bottom: 16px;
 }
-
 .stat-icon {
-  color: var(--cor-secundaria, #6b7280);
-  font-size: 1.2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #f0fdfa;
+  color: var(--cor-primaria, #1ca4a7);
+  font-size: 16px;
 }
-
 .trend {
-  font-size: 0.8rem;
-  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: #f1f5f9;
+  font-size: 11px;
+  font-weight: 500;
 }
-
 .positive {
-  color: #10b981;
+  background: #ecfdf5;
+  color: #047857;
 }
-
 .neutral {
-  color: #6b7280;
+  color: #64748b;
 }
-
 .stat-value {
-  font-size: 1.8rem;
-  font-weight: 700;
-  color: var(--cor-escura, #111827);
-  margin-bottom: 0.25rem;
+  font-size: 30px;
+  font-weight: 500;
+  color: #0f172a;
+  margin-bottom: 4px;
 }
-
 .stat-value-dev {
-  font-size: 1.1rem;
-  line-height: 2.7rem;
-  color: #9ca3af;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 45px;
+  color: #94a3b8;
 }
-
 .stat-label {
-  font-size: 0.85rem;
-  color: var(--cor-secundaria, #6b7280);
+  font-size: 13px;
+  font-weight: 500;
+  color: #64748b;
 }
-
 @media (max-width: 1200px) {
   .stats-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
-
 @media (max-width: 768px) {
   .stats-grid {
     grid-template-columns: 1fr;
-    gap: 1rem;
+    gap: 16px;
   }
-
   .stat-card {
-    padding: 1rem;
+    padding: 16px;
   }
 }
 </style>

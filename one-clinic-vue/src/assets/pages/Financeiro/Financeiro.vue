@@ -10,18 +10,15 @@
             </div>
           </div>
         </div>
-        
         <h1 class="title">Módulo Financeiro</h1>
-        
         <div class="badge-container">
           <span class="status-badge">Em Desenvolvimento</span>
         </div>
-        
         <p class="description">
-          Estamos construindo recursos avançados para o controle financeiro da sua clínica. 
-          Em breve, você terá acesso a fluxos de caixa, relatórios de faturamento e gestão de pagamentos.
+          Estamos construindo recursos avançados para o controle financeiro da sua
+          clínica. Em breve, você terá acesso a fluxos de caixa, relatórios de faturamento
+          e gestão de pagamentos.
         </p>
-        
         <div class="action-container">
           <button class="btn-voltar" @click="voltarParaDashboard">
             <i class="pi pi-arrow-left"></i> Voltar ao Início
@@ -33,68 +30,50 @@
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router'
-
-const router = useRouter()
-
+import { useRouter } from "vue-router";
+const router = useRouter();
 const voltarParaDashboard = () => {
   if (router) {
-    router.push('/app/dashboard')
+    router.push("/app/dashboard");
   } else {
-    window.history.back()
+    window.history.back();
   }
-}
+};
 </script>
 
 <style scoped>
 .page-container {
   min-height: 100vh;
-  background-color: #f9fafb;
+  background-color: var(--cor-fundo, #f5f7fa);
   display: flex;
   flex-direction: column;
+  font-family: "Inter", sans-serif;
 }
-
 .page-content {
-  padding: 2rem;
+  padding: 28px;
   flex-grow: 1;
 }
-
 .flex-center {
   display: flex;
   justify-content: center;
   align-items: center;
 }
-
 .development-card {
-  background-color: #ffffff;
-  border-radius: 16px;
-  padding: 4rem 3rem;
-  max-width: 550px;
+  background: linear-gradient(180deg, #ffffff 0%, #fcfdff 100%);
+  border-radius: 20px;
+  padding: 56px 40px;
+  max-width: 560px;
   width: 100%;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-  border: 1px solid #e5e7eb;
+  box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.05);
+  border: 1px solid #e2e8f0;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  position: relative;
-  overflow: hidden;
 }
-
-.development-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 6px;
-  background: linear-gradient(90deg, #1ca4a7, #0d7f82);
-}
-
 .icon-wrapper {
-  margin-bottom: 2rem;
+  margin-bottom: 28px;
 }
-
 .gear-container {
   position: relative;
   width: 90px;
@@ -103,88 +82,80 @@ const voltarParaDashboard = () => {
   justify-content: center;
   align-items: center;
 }
-
 .icon-gear {
-  font-size: 5.5rem;
-  color: #E0F2F1;
+  font-size: 88px;
+  color: #ccfbf1;
   animation: spin 10s linear infinite;
 }
-
 .inner-icon {
   position: absolute;
-  background-color: #1CA4A7;
-  width: 45px;
-  height: 45px;
-  border-radius: 50%;
+  background-color: var(--cor-primaria, #1ca4a7);
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
   display: flex;
   justify-content: center;
   align-items: center;
-  box-shadow: 0 4px 6px rgba(28, 164, 167, 0.3);
+  box-shadow: 0 6px 14px -4px rgba(28, 164, 167, 0.4);
 }
-
 .inner-icon i {
   color: #ffffff;
-  font-size: 1.5rem;
+  font-size: 20px;
 }
-
 .title {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: #1f2937;
-  margin: 0 0 1rem 0;
+  font-size: 22px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0 0 14px 0;
 }
-
 .badge-container {
-  margin-bottom: 1.5rem;
+  margin-bottom: 20px;
 }
-
 .status-badge {
-  background-color: #FEF3C7;
-  color: #92400E;
-  font-size: 0.85rem;
-  font-weight: 700;
-  padding: 0.4rem 1rem;
+  background-color: #fffbeb;
+  color: #b45309;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 6px 14px;
   border-radius: 20px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  border: 1px solid #FDE68A;
+  letter-spacing: 0.04em;
+  border: 1px solid #fde68a;
 }
-
 .description {
-  font-size: 1rem;
+  font-size: 14px;
   line-height: 1.6;
-  color: #6b7280;
-  margin: 0 0 2.5rem 0;
+  color: #64748b;
+  margin: 0 0 32px 0;
   max-width: 90%;
 }
-
 .action-container {
   display: flex;
   justify-content: center;
   width: 100%;
 }
-
 .btn-voltar {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  background-color: #f3f4f6;
-  color: #4b5563;
-  padding: 0.85rem 2rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  font-size: 0.95rem;
+  gap: 8px;
+  background-color: #f8fafc;
+  color: #475569;
+  height: 46px;
+  padding: 0 24px;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
-
 .btn-voltar:hover {
-  background-color: #e5e7eb;
-  color: #1f2937;
+  background-color: #f0fdfa;
+  border-color: var(--cor-primaria, #1ca4a7);
+  color: #0f766e;
   transform: translateY(-2px);
 }
-
 @keyframes spin {
   from {
     transform: rotate(0deg);

@@ -1,18 +1,22 @@
 <template>
   <Transition name="fade">
-    <div class="modal-overlay" v-if="isOpen" @click.self="fechar">
+    <div v-if="isOpen" class="modal-overlay" @click.self="fechar">
       <Transition name="scale">
-        <div class="modal-container" v-if="isOpen && atendimento">
+        <div v-if="isOpen && atendimento" class="modal-container">
           <header class="modal-header">
-            <div class="header-titles">
-              <h3>Detalhes do Atendimento</h3>
-              <p class="subtitle">{{ atendimento.cliente }}</p>
+            <div class="header-title">
+              <div class="header-icon">
+                <i class="pi pi-eye"></i>
+              </div>
+              <div class="header-titles">
+                <h3>Detalhes do Atendimento</h3>
+                <p class="subtitle">{{ atendimento.cliente }}</p>
+              </div>
             </div>
-            <button class="btn-close" aria-label="Fechar" @click="fechar">
+            <button type="button" class="btn-close" aria-label="Fechar" @click="fechar">
               <i class="pi pi-times"></i>
             </button>
           </header>
-
           <div class="modal-body">
             <div class="status-linha">
               <span :class="['status-badge', `badge-${atendimento.status}`]">
@@ -22,7 +26,6 @@
                 Resultado: <strong>{{ rotuloResultado }}</strong>
               </span>
             </div>
-
             <div class="info-grid">
               <div class="info-item">
                 <span class="info-rotulo">Cliente</span>
@@ -30,7 +33,9 @@
               </div>
               <div class="info-item">
                 <span class="info-rotulo">Telefone</span>
-                <span class="info-valor">{{ atendimento.clienteTelefone || "Não informado" }}</span>
+                <span class="info-valor">{{
+                  atendimento.clienteTelefone || "Não informado"
+                }}</span>
               </div>
               <div class="info-item">
                 <span class="info-rotulo">Procedimento</span>
@@ -42,7 +47,9 @@
               </div>
               <div class="info-item">
                 <span class="info-rotulo">Data</span>
-                <span class="info-valor">{{ formatarDataBR(atendimento.dataInicio) }}</span>
+                <span class="info-valor">{{
+                  formatarDataBR(atendimento.dataInicio)
+                }}</span>
               </div>
               <div class="info-item">
                 <span class="info-rotulo">Horário</span>
@@ -52,11 +59,15 @@
               </div>
               <div class="info-item">
                 <span class="info-rotulo">Duração do agendamento</span>
-                <span class="info-valor">{{ formatarDuracao(atendimento.duracaoMinutos) }}</span>
+                <span class="info-valor">{{
+                  formatarDuracao(atendimento.duracaoMinutos)
+                }}</span>
               </div>
               <div class="info-item">
                 <span class="info-rotulo">Duração de referência</span>
-                <span class="info-valor">{{ formatarDuracao(atendimento.servicoDuracaoMinutos) }}</span>
+                <span class="info-valor">{{
+                  formatarDuracao(atendimento.servicoDuracaoMinutos)
+                }}</span>
               </div>
               <div class="info-item">
                 <span class="info-rotulo">Valor do agendamento</span>
@@ -73,7 +84,9 @@
               </div>
               <div v-if="atendimento.precoAcordado !== null" class="info-item">
                 <span class="info-rotulo">Valor de referência</span>
-                <span class="info-valor">{{ formatarMoeda(atendimento.servicoPreco) }}</span>
+                <span class="info-valor">{{
+                  formatarMoeda(atendimento.servicoPreco)
+                }}</span>
               </div>
               <div class="info-item">
                 <span class="info-rotulo">Pacote</span>
@@ -83,26 +96,30 @@
                 </span>
               </div>
             </div>
-
             <div v-if="atendimento.motivoCancelamento" class="bloco bloco-alerta">
               <span class="info-rotulo">Motivo do cancelamento</span>
               <p>{{ atendimento.motivoCancelamento }}</p>
             </div>
-
             <div v-if="atendimento.observacoes" class="bloco">
               <span class="info-rotulo">Observações</span>
               <p>{{ atendimento.observacoes }}</p>
             </div>
-
-            <div v-if="registroFormatado" class="registro">
-              <i class="pi pi-history"></i>
-              Registrado em {{ registroFormatado }}
+            <div class="registro">
+              <span
+                ><i class="pi pi-calendar-plus"></i> Criado em
+                {{ formatarDataHora(atendimento.criadoEm) }}</span
+              >
+              <span
+                ><i class="pi pi-refresh"></i> Atualizado em
+                {{ formatarDataHora(atendimento.atualizadoEm) }}</span
+              >
             </div>
           </div>
-
           <footer class="modal-footer">
             <div
-              v-if="podeEncerrar && (atendimento.faltaRegistravel || atendimento.editavel)"
+              v-if="
+                podeEncerrar && (atendimento.faltaRegistravel || atendimento.editavel)
+              "
               class="footer-extras"
             >
               <button
@@ -112,7 +129,9 @@
                 @click="$emit('falta', atendimento)"
               >
                 <i class="pi pi-user-minus"></i>
-                {{ atendimento.corrigeConcluido ? "Corrigir para falta" : "Registrar falta" }}
+                {{
+                  atendimento.corrigeConcluido ? "Corrigir para falta" : "Registrar falta"
+                }}
               </button>
               <button
                 v-if="atendimento.editavel"
@@ -123,7 +142,6 @@
                 <i class="pi pi-ban"></i> Cancelar
               </button>
             </div>
-
             <div class="footer-actions">
               <button type="button" class="btn-cancelar" @click="fechar">Fechar</button>
               <button
@@ -144,8 +162,8 @@
 
 <script setup>
 import { computed } from "vue";
+import { formatarDataHora } from "@/utils/datas";
 import {
-  FUSO_CLINICA,
   formatarDataBR,
   formatarDuracao,
   formatarMoeda,
@@ -183,107 +201,112 @@ const rotuloSessao = computed(
   () => rotulosSessao[props.atendimento?.sessaoPacoteStatus] || ""
 );
 
-const registroFormatado = computed(() => {
-  const iso = props.atendimento?.criadoEm;
-
-  if (!iso) return "";
-
-  const data = new Date(iso);
-
-  if (Number.isNaN(data.getTime())) return "";
-
-  return data.toLocaleString("pt-BR", {
-    timeZone: FUSO_CLINICA,
-    dateStyle: "short",
-    timeStyle: "short",
-  });
-});
-
 const fechar = () => {
   emit("close");
 };
 </script>
 
 <style scoped>
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
-
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap");
 .modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: rgba(31, 41, 55, 0.5);
-  backdrop-filter: blur(4px);
+  inset: 0;
+  z-index: 2000;
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 2000;
+  padding: 16px;
+  box-sizing: border-box;
+  background-color: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(6px);
   font-family: "Inter", sans-serif;
 }
 .modal-container {
-  background-color: #ffffff;
-  border-radius: 16px;
-  width: 90%;
-  max-width: 650px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
-  overflow: hidden;
+  width: 100%;
+  max-width: 640px;
+  max-height: calc(100dvh - 32px);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  background-color: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
 }
 .modal-header {
+  flex-shrink: 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.25rem 1.5rem;
-  background-color: #1f2937;
+  gap: 16px;
+  padding: 20px 24px;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
   color: #ffffff;
+}
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+.header-icon {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: rgba(28, 164, 167, 0.2);
+  color: var(--cor-primaria, #1ca4a7);
+  font-size: 18px;
 }
 .header-titles h3 {
   margin: 0;
-  font-size: 1.15rem;
+  font-size: 17px;
   font-weight: 600;
 }
 .subtitle {
-  margin: 0.2rem 0 0 0;
-  font-size: 0.85rem;
-  color: #9ca3af;
+  margin: 3px 0 0;
+  font-size: 12px;
+  color: #94a3b8;
 }
 .btn-close {
-  background: none;
-  border: none;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
   color: #ffffff;
-  opacity: 0.7;
   cursor: pointer;
-  transition: opacity 0.2s ease, transform 0.2s ease;
-  font-size: 1.2rem;
+  transition: all 0.2s ease;
 }
 .btn-close:hover {
-  opacity: 1;
-  transform: scale(1.1);
+  background: rgba(255, 255, 255, 0.18);
+  transform: scale(1.05);
 }
-
 .modal-body {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
-  padding: 1.5rem;
-  max-height: 70vh;
+  gap: 18px;
+  padding: 24px;
   overflow-y: auto;
 }
 .status-linha {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 0.75rem 1.25rem;
+  gap: 12px 20px;
 }
 .status-badge {
-  font-size: 0.72rem;
-  font-weight: 700;
-  padding: 0.3rem 0.7rem;
-  border-radius: 20px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.04em;
 }
 .badge-pendente {
   background-color: #ffedd5;
@@ -302,148 +325,168 @@ const fechar = () => {
   color: #475569;
 }
 .badge-concluido {
-  background-color: #def7ec;
-  color: #03543f;
+  background-color: #ecfdf5;
+  color: #047857;
 }
 .badge-falta {
   background-color: #f3e8ff;
   color: #7e22ce;
 }
 .badge-cancelado {
-  background-color: #ffe4e6;
-  color: #be123c;
+  background-color: #fef2f2;
+  color: #b91c1c;
 }
 .resultado-texto {
-  font-size: 0.85rem;
-  color: #6b7280;
+  font-size: 13px;
+  color: #64748b;
 }
 .resultado-texto strong {
-  color: #1f2937;
+  color: #0f172a;
+  font-weight: 600;
 }
 .info-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem 1.5rem;
+  gap: 12px;
 }
 .info-item {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 4px;
   min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
 }
 .info-rotulo {
-  font-size: 0.75rem;
+  font-size: 10px;
   font-weight: 600;
-  color: #6b7280;
+  color: #94a3b8;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.04em;
 }
 .info-valor {
-  font-size: 0.95rem;
+  font-size: 13px;
   font-weight: 600;
-  color: #1f2937;
+  color: #0f172a;
   overflow-wrap: anywhere;
 }
 .info-extra {
   display: block;
-  margin-top: 0.15rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: #6b7280;
+  margin-top: 2px;
+  font-size: 11px;
+  font-weight: 400;
+  color: #64748b;
 }
 .bloco {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
-  padding: 0.85rem 1rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  background-color: #f9fafb;
+  gap: 6px;
+  padding: 14px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background-color: #f8fafc;
 }
 .bloco p {
   margin: 0;
-  font-size: 0.9rem;
-  color: #374151;
+  font-size: 13px;
+  color: #334155;
   line-height: 1.5;
   white-space: pre-wrap;
 }
 .bloco-alerta {
-  border-color: #fecdd3;
-  background-color: #fff1f2;
+  border-color: #fecaca;
+  background-color: #fef2f2;
 }
 .registro {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 0.78rem;
-  color: #9ca3af;
+  gap: 8px 20px;
+  padding-top: 14px;
+  border-top: 1px dashed #e2e8f0;
+  font-size: 11px;
+  font-weight: 500;
+  color: #94a3b8;
 }
-@media (max-width: 600px) {
-  .info-grid {
-    grid-template-columns: 1fr;
-  }
+.registro span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
-
 .modal-footer {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 0.75rem;
-  border-top: 1px solid #e5e7eb;
-  padding: 1rem 1.5rem 1.25rem;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
 }
 .footer-extras,
 .footer-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  gap: 12px;
 }
 .footer-actions {
   margin-left: auto;
 }
 .btn-cancelar {
+  height: 44px;
+  padding: 0 20px;
+  border: 1px solid #cbd5e1;
+  border-radius: 11px;
   background: #ffffff;
-  border: 1px solid #e5e7eb;
-  color: #6b7280;
-  padding: 0.8rem 1.5rem;
-  border-radius: 10px;
-  cursor: pointer;
+  color: #475569;
+  font-family: inherit;
+  font-size: 13px;
   font-weight: 600;
+  cursor: pointer;
   transition: all 0.2s ease;
 }
 .btn-cancelar:hover {
-  background-color: #f9fafb;
-  color: #1f2937;
+  background-color: #f1f5f9;
+  color: #0f172a;
+  border-color: #94a3b8;
 }
 .btn-salvar {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  background-color: #1ca4a7;
+  gap: 8px;
+  height: 44px;
+  padding: 0 22px;
+  border: 0;
+  border-radius: 11px;
+  background-color: var(--cor-primaria, #1ca4a7);
   color: #ffffff;
-  border: none;
-  padding: 0.8rem 1.5rem;
-  border-radius: 10px;
-  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
   font-weight: 600;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(28, 164, 167, 0.25);
+  transition: all 0.25s ease;
 }
 .btn-salvar:hover {
   background-color: #158a8d;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(28, 164, 167, 0.2);
+  transform: translateY(-1px);
 }
 .btn-perigo,
 .btn-falta {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 8px;
+  height: 44px;
+  padding: 0 18px;
+  border-radius: 11px;
   background: #ffffff;
-  padding: 0.8rem 1.25rem;
-  border-radius: 10px;
-  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
   font-weight: 600;
+  cursor: pointer;
   transition: all 0.2s ease;
 }
 .btn-perigo {
@@ -452,6 +495,7 @@ const fechar = () => {
 }
 .btn-perigo:hover {
   background-color: #fef2f2;
+  border-color: #fca5a5;
 }
 .btn-falta {
   border: 1px solid #e9d5ff;
@@ -460,18 +504,6 @@ const fechar = () => {
 .btn-falta:hover {
   background-color: #faf5ff;
 }
-@media (max-width: 600px) {
-  .footer-extras,
-  .footer-actions {
-    width: 100%;
-  }
-  .footer-extras button,
-  .footer-actions button {
-    flex: 1;
-    justify-content: center;
-  }
-}
-
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.3s ease;
@@ -482,10 +514,32 @@ const fechar = () => {
 }
 .scale-enter-active,
 .scale-leave-active {
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
 }
 .scale-enter-from,
 .scale-leave-to {
+  opacity: 0;
   transform: scale(0.95);
+}
+@media (max-width: 600px) {
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+  .modal-header,
+  .modal-body {
+    padding: 18px;
+  }
+  .modal-footer {
+    padding: 16px 18px;
+  }
+  .footer-extras,
+  .footer-actions {
+    width: 100%;
+  }
+  .footer-extras button,
+  .footer-actions button {
+    flex: 1;
+    justify-content: center;
+  }
 }
 </style>
