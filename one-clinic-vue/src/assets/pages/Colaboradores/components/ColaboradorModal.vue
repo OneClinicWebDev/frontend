@@ -240,9 +240,28 @@
               <button class="btn-cancelar" type="button" @click="fechar">
                 {{ isDetalhes ? "Fechar" : "Cancelar" }}
               </button>
-              <button v-if="!isDetalhes" class="btn-salvar" type="submit">
-                <i :class="isEdicao ? 'pi pi-check' : 'pi pi-plus'"></i>
-                {{ isEdicao ? "Salvar alterações" : "Cadastrar colaborador" }}
+              <button
+                v-if="!isDetalhes"
+                class="btn-salvar"
+                type="submit"
+                :disabled="salvando"
+              >
+                <i
+                  :class="
+                    salvando
+                      ? 'pi pi-spin pi-spinner'
+                      : isEdicao
+                      ? 'pi pi-check'
+                      : 'pi pi-plus'
+                  "
+                ></i>
+                {{
+                  salvando
+                    ? "Salvando..."
+                    : isEdicao
+                    ? "Salvar alterações"
+                    : "Cadastrar colaborador"
+                }}
               </button>
             </footer>
           </form>
@@ -251,7 +270,6 @@
     </div>
   </Transition>
 </template>
-
 <script setup>
 import { formatarDataHora } from "@/utils/datas";
 import { ref, computed, watch } from "vue";
@@ -277,6 +295,10 @@ const props = defineProps({
   tagsDisponiveis: {
     type: Array,
     default: () => [],
+  },
+  salvando: {
+    type: Boolean,
+    default: false,
   },
 });
 const emit = defineEmits(["close", "save"]);
@@ -351,15 +373,21 @@ function processarCpf(event) {
     verificarCpfUsuario(form.value.cpf);
   }
 }
+function especialidadeJaExiste(tag) {
+  const chave = tag.toLocaleLowerCase("pt-BR");
+  return form.value.especialidades.some(
+    (item) => String(item).trim().toLocaleLowerCase("pt-BR") === chave
+  );
+}
 function adicionarEspecialidade() {
-  const tag = novaEspecialidade.value.trim();
-  if (tag && !form.value.especialidades.includes(tag)) {
+  const tag = novaEspecialidade.value.trim().replace(/\s+/g, " ");
+  if (tag && !especialidadeJaExiste(tag)) {
     form.value.especialidades.push(tag);
   }
   novaEspecialidade.value = "";
 }
 function adicionarEspecialidadePronta(tag) {
-  if (tag && !form.value.especialidades.includes(tag)) {
+  if (tag && !especialidadeJaExiste(tag)) {
     form.value.especialidades.push(tag);
   }
 }
@@ -415,7 +443,7 @@ function fechar() {
   emit("close");
 }
 function salvar() {
-  if (isDetalhes.value) return;
+  if (isDetalhes.value || props.salvando) return;
   const nome = form.value.nome.trim();
   if (nome.length < 3) return;
   const roleId = Number(form.value.roleId);
@@ -442,9 +470,8 @@ function salvar() {
   });
 }
 </script>
-
 <style scoped>
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap");
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -934,6 +961,12 @@ function salvar() {
   border-color: #158a8d;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgb(28 164 167 / 20%);
+}
+.btn-salvar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 .fade-enter-active,
 .fade-leave-active {

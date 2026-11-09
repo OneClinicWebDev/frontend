@@ -117,6 +117,7 @@
       :mode="modalMode"
       :colaborador-edicao="colaboradorSelecionado"
       :tags-disponiveis="tagsDisponiveis"
+      :salvando="salvando"
       @close="fecharModal"
       @save="salvarColaborador"
     />
@@ -139,7 +140,6 @@
     </Transition>
   </div>
 </template>
-
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import api from "@/services/api.js";
@@ -165,6 +165,7 @@ const filtroStatus = ref("todos");
 const isModalOpen = ref(false);
 const modalMode = ref("criar");
 const colaboradorSelecionado = ref(null);
+const salvando = ref(false);
 const toast = ref({ show: false, message: "", type: "success" });
 let toastTimeout;
 const camposBusca = [
@@ -241,7 +242,7 @@ function obterMensagemErro(error) {
       const itens = Array.isArray(valor) ? valor : [valor];
       return itens
         .filter((item) => typeof item === "string")
-        .map((item) => `${campo}: ${item}`);
+        .map((item) => (campo === "detail" ? item : `${campo}: ${item}`));
     });
     if (mensagens.length) return mensagens.join(" ");
   }
@@ -344,7 +345,24 @@ function fecharModal() {
   isModalOpen.value = false;
   colaboradorSelecionado.value = null;
 }
+function normalizarEspecialidades(lista) {
+  const vistos = new Set();
+  const resultado = [];
+  (Array.isArray(lista) ? lista : []).forEach((item) => {
+    const nome = String(item || "")
+      .trim()
+      .replace(/\s+/g, " ");
+    const chave = nome.toLocaleLowerCase("pt-BR");
+    if (nome && !vistos.has(chave)) {
+      vistos.add(chave);
+      resultado.push(nome);
+    }
+  });
+  return resultado;
+}
 async function salvarColaborador(dados) {
+  if (salvando.value) return;
+  salvando.value = true;
   try {
     if (dados.id) {
       const payload = {
@@ -354,7 +372,9 @@ async function salvarColaborador(dados) {
             ? Boolean(dados.pode_editar_agenda)
             : false,
         especialidades:
-          Number(dados.roleId) === ROLES.PROFISSIONAL ? dados.especialidades : [],
+          Number(dados.roleId) === ROLES.PROFISSIONAL
+            ? normalizarEspecialidades(dados.especialidades)
+            : [],
       };
       await api.patch(`/api/colaboradores/${dados.id}/`, payload);
       dispararToast(`Colaborador "${dados.nome}" atualizado com sucesso.`);
@@ -368,7 +388,9 @@ async function salvarColaborador(dados) {
             ? Boolean(dados.pode_editar_agenda)
             : false,
         especialidades:
-          Number(dados.roleId) === ROLES.PROFISSIONAL ? dados.especialidades : [],
+          Number(dados.roleId) === ROLES.PROFISSIONAL
+            ? normalizarEspecialidades(dados.especialidades)
+            : [],
       };
       await api.post("/api/colaboradores/", payload);
       dispararToast(`Colaborador "${dados.nome}" cadastrado com sucesso.`);
@@ -377,6 +399,8 @@ async function salvarColaborador(dados) {
     await carregarColaboradores();
   } catch (error) {
     dispararToast(obterMensagemErro(error), "error");
+  } finally {
+    salvando.value = false;
   }
 }
 async function alternarStatus(colaborador) {
@@ -410,7 +434,6 @@ onUnmounted(() => {
   if (toastTimeout) clearTimeout(toastTimeout);
 });
 </script>
-
 <style scoped>
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap");
 .page-container {
