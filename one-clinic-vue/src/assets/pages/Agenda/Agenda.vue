@@ -342,7 +342,7 @@ const events = computed(() =>
     const theme = eventColors[item.status] || eventColors.confirmado;
     return {
       id: String(item.id),
-      title: `${item.cliente} • ${item.servico}`,
+      title: `${item.cliente}\n${item.servico}`,
       start: `${item.dataInicio}T${item.horaInicio}`,
       end: `${item.dataFim || item.dataInicio}T${item.horaFim}`,
       backgroundColor: theme.bg,

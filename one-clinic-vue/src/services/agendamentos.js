@@ -50,6 +50,16 @@ export const listarPacotes = async (params = {}) => {
   return Array.isArray(resposta.data) ? resposta.data : [];
 };
 
+export const listarModelosPacote = async () => {
+  const resposta = await api.get("/api/modelos-pacote/");
+  return Array.isArray(resposta.data) ? resposta.data : [];
+};
+
+export const venderPacote = async (payload) => {
+  const resposta = await api.post("/api/pacotes/", payload);
+  return resposta.data;
+};
+
 export const criarCliente = async (payload) => {
   const resposta = await api.post("/api/clientes/", payload);
   return resposta.data;

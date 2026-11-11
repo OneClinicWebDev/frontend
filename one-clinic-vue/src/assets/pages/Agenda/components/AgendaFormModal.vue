@@ -273,6 +273,55 @@
                     </option>
                   </select>
                 </div>
+                <div v-if="!bloqueado && !vendaIndisponivel" class="venda-box">
+                  <button type="button" class="btn-venda" @click="alternarVenda">
+                    <i :class="vendaAberta ? 'pi pi-times' : 'pi pi-shopping-cart'"></i>
+                    {{
+                      vendaAberta
+                        ? "Fechar venda de pacote"
+                        : "Vender pacote a este cliente"
+                    }}
+                  </button>
+                  <div v-if="vendaAberta" class="venda-painel">
+                    <select
+                      v-model="modeloVenda"
+                      class="form-control"
+                      :disabled="vendendo || modelosCarregando"
+                    >
+                      <option value="" disabled>
+                        {{
+                          modelosCarregando
+                            ? "Buscando modelos..."
+                            : "Selecione o modelo do pacote..."
+                        }}
+                      </option>
+                      <option
+                        v-for="modelo in modelosDoServico"
+                        :key="modelo.id"
+                        :value="String(modelo.id)"
+                      >
+                        {{ modelo.nome }} — {{ modelo.quantidade_sessoes }} sessões —
+                        {{ formatarMoeda(modelo.valor_total) }}
+                      </option>
+                    </select>
+                    <small
+                      v-if="!modelosCarregando && !modelosDoServico.length"
+                      class="campo-ajuda"
+                    >
+                      Nenhum modelo ativo para este procedimento. Cadastre em Pacotes e
+                      Procedimentos.
+                    </small>
+                    <button
+                      type="button"
+                      class="btn-salvar btn-venda-confirmar"
+                      :disabled="!modeloVenda || vendendo"
+                      @click="venderPacoteSelecionado"
+                    >
+                      <i v-if="vendendo" class="pi pi-spin pi-spinner"></i>
+                      {{ vendendo ? "Registrando venda..." : "Confirmar venda" }}
+                    </button>
+                  </div>
+                </div>
                 <small class="campo-ajuda">
                   <template v-if="!pacotesCarregando && !opcoesPacote.length">
                     Nenhum pacote ativo deste cliente para o procedimento escolhido.
@@ -420,10 +469,13 @@
     </div>
   </Transition>
 </template>
-
 <script setup>
 import { ref, computed, watch, nextTick } from "vue";
-import { listarPacotes } from "@/services/agendamentos";
+import {
+  listarPacotes,
+  listarModelosPacote,
+  venderPacote,
+} from "@/services/agendamentos";
 import {
   diferencaMinutos,
   formatarDuracao,
@@ -431,7 +483,6 @@ import {
   interpretarPreco,
   somarMinutosAoHorario,
 } from "@/utils/agendamentos";
-
 const props = defineProps({
   isOpen: Boolean,
   editing: Boolean,
@@ -448,7 +499,6 @@ const props = defineProps({
   permitirCancelar: Boolean,
   permitirFalta: Boolean,
 });
-
 const emit = defineEmits([
   "close",
   "save",
@@ -457,7 +507,6 @@ const emit = defineEmits([
   "notify",
   "limpar-alerta",
 ]);
-
 const corpoRef = ref(null);
 const foiValidado = ref(false);
 const listaAberta = ref(null);
@@ -473,50 +522,47 @@ const pacotes = ref([]);
 const pacotesCarregando = ref(false);
 const pacotesIndisponivel = ref(false);
 const origemInicial = ref({ cliente: "", servico: "", pacote: "" });
+const modelosPacote = ref([]);
+const modelosCarregados = ref(false);
+const modelosCarregando = ref(false);
+const vendaAberta = ref(false);
+const vendaIndisponivel = ref(false);
+const modeloVenda = ref("");
+const vendendo = ref(false);
 let tokenPacotes = 0;
-
 const bloqueado = computed(() => props.somenteLeitura);
-
 const tituloModal = computed(() => {
   if (props.somenteLeitura && props.editing) return "Detalhes do Agendamento";
   return props.editing ? "Editar Agendamento" : "Novo Agendamento";
 });
-
 const subtituloModal = computed(() =>
   props.somenteLeitura && props.editing
     ? "Consulte os dados deste atendimento."
     : "Preencha os dados para organizar o atendimento."
 );
-
 const rotulosFuncao = {
   PROFISSIONAL: "Profissional",
   ADMIN: "Administrador",
   SECRETARIO: "Secretário",
 };
-
 const rotuloFuncao = (funcao) => rotulosFuncao[funcao] || "Profissional";
-
 const normalizarTexto = (valor) =>
   String(valor ?? "")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLocaleLowerCase("pt-BR")
     .trim();
-
 const apenasNumeros = (valor) => String(valor ?? "").replace(/\D/g, "");
-
 const incluirAtual = (lista, id, nome, extra = {}) => {
   if (!id || !nome) return lista;
   if (lista.some((item) => String(item.id) === String(id))) return lista;
   return [...lista, { id, nome, ...extra }];
 };
-
 const clientesDisponiveis = computed(() =>
   incluirAtual(props.clientesBD, props.form.cliente_id, props.form.cliente, {
     cpf: "",
   })
 );
-
 const profissionaisDisponiveis = computed(() =>
   incluirAtual(
     props.profissionaisBD,
@@ -525,21 +571,18 @@ const profissionaisDisponiveis = computed(() =>
     { funcao: "" }
   )
 );
-
 const servicosDisponiveis = computed(() =>
   incluirAtual(props.servicosBD, props.form.servico_id, props.form.servico, {
     preco: props.form.servicoPreco ?? null,
     duracao: props.form.servicoDuracao ?? null,
   })
 );
-
 const servicoAtual = computed(
   () =>
     servicosDisponiveis.value.find(
       (item) => String(item.id) === String(servicoSelecionado.value)
     ) || null
 );
-
 const pesquisarPessoa = (lista, busca) => {
   const termo = String(busca ?? "").trim();
   if (!termo) return lista;
@@ -555,15 +598,12 @@ const pesquisarPessoa = (lista, busca) => {
     return nome.includes(texto) || (numero.length >= 3 && cpf.includes(numero));
   });
 };
-
 const clientesFiltrados = computed(() =>
   pesquisarPessoa(clientesDisponiveis.value, buscaCliente.value)
 );
-
 const profissionaisFiltrados = computed(() =>
   pesquisarPessoa(profissionaisDisponiveis.value, buscaProfissional.value)
 );
-
 const clienteValido = computed(
   () =>
     Boolean(clienteEscolhido.value) &&
@@ -571,7 +611,6 @@ const clienteValido = computed(
       (item) => String(item.id) === String(clienteEscolhido.value.id)
     )
 );
-
 const profissionalValido = computed(
   () =>
     Boolean(profissionalEscolhido.value) &&
@@ -579,7 +618,6 @@ const profissionalValido = computed(
       (item) => String(item.id) === String(profissionalEscolhido.value.id)
     )
 );
-
 const duracaoEfetiva = computed(() =>
   diferencaMinutos(
     props.form.dataInicio,
@@ -588,19 +626,16 @@ const duracaoEfetiva = computed(() =>
     props.form.horaFim
   )
 );
-
 const precoInvalido = computed(() => {
   const resultado = interpretarPreco(props.form.precoAcordado);
   return !resultado.vazio && resultado.valor === null;
 });
-
 const mostrarPacotes = computed(
   () =>
     !pacotesIndisponivel.value &&
     Boolean(clienteEscolhido.value) &&
     Boolean(servicoSelecionado.value)
 );
-
 const opcoesPacote = computed(() => {
   const opcoes = pacotes.value.map((pacote) => {
     const saldo = Number(pacote.saldo_sessoes ?? 0);
@@ -630,22 +665,84 @@ const opcoesPacote = computed(() => {
   }
   return opcoes;
 });
-
+const modelosDoServico = computed(() =>
+  modelosPacote.value.filter(
+    (modelo) =>
+      modelo.ativo && String(modelo.servico) === String(servicoSelecionado.value)
+  )
+);
+const mensagemErro = (erro) => {
+  const dados = erro?.response?.data;
+  if (typeof dados === "string") return dados;
+  if (dados?.detail) return dados.detail;
+  if (dados && typeof dados === "object") {
+    const partes = Object.values(dados)
+      .flat()
+      .filter((item) => typeof item === "string");
+    if (partes.length) return partes.join(" ");
+  }
+  if (erro?.response?.status === 403) {
+    return "Seu perfil não pode vender pacotes.";
+  }
+  return "Não foi possível concluir a operação. Tente novamente.";
+};
+const alternarVenda = async () => {
+  vendaAberta.value = !vendaAberta.value;
+  modeloVenda.value = "";
+  if (!vendaAberta.value || modelosCarregados.value) return;
+  modelosCarregando.value = true;
+  try {
+    modelosPacote.value = await listarModelosPacote();
+    modelosCarregados.value = true;
+  } catch (erro) {
+    vendaAberta.value = false;
+    if (erro?.response?.status === 403) vendaIndisponivel.value = true;
+    emit("notify", { message: mensagemErro(erro), type: "error" });
+  } finally {
+    modelosCarregando.value = false;
+  }
+};
+const venderPacoteSelecionado = async () => {
+  const modelo = modelosDoServico.value.find(
+    (item) => String(item.id) === String(modeloVenda.value)
+  );
+  const cliente = clienteEscolhido.value;
+  if (!modelo || !cliente || vendendo.value) return;
+  vendendo.value = true;
+  try {
+    const novo = await venderPacote({
+      modelo: modelo.id,
+      cliente: cliente.id,
+      servico: modelo.servico,
+      quantidade_sessoes: modelo.quantidade_sessoes,
+      valor_total: modelo.valor_total,
+    });
+    await carregarPacotes();
+    props.form.pacote_id = String(novo.id);
+    vendaAberta.value = false;
+    modeloVenda.value = "";
+    emit("notify", {
+      message: "Pacote vendido e vinculado a este agendamento.",
+      type: "success",
+    });
+  } catch (erro) {
+    emit("notify", { message: mensagemErro(erro), type: "error" });
+  } finally {
+    vendendo.value = false;
+  }
+};
 const abrirLista = (tipo) => {
   if (bloqueado.value) return;
   listaAberta.value = tipo;
   indiceSelecionado.value[tipo] = 0;
 };
-
 const fecharListas = () => {
   listaAberta.value = null;
 };
-
 const alternarLista = (tipo) => {
   if (listaAberta.value === tipo) fecharListas();
   else abrirLista(tipo);
 };
-
 const aoPesquisar = (tipo) => {
   if (tipo === "cliente") {
     clienteEscolhido.value = null;
@@ -658,7 +755,6 @@ const aoPesquisar = (tipo) => {
   }
   abrirLista(tipo);
 };
-
 const moverSelecao = (tipo, direcao) => {
   if (listaAberta.value !== tipo) abrirLista(tipo);
   const quantidade =
@@ -669,7 +765,6 @@ const moverSelecao = (tipo, direcao) => {
   const atual = indiceSelecionado.value[tipo];
   indiceSelecionado.value[tipo] = (atual + direcao + quantidade) % quantidade;
 };
-
 const selecionarComTeclado = (tipo) => {
   if (listaAberta.value !== tipo) {
     abrirLista(tipo);
@@ -683,7 +778,6 @@ const selecionarComTeclado = (tipo) => {
     if (pessoa) selecionarProfissional(pessoa);
   }
 };
-
 const selecionarCliente = (cliente) => {
   clienteEscolhido.value = cliente;
   buscaCliente.value = cliente.nome;
@@ -691,7 +785,6 @@ const selecionarCliente = (cliente) => {
   props.form.cliente_id = cliente.id;
   fecharListas();
 };
-
 const selecionarProfissional = (profissional) => {
   profissionalEscolhido.value = profissional;
   buscaProfissional.value = profissional.nome;
@@ -699,7 +792,6 @@ const selecionarProfissional = (profissional) => {
   props.form.profissional_id = profissional.id;
   fecharListas();
 };
-
 const sugerirFim = () => {
   if (fimManual.value || bloqueado.value) return;
   if (!servicoAtual.value || !props.form.horaInicio) return;
@@ -709,7 +801,6 @@ const sugerirFim = () => {
   );
   if (sugestao) props.form.horaFim = sugestao;
 };
-
 const carregarPacotes = async () => {
   const cliente = clienteEscolhido.value?.id;
   const servico = servicoSelecionado.value;
@@ -744,7 +835,6 @@ const carregarPacotes = async () => {
     String(origemInicial.value.servico) === String(servico);
   if (!existe && !mesmoContexto) props.form.pacote_id = "";
 };
-
 const sincronizarFormulario = () => {
   sincronizando.value = true;
   buscaCliente.value = props.form.cliente || "";
@@ -776,12 +866,13 @@ const sincronizarFormulario = () => {
   };
   fimManual.value = props.editing || Boolean(props.form.horaFim);
   pacotesIndisponivel.value = false;
+  vendaAberta.value = false;
+  modeloVenda.value = "";
   carregarPacotes();
   nextTick(() => {
     sincronizando.value = false;
   });
 };
-
 const salvar = () => {
   if (bloqueado.value) return;
   foiValidado.value = true;
@@ -820,12 +911,10 @@ const salvar = () => {
   props.form.dataFim = props.form.dataInicio;
   emit("save");
 };
-
 const fechar = () => {
   fecharListas();
   emit("close");
 };
-
 watch(
   () => props.isOpen,
   (aberto) => {
@@ -838,7 +927,6 @@ watch(
     }
   }
 );
-
 watch(servicoSelecionado, (id) => {
   if (!props.isOpen || sincronizando.value) return;
   const servico = servicosDisponiveis.value.find(
@@ -848,10 +936,11 @@ watch(servicoSelecionado, (id) => {
     props.form.servico = servico.nome;
     props.form.servico_id = servico.id;
   }
+  vendaAberta.value = false;
+  modeloVenda.value = "";
   sugerirFim();
   carregarPacotes();
 });
-
 watch(
   () => clienteEscolhido.value?.id,
   () => {
@@ -859,7 +948,6 @@ watch(
     carregarPacotes();
   }
 );
-
 watch(
   () => props.form.horaInicio,
   () => {
@@ -867,7 +955,6 @@ watch(
     sugerirFim();
   }
 );
-
 watch(
   () => [
     props.form.dataInicio,
@@ -882,7 +969,6 @@ watch(
     }
   }
 );
-
 watch(
   () => props.alerta,
   (alerta) => {
@@ -893,7 +979,6 @@ watch(
   }
 );
 </script>
-
 <style scoped>
 .modal-overlay {
   position: fixed;
@@ -1448,6 +1533,45 @@ select.form-control {
   background-color: #f1f5f9;
   color: #64748b;
   cursor: not-allowed;
+}
+.venda-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.btn-venda {
+  align-self: flex-start;
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  border: 1px solid #ccfbf1;
+  border-radius: 11px;
+  background: #f0fdfa;
+  color: #0f766e;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.btn-venda:hover {
+  background: var(--cor-primaria, #1ca4a7);
+  border-color: var(--cor-primaria, #1ca4a7);
+  color: #ffffff;
+}
+.venda-painel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 12px;
+  background: #fbfdff;
+}
+.btn-venda-confirmar {
+  align-self: flex-start;
 }
 .footer-extras {
   display: flex;
