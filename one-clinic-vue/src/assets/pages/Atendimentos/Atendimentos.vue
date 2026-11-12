@@ -168,6 +168,7 @@
       :alerta="alertaForm"
       :avisosAcesso="avisosAcesso"
       :somenteLeitura="somenteLeitura"
+      :edicaoParcial="edicaoParcialForm"
       :mensagemSomenteLeitura="mensagemSomenteLeitura"
       :permitirCancelar="permitirAcoesEncerramento"
       :permitirFalta="permitirFaltaForm"
@@ -525,8 +526,18 @@ const somenteLeitura = computed(() => {
   if (!editando.value) return false;
   if (!itemEmEdicao.value) return true;
 
-  return !itemEmEdicao.value.editavel || atravessaMeiaNoite.value;
+  return (
+    !(itemEmEdicao.value.editavel || itemEmEdicao.value.edicaoParcial) ||
+    atravessaMeiaNoite.value
+  );
 });
+
+const edicaoParcialForm = computed(
+  () =>
+    editando.value &&
+    Boolean(itemEmEdicao.value) &&
+    Boolean(itemEmEdicao.value.edicaoParcial)
+);
 
 const mensagemSomenteLeitura = computed(() => {
   if (!podeEditarAgenda.value) {
@@ -535,7 +546,7 @@ const mensagemSomenteLeitura = computed(() => {
 
   if (!editando.value || !itemEmEdicao.value) return "";
 
-  if (!itemEmEdicao.value.editavel) {
+  if (!itemEmEdicao.value.editavel && !itemEmEdicao.value.edicaoParcial) {
     return "Agendamentos concluídos ou cancelados não podem ser editados.";
   }
 

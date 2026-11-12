@@ -55,6 +55,14 @@
                 <i class="pi pi-lock"></i>
                 <span>{{ mensagemSomenteLeitura }}</span>
               </div>
+              <div v-if="edicaoParcial && !somenteLeitura" class="aviso">
+                <i class="pi pi-info-circle"></i>
+                <span>
+                  Este agendamento já foi encerrado. Como administrador, você pode alterar
+                  as observações. Cliente, procedimento, profissional, pacote, horário e
+                  valor ficam preservados no histórico.
+                </span>
+              </div>
               <div v-for="aviso in avisosAcesso" :key="aviso" class="aviso">
                 <i class="pi pi-info-circle"></i>
                 <span>{{ aviso }}</span>
@@ -392,7 +400,7 @@
                   class="form-control textarea"
                   rows="3"
                   placeholder="Detalhes adicionais sobre o atendimento..."
-                  :disabled="bloqueado"
+                  :disabled="somenteLeitura"
                 ></textarea>
               </div>
             </div>
@@ -432,7 +440,7 @@
               <div class="footer-actions">
                 <button type="button" class="btn-cancelar" @click="fechar">Fechar</button>
                 <button
-                  v-if="!bloqueado"
+                  v-if="!somenteLeitura"
                   type="submit"
                   class="btn-salvar"
                   :disabled="salvando || vendendo"
@@ -480,6 +488,7 @@ const props = defineProps({
   alerta: { type: Object, default: null },
   avisosAcesso: { type: Array, default: () => [] },
   somenteLeitura: Boolean,
+  edicaoParcial: Boolean,
   mensagemSomenteLeitura: { type: String, default: "" },
   permitirCancelar: Boolean,
   permitirFalta: Boolean,
@@ -514,9 +523,10 @@ const modelosCarregados = ref(false);
 const modeloSelecionado = ref("");
 const vendendo = ref(false);
 let tokenPacotes = 0;
-const bloqueado = computed(() => props.somenteLeitura);
+const bloqueado = computed(() => props.somenteLeitura || props.edicaoParcial);
 const tituloModal = computed(() => {
   if (props.somenteLeitura && props.editing) return "Detalhes do Agendamento";
+  if (props.edicaoParcial && props.editing) return "Editar Agendamento Encerrado";
   return props.editing ? "Editar Agendamento" : "Novo Agendamento";
 });
 const subtituloModal = computed(() =>
@@ -847,7 +857,7 @@ const sincronizarFormulario = () => {
   });
 };
 const salvar = async () => {
-  if (bloqueado.value || vendendo.value) return;
+  if (props.somenteLeitura || vendendo.value) return;
   foiValidado.value = true;
   const servico = servicoAtual.value;
   if (!clienteValido.value || !profissionalValido.value || !servico) {

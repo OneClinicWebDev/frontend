@@ -73,10 +73,20 @@ export function useAgendamentos() {
     () => podeGerenciar.value || profissionalComAutonomia.value
   );
 
+  const ehAdmin = computed(() => perfil.value === "ADMIN");
+
   const agendamentos = computed(() =>
-    registros.value.map((registro) =>
-      normalizarAgendamento(registro, agora.value)
-    )
+    registros.value.map((registro) => {
+      const item = normalizarAgendamento(registro, agora.value);
+
+      return {
+        ...item,
+        edicaoParcial:
+          ehAdmin.value &&
+          !item.editavel &&
+          ["CONCLUIDO", "CANCELADO"].includes(item.statusApi),
+      };
+    })
   );
 
   const clientesBD = computed(() =>
@@ -335,6 +345,7 @@ export function useAgendamentos() {
     profissionalComAutonomia,
     podeGerenciar,
     podeEditarAgenda,
+    ehAdmin,
     carregarCadastros,
     carregarAgendamentos,
     salvarAgendamento,

@@ -28,7 +28,7 @@
             <i class="pi pi-eye"></i> Ver detalhes
           </button>
           <button
-            v-if="podeEditar && atendimento.editavel"
+            v-if="podeEditar && (atendimento.editavel || atendimento.edicaoParcial)"
             class="dropdown-item"
             @click.stop="emitirAcao('editar')"
           >

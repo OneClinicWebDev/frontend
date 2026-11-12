@@ -152,7 +152,7 @@
             <div class="footer-actions">
               <button type="button" class="btn-cancelar" @click="fechar">Fechar</button>
               <button
-                v-if="podeEditar && atendimento.editavel"
+                v-if="podeEditar && (atendimento.editavel || atendimento.edicaoParcial)"
                 type="button"
                 class="btn-salvar"
                 @click="$emit('editar', atendimento)"
