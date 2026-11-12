@@ -64,3 +64,22 @@ export const criarCliente = async (payload) => {
   const resposta = await api.post("/api/clientes/", payload);
   return resposta.data;
 };
+
+export const concluirAgendamento = async (id) => {
+  const resposta = await api.post(`/api/agendamentos/${id}/concluir/`, {});
+  return resposta.data;
+};
+
+export const obterHistoricoCliente = async (clienteId) => {
+  const resposta = await api.get(`/api/clientes/${clienteId}/historico/`, {
+    params: { atualizar: Date.now() },
+  });
+  return resposta.data;
+};
+
+export const listarSessoesPacote = async (pacoteId) => {
+  const resposta = await api.get(`/api/pacotes/${pacoteId}/sessoes/`, {
+    params: { atualizar: Date.now() },
+  });
+  return resposta.data;
+};
