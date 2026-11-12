@@ -25,7 +25,12 @@
               <i class="pi pi-eye"></i>
               Ver detalhes
             </button>
-            <button class="dropdown-item" type="button" @click="emitirAcao('editar')">
+            <button
+              v-if="podeEditar"
+              class="dropdown-item"
+              type="button"
+              @click="emitirAcao('editar')"
+            >
               <i class="pi pi-pencil"></i>
               Editar
             </button>
@@ -38,8 +43,9 @@
               <i class="pi pi-key"></i>
               Gerar código de acesso
             </button>
-            <div class="dropdown-divider"></div>
+            <div v-if="podeAlterarStatus" class="dropdown-divider"></div>
             <button
+              v-if="podeAlterarStatus"
               :class="[
                 'dropdown-item',
                 colaborador.status === 'ativo' ? 'item-danger' : 'item-success',
@@ -144,6 +150,14 @@ const props = defineProps({
   colaborador: {
     type: Object,
     required: true,
+  },
+  podeEditar: {
+    type: Boolean,
+    default: true,
+  },
+  podeAlterarStatus: {
+    type: Boolean,
+    default: true,
   },
 });
 const emit = defineEmits(["editar", "toggle-status", "detalhes", "gerar-codigo"]);

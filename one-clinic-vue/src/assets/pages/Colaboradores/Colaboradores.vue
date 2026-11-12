@@ -81,6 +81,8 @@
           v-for="colaborador in colaboradoresFiltrados"
           :key="colaborador.id"
           :colaborador="colaborador"
+          :pode-editar="podeEditar(colaborador)"
+          :pode-alterar-status="podeAlterarStatus(colaborador)"
           @detalhes="abrirModalDetalhes"
           @editar="abrirModalEdicao"
           @toggle-status="alternarStatus"
@@ -119,6 +121,8 @@
       :colaborador-edicao="colaboradorSelecionado"
       :tags-disponiveis="tagsDisponiveis"
       :salvando="salvando"
+      :roles-permitidos="rolesPermitidos"
+      :role-bloqueado="roleBloqueado"
       @close="fecharModal"
       @save="salvarColaborador"
     />
@@ -151,6 +155,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import api from "@/services/api.js";
+import { useAuthStore } from "@/store/auth";
 import StatCard from "../../layouts/Components/StatCard.vue";
 import ColaboradorCard from "./components/ColaboradorCard.vue";
 import ColaboradorModal from "./components/ColaboradorModal.vue";
@@ -165,6 +170,7 @@ const nomesFuncoes = {
   SECRETARIO: "Secretário(a)",
   PROFISSIONAL: "Profissional",
 };
+const authStore = useAuthStore();
 const colaboradores = ref([]);
 const carregando = ref(false);
 const erroCarregamento = ref("");
@@ -188,6 +194,34 @@ const statusBusca = [
   { label: "Ativos", value: "ativo" },
   { label: "Inativos", value: "inativo" },
 ];
+const papelLogado = computed(() => String(authStore.role || "").toUpperCase());
+const ehAdminLogado = computed(() => papelLogado.value === "ADMIN");
+function ehProprio(colaborador) {
+  return (
+    Boolean(authStore.usuario?.id) &&
+    String(colaborador?.usuarioId || "") === String(authStore.usuario.id)
+  );
+}
+function podeEditar(colaborador) {
+  return colaborador.roleNome !== "ADMIN" || ehProprio(colaborador);
+}
+function podeAlterarStatus(colaborador) {
+  if (colaborador.roleNome === "ADMIN" && !ehProprio(colaborador)) return false;
+  if (!ehAdminLogado.value && ehProprio(colaborador)) return false;
+  return true;
+}
+const rolesPermitidos = computed(() => {
+  if (ehAdminLogado.value || modalMode.value === "criar") {
+    return [ROLES.ADMIN, ROLES.SECRETARIO, ROLES.PROFISSIONAL];
+  }
+  return [ROLES.SECRETARIO, ROLES.PROFISSIONAL];
+});
+const roleBloqueado = computed(
+  () =>
+    !ehAdminLogado.value &&
+    modalMode.value === "editar" &&
+    ehProprio(colaboradorSelecionado.value)
+);
 const colaboradoresAtivos = computed(
   () => colaboradores.value.filter((c) => c.status === "ativo").length
 );
@@ -287,6 +321,7 @@ function normalizarColaborador(item) {
     .toUpperCase();
   return {
     id: item.id,
+    usuarioId: item.usuario,
     nome,
     iniciais: iniciais || "CO",
     roleId,

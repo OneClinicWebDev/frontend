@@ -94,13 +94,28 @@
                 id="colaborador-funcao"
                 v-model="form.roleId"
                 required
-                :disabled="isDetalhes"
+                :disabled="isDetalhes || roleBloqueado"
               >
                 <option value="" disabled>Selecione uma função</option>
-                <option :value="String(ROLES.ADMIN)">Administrador</option>
-                <option :value="String(ROLES.SECRETARIO)">Secretário(a)</option>
-                <option :value="String(ROLES.PROFISSIONAL)">Profissional</option>
+                <option v-if="permiteRole(ROLES.ADMIN)" :value="String(ROLES.ADMIN)">
+                  Administrador
+                </option>
+                <option
+                  v-if="permiteRole(ROLES.SECRETARIO)"
+                  :value="String(ROLES.SECRETARIO)"
+                >
+                  Secretário(a)
+                </option>
+                <option
+                  v-if="permiteRole(ROLES.PROFISSIONAL)"
+                  :value="String(ROLES.PROFISSIONAL)"
+                >
+                  Profissional
+                </option>
               </select>
+              <span v-if="roleBloqueado && !isDetalhes" class="field-hint">
+                Somente administradores podem alterar o próprio papel.
+              </span>
             </div>
             <Transition name="field">
               <div v-if="isProfissional" class="form-group">
@@ -300,6 +315,14 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  rolesPermitidos: {
+    type: Array,
+    default: () => [1, 2, 3],
+  },
+  roleBloqueado: {
+    type: Boolean,
+    default: false,
+  },
 });
 const emit = defineEmits(["close", "save"]);
 const form = ref({
@@ -316,6 +339,9 @@ const usuarioExistente = ref(false);
 const isDetalhes = computed(() => props.mode === "detalhes");
 const isEdicao = computed(() => props.mode === "editar");
 const isCriacao = computed(() => props.mode === "criar");
+function permiteRole(id) {
+  return props.rolesPermitidos.includes(id) || Number(form.value.roleId) === id;
+}
 const isProfissional = computed(() => Number(form.value.roleId) === ROLES.PROFISSIONAL);
 const ativo = computed(() => Boolean(props.colaboradorEdicao?.ativo));
 const tagsDisponiveisFiltradas = computed(() => {
