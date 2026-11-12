@@ -127,26 +127,44 @@
               <div class="form-row">
                 <div class="form-group flex-1">
                   <label for="servico"
-                    >Procedimento <span class="required-asterisk">*</span></label
+                    >Procedimento ou pacote
+                    <span class="required-asterisk">*</span></label
                   >
                   <div class="input-with-icon">
                     <i class="pi pi-tag input-icon"></i>
                     <select
                       id="servico"
-                      v-model="servicoSelecionado"
+                      v-model="escolhaProcedimento"
                       class="form-control pl-icon"
                       :class="{ 'input-invalid': foiValidado && !servicoSelecionado }"
                       required
                       :disabled="bloqueado"
                     >
-                      <option value="" disabled>Selecione o procedimento...</option>
-                      <option
-                        v-for="servico in servicosDisponiveis"
-                        :key="servico.id"
-                        :value="String(servico.id)"
-                      >
-                        {{ servico.nome }}
+                      <option value="" disabled>
+                        Selecione o procedimento ou pacote...
                       </option>
+                      <optgroup label="Procedimentos (atendimento avulso)">
+                        <option
+                          v-for="servico in servicosDisponiveis"
+                          :key="'s' + servico.id"
+                          :value="'s:' + servico.id"
+                        >
+                          {{ servico.nome }}
+                        </option>
+                      </optgroup>
+                      <optgroup
+                        v-if="modelosAtivos.length"
+                        label="Pacotes (várias sessões)"
+                      >
+                        <option
+                          v-for="modelo in modelosAtivos"
+                          :key="'m' + modelo.id"
+                          :value="'m:' + modelo.id"
+                        >
+                          {{ modelo.nome }} — {{ modelo.quantidade_sessoes }} sessões —
+                          {{ formatarMoeda(modelo.valor_total) }}
+                        </option>
+                      </optgroup>
                     </select>
                   </div>
                   <span
@@ -246,8 +264,20 @@
                   </span>
                 </div>
               </div>
-              <div v-if="mostrarPacotes" class="form-group">
-                <label for="pacote">Pacote do cliente (opcional)</label>
+              <div v-if="modeloEscolhido" class="pacote-info">
+                <i class="pi pi-box"></i>
+                <span>
+                  Pacote <strong>{{ modeloEscolhido.nome }}</strong
+                  >: {{ modeloEscolhido.quantidade_sessoes }} sessões por
+                  {{ formatarMoeda(modeloEscolhido.valor_total) }}. Ao criar o
+                  agendamento, o pacote é registrado para o cliente e esta sessão fica
+                  reservada nele.
+                </span>
+              </div>
+              <div v-else-if="mostrarPacotes && opcoesPacote.length" class="form-group">
+                <label for="pacote"
+                  >Usar pacote já adquirido pelo cliente (opcional)</label
+                >
                 <div class="input-with-icon">
                   <i class="pi pi-box input-icon"></i>
                   <select
@@ -273,63 +303,9 @@
                     </option>
                   </select>
                 </div>
-                <div v-if="!bloqueado && !vendaIndisponivel" class="venda-box">
-                  <button type="button" class="btn-venda" @click="alternarVenda">
-                    <i :class="vendaAberta ? 'pi pi-times' : 'pi pi-shopping-cart'"></i>
-                    {{
-                      vendaAberta
-                        ? "Fechar venda de pacote"
-                        : "Vender pacote a este cliente"
-                    }}
-                  </button>
-                  <div v-if="vendaAberta" class="venda-painel">
-                    <select
-                      v-model="modeloVenda"
-                      class="form-control"
-                      :disabled="vendendo || modelosCarregando"
-                    >
-                      <option value="" disabled>
-                        {{
-                          modelosCarregando
-                            ? "Buscando modelos..."
-                            : "Selecione o modelo do pacote..."
-                        }}
-                      </option>
-                      <option
-                        v-for="modelo in modelosDoServico"
-                        :key="modelo.id"
-                        :value="String(modelo.id)"
-                      >
-                        {{ modelo.nome }} — {{ modelo.quantidade_sessoes }} sessões —
-                        {{ formatarMoeda(modelo.valor_total) }}
-                      </option>
-                    </select>
-                    <small
-                      v-if="!modelosCarregando && !modelosDoServico.length"
-                      class="campo-ajuda"
-                    >
-                      Nenhum modelo ativo para este procedimento. Cadastre em Pacotes e
-                      Procedimentos.
-                    </small>
-                    <button
-                      type="button"
-                      class="btn-salvar btn-venda-confirmar"
-                      :disabled="!modeloVenda || vendendo"
-                      @click="venderPacoteSelecionado"
-                    >
-                      <i v-if="vendendo" class="pi pi-spin pi-spinner"></i>
-                      {{ vendendo ? "Registrando venda..." : "Confirmar venda" }}
-                    </button>
-                  </div>
-                </div>
                 <small class="campo-ajuda">
-                  <template v-if="!pacotesCarregando && !opcoesPacote.length">
-                    Nenhum pacote ativo deste cliente para o procedimento escolhido.
-                  </template>
-                  <template v-else>
-                    Ao salvar, uma sessão disponível do pacote é reservada para este
-                    agendamento e só é consumida quando o atendimento for concluído.
-                  </template>
+                  Ao salvar, uma sessão disponível do pacote é reservada para este
+                  agendamento e só é consumida quando o atendimento for concluído.
                 </small>
               </div>
               <div class="dates-box">
@@ -422,9 +398,18 @@
             </div>
             <footer class="modal-footer">
               <div
-                v-if="editing && (permitirCancelar || permitirFalta)"
+                v-if="editing && (permitirCancelar || permitirFalta || permitirConcluir)"
                 class="footer-extras"
               >
+                <button
+                  v-if="permitirConcluir"
+                  type="button"
+                  class="btn-concluir"
+                  @click="$emit('concluir-agendamento')"
+                >
+                  <i class="pi pi-check-circle"></i>
+                  Concluir atendimento
+                </button>
                 <button
                   v-if="permitirCancelar"
                   type="button"
@@ -450,11 +435,11 @@
                   v-if="!bloqueado"
                   type="submit"
                   class="btn-salvar"
-                  :disabled="salvando"
+                  :disabled="salvando || vendendo"
                 >
-                  <i v-if="salvando" class="pi pi-spin pi-spinner"></i>
+                  <i v-if="salvando || vendendo" class="pi pi-spin pi-spinner"></i>
                   {{
-                    salvando
+                    salvando || vendendo
                       ? "Salvando..."
                       : editing
                       ? "Salvar alterações"
@@ -498,12 +483,14 @@ const props = defineProps({
   mensagemSomenteLeitura: { type: String, default: "" },
   permitirCancelar: Boolean,
   permitirFalta: Boolean,
+  permitirConcluir: Boolean,
 });
 const emit = defineEmits([
   "close",
   "save",
   "cancelar-agendamento",
   "registrar-falta",
+  "concluir-agendamento",
   "notify",
   "limpar-alerta",
 ]);
@@ -524,10 +511,7 @@ const pacotesIndisponivel = ref(false);
 const origemInicial = ref({ cliente: "", servico: "", pacote: "" });
 const modelosPacote = ref([]);
 const modelosCarregados = ref(false);
-const modelosCarregando = ref(false);
-const vendaAberta = ref(false);
-const vendaIndisponivel = ref(false);
-const modeloVenda = ref("");
+const modeloSelecionado = ref("");
 const vendendo = ref(false);
 let tokenPacotes = 0;
 const bloqueado = computed(() => props.somenteLeitura);
@@ -665,12 +649,37 @@ const opcoesPacote = computed(() => {
   }
   return opcoes;
 });
-const modelosDoServico = computed(() =>
-  modelosPacote.value.filter(
-    (modelo) =>
-      modelo.ativo && String(modelo.servico) === String(servicoSelecionado.value)
-  )
+const modelosAtivos = computed(() =>
+  props.editing || bloqueado.value
+    ? []
+    : modelosPacote.value.filter((modelo) => modelo.ativo)
 );
+const modeloEscolhido = computed(
+  () =>
+    modelosAtivos.value.find(
+      (modelo) => String(modelo.id) === String(modeloSelecionado.value)
+    ) || null
+);
+const escolhaProcedimento = computed({
+  get() {
+    if (modeloEscolhido.value) return `m:${modeloEscolhido.value.id}`;
+    return servicoSelecionado.value ? `s:${servicoSelecionado.value}` : "";
+  },
+  set(valor) {
+    const texto = String(valor || "");
+    if (texto.startsWith("m:")) {
+      const modelo = modelosAtivos.value.find(
+        (item) => String(item.id) === texto.slice(2)
+      );
+      if (!modelo) return;
+      modeloSelecionado.value = String(modelo.id);
+      servicoSelecionado.value = String(modelo.servico);
+      return;
+    }
+    modeloSelecionado.value = "";
+    servicoSelecionado.value = texto.slice(2);
+  },
+});
 const mensagemErro = (erro) => {
   const dados = erro?.response?.data;
   if (typeof dados === "string") return dados;
@@ -682,53 +691,17 @@ const mensagemErro = (erro) => {
     if (partes.length) return partes.join(" ");
   }
   if (erro?.response?.status === 403) {
-    return "Seu perfil não pode vender pacotes.";
+    return "Seu perfil não pode registrar pacotes.";
   }
-  return "Não foi possível concluir a operação. Tente novamente.";
+  return "Não foi possível registrar o pacote. Tente novamente.";
 };
-const alternarVenda = async () => {
-  vendaAberta.value = !vendaAberta.value;
-  modeloVenda.value = "";
-  if (!vendaAberta.value || modelosCarregados.value) return;
-  modelosCarregando.value = true;
+const carregarModelos = async () => {
+  if (modelosCarregados.value || bloqueado.value || props.editing) return;
+  modelosCarregados.value = true;
   try {
     modelosPacote.value = await listarModelosPacote();
-    modelosCarregados.value = true;
-  } catch (erro) {
-    vendaAberta.value = false;
-    if (erro?.response?.status === 403) vendaIndisponivel.value = true;
-    emit("notify", { message: mensagemErro(erro), type: "error" });
-  } finally {
-    modelosCarregando.value = false;
-  }
-};
-const venderPacoteSelecionado = async () => {
-  const modelo = modelosDoServico.value.find(
-    (item) => String(item.id) === String(modeloVenda.value)
-  );
-  const cliente = clienteEscolhido.value;
-  if (!modelo || !cliente || vendendo.value) return;
-  vendendo.value = true;
-  try {
-    const novo = await venderPacote({
-      modelo: modelo.id,
-      cliente: cliente.id,
-      servico: modelo.servico,
-      quantidade_sessoes: modelo.quantidade_sessoes,
-      valor_total: modelo.valor_total,
-    });
-    await carregarPacotes();
-    props.form.pacote_id = String(novo.id);
-    vendaAberta.value = false;
-    modeloVenda.value = "";
-    emit("notify", {
-      message: "Pacote vendido e vinculado a este agendamento.",
-      type: "success",
-    });
-  } catch (erro) {
-    emit("notify", { message: mensagemErro(erro), type: "error" });
-  } finally {
-    vendendo.value = false;
+  } catch {
+    modelosPacote.value = [];
   }
 };
 const abrirLista = (tipo) => {
@@ -866,15 +839,15 @@ const sincronizarFormulario = () => {
   };
   fimManual.value = props.editing || Boolean(props.form.horaFim);
   pacotesIndisponivel.value = false;
-  vendaAberta.value = false;
-  modeloVenda.value = "";
+  modeloSelecionado.value = "";
+  carregarModelos();
   carregarPacotes();
   nextTick(() => {
     sincronizando.value = false;
   });
 };
-const salvar = () => {
-  if (bloqueado.value) return;
+const salvar = async () => {
+  if (bloqueado.value || vendendo.value) return;
   foiValidado.value = true;
   const servico = servicoAtual.value;
   if (!clienteValido.value || !profissionalValido.value || !servico) {
@@ -901,6 +874,29 @@ const salvar = () => {
       type: "error",
     });
     return;
+  }
+  const modeloVenda = modeloEscolhido.value;
+  if (modeloVenda) {
+    vendendo.value = true;
+    let falhou = false;
+    try {
+      const novo = await venderPacote({
+        modelo: modeloVenda.id,
+        cliente: clienteEscolhido.value.id,
+        servico: modeloVenda.servico,
+        quantidade_sessoes: modeloVenda.quantidade_sessoes,
+        valor_total: modeloVenda.valor_total,
+      });
+      modeloSelecionado.value = "";
+      await carregarPacotes();
+      props.form.pacote_id = String(novo.id);
+    } catch (erro) {
+      falhou = true;
+      emit("notify", { message: mensagemErro(erro), type: "error" });
+    } finally {
+      vendendo.value = false;
+    }
+    if (falhou) return;
   }
   props.form.cliente = clienteEscolhido.value.nome;
   props.form.cliente_id = clienteEscolhido.value.id;
@@ -936,8 +932,6 @@ watch(servicoSelecionado, (id) => {
     props.form.servico = servico.nome;
     props.form.servico_id = servico.id;
   }
-  vendaAberta.value = false;
-  modeloVenda.value = "";
   sugerirFim();
   carregarPacotes();
 });
@@ -1311,7 +1305,8 @@ select.form-control {
 .btn-cancelar,
 .btn-salvar,
 .btn-excluir,
-.btn-falta {
+.btn-falta,
+.btn-concluir {
   min-height: 44px;
   display: inline-flex;
   align-items: center;
@@ -1366,6 +1361,14 @@ select.form-control {
 }
 .btn-falta:hover {
   background: #fff7ed;
+}
+.btn-concluir {
+  border: 1px solid #99f6e4;
+  background: #ffffff;
+  color: #0f766e;
+}
+.btn-concluir:hover {
+  background: #f0fdfa;
 }
 .fade-enter-active,
 .fade-leave-active {
@@ -1534,44 +1537,22 @@ select.form-control {
   color: #64748b;
   cursor: not-allowed;
 }
-.venda-box {
+.pacote-info {
   display: flex;
-  flex-direction: column;
+  align-items: flex-start;
   gap: 10px;
-}
-.btn-venda {
-  align-self: flex-start;
-  min-height: 38px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0 14px;
+  margin: 0 0 16px;
+  padding: 12px 14px;
   border: 1px solid #ccfbf1;
-  border-radius: 11px;
+  border-radius: 12px;
   background: #f0fdfa;
   color: #0f766e;
-  font-family: inherit;
   font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  line-height: 1.5;
 }
-.btn-venda:hover {
-  background: var(--cor-primaria, #1ca4a7);
-  border-color: var(--cor-primaria, #1ca4a7);
-  color: #ffffff;
-}
-.venda-painel {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 14px;
-  border: 1px dashed #cbd5e1;
-  border-radius: 12px;
-  background: #fbfdff;
-}
-.btn-venda-confirmar {
-  align-self: flex-start;
+.pacote-info i {
+  margin-top: 2px;
+  font-size: 15px;
 }
 .footer-extras {
   display: flex;
@@ -1627,7 +1608,8 @@ select.form-control {
     flex-direction: column;
   }
   .btn-excluir,
-  .btn-falta {
+  .btn-falta,
+  .btn-concluir {
     width: 100%;
   }
 }
