@@ -6,6 +6,7 @@ import {
   atualizarAgendamento,
   cancelarAgendamento,
   registrarFaltaAgendamento,
+  concluirAgendamento,
   listarClientes,
   listarColaboradores,
   listarServicos,
@@ -284,6 +285,22 @@ export function useAgendamentos() {
     }
   };
 
+  const concluir = async (id) => {
+    processandoAcao.value = true;
+
+    try {
+      await concluirAgendamento(id);
+      return { ok: true };
+    } catch (erro) {
+      return {
+        ok: false,
+        erro: interpretarErro(erro, "Não foi possível concluir o atendimento."),
+      };
+    } finally {
+      processandoAcao.value = false;
+    }
+  };
+
   const registrarFalta = async (id, payload) => {
     processandoAcao.value = true;
 
@@ -324,5 +341,6 @@ export function useAgendamentos() {
     reagendarAgendamento,
     cancelar,
     registrarFalta,
+    concluir,
   };
 }
