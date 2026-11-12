@@ -84,6 +84,7 @@
           @detalhes="abrirModalDetalhes"
           @editar="abrirModalEdicao"
           @toggle-status="alternarStatus"
+          @gerar-codigo="gerarNovoCodigo"
         />
       </TransitionGroup>
       <div
@@ -121,6 +122,13 @@
       @close="fecharModal"
       @save="salvarColaborador"
     />
+    <CodigoPrimeiroAcessoModal
+      :is-open="codigoModal.aberto"
+      :nome="codigoModal.nome"
+      :codigo="codigoModal.codigo"
+      :expira-em="codigoModal.expiraEm"
+      @close="fecharCodigoModal"
+    />
     <Transition name="toast">
       <div v-if="toast.show" :class="['toast-notification', toast.type]" role="status">
         <i
@@ -146,6 +154,7 @@ import api from "@/services/api.js";
 import StatCard from "../../layouts/Components/StatCard.vue";
 import ColaboradorCard from "./components/ColaboradorCard.vue";
 import ColaboradorModal from "./components/ColaboradorModal.vue";
+import CodigoPrimeiroAcessoModal from "./components/CodigoPrimeiroAcessoModal.vue";
 const ROLES = {
   ADMIN: 1,
   SECRETARIO: 2,
@@ -166,6 +175,8 @@ const isModalOpen = ref(false);
 const modalMode = ref("criar");
 const colaboradorSelecionado = ref(null);
 const salvando = ref(false);
+const gerandoCodigo = ref(false);
+const codigoModal = ref({ aberto: false, nome: "", codigo: "", expiraEm: "" });
 const toast = ref({ show: false, message: "", type: "success" });
 let toastTimeout;
 const camposBusca = [
@@ -284,6 +295,7 @@ function normalizarColaborador(item) {
     status: item.ativo ? "ativo" : "inativo",
     ativo: Boolean(item.ativo),
     pode_editar_agenda: Boolean(item.pode_editar_agenda),
+    primeiroAcessoPendente: Boolean(item.primeiro_acesso_pendente),
     especialidades: item.especialidades || [],
     criadoEm: item.created_at || "",
     atualizadoEm: item.updated_at || "",
@@ -312,6 +324,17 @@ function dispararToast(message, type = "success") {
   toastTimeout = setTimeout(() => {
     toast.value.show = false;
   }, 4000);
+}
+function exibirCodigo(nome, primeiroAcesso) {
+  codigoModal.value = {
+    aberto: true,
+    nome,
+    codigo: primeiroAcesso.codigo,
+    expiraEm: primeiroAcesso.expira_em || "",
+  };
+}
+function fecharCodigoModal() {
+  codigoModal.value = { aberto: false, nome: "", codigo: "", expiraEm: "" };
 }
 function toggleCampo(campo) {
   const index = camposAtivos.value.indexOf(campo);
@@ -363,6 +386,7 @@ function normalizarEspecialidades(lista) {
 async function salvarColaborador(dados) {
   if (salvando.value) return;
   salvando.value = true;
+  let primeiroAcesso = null;
   try {
     if (dados.id) {
       const payload = {
@@ -392,15 +416,44 @@ async function salvarColaborador(dados) {
             ? normalizarEspecialidades(dados.especialidades)
             : [],
       };
-      await api.post("/api/colaboradores/", payload);
-      dispararToast(`Colaborador "${dados.nome}" cadastrado com sucesso.`);
+      const response = await api.post("/api/colaboradores/", payload);
+      primeiroAcesso = response.data?.primeiro_acesso || null;
+      dispararToast(
+        primeiroAcesso
+          ? `Colaborador "${dados.nome}" cadastrado com sucesso.`
+          : `Colaborador "${dados.nome}" cadastrado. Este usuário já possui senha e entra com o CPF e a senha atuais.`
+      );
     }
     fecharModal();
     await carregarColaboradores();
+    if (primeiroAcesso?.codigo) {
+      exibirCodigo(dados.nome, primeiroAcesso);
+    }
   } catch (error) {
     dispararToast(obterMensagemErro(error), "error");
   } finally {
     salvando.value = false;
+  }
+}
+async function gerarNovoCodigo(colaborador) {
+  if (carregando.value || gerandoCodigo.value) return;
+  const mensagem = `Gerar um novo código de primeiro acesso para ${colaborador.nome}? O código anterior deixará de funcionar.`;
+  if (!window.confirm(mensagem)) return;
+  gerandoCodigo.value = true;
+  try {
+    const response = await api.post(
+      `/api/colaboradores/${colaborador.id}/novo-codigo-primeiro-acesso/`
+    );
+    const primeiroAcesso = response.data?.primeiro_acesso;
+    if (!primeiroAcesso?.codigo) {
+      dispararToast("A API não retornou o código de primeiro acesso.", "error");
+      return;
+    }
+    exibirCodigo(colaborador.nome, primeiroAcesso);
+  } catch (error) {
+    dispararToast(obterMensagemErro(error), "error");
+  } finally {
+    gerandoCodigo.value = false;
   }
 }
 async function alternarStatus(colaborador) {

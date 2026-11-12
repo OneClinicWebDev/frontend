@@ -1,309 +1,425 @@
 <script setup>
-import { computed, onMounted, onBeforeUnmount, ref } from 'vue'
-import { useRouter } from 'vue-router'
-import Button from 'primevue/button'
-import { useAuthStore } from '@/store'
+import { computed, onMounted, onBeforeUnmount, ref } from "vue";
+import { useRouter } from "vue-router";
+import Button from "primevue/button";
+import { useAuthStore } from "@/store";
 
-const emit = defineEmits(['close'])
+const CODIGO_TAMANHO = 10;
+const CODIGO_GRUPO = 5;
 
-const router = useRouter()
-const authStore = useAuthStore()
+const emit = defineEmits(["close"]);
 
-const step = ref(1)
-const visible = ref(false)
-const isLoading = ref(false)
-const erroLogin = ref('')
-const mensagemSucesso = ref('')
-const cadastroConcluido = ref(false)
-const cpf = ref('')
-const senha = ref('')
-const mostrarSenha = ref(false)
-const clinicaSelecionadaId = ref('')
+const router = useRouter();
+const authStore = useAuthStore();
+
+const step = ref(1);
+const visible = ref(false);
+const isLoading = ref(false);
+const erroLogin = ref("");
+const mensagemSucesso = ref("");
+const cadastroConcluido = ref(false);
+const cpf = ref("");
+const senha = ref("");
+const mostrarSenha = ref(false);
+const clinicaSelecionadaId = ref("");
+const codigoPrimeiroAcesso = ref("");
+const novaSenha = ref("");
+const confirmarSenha = ref("");
+const mostrarNovaSenha = ref(false);
 
 const novaClinica = ref({
-  nome_completo: '',
-  data_nascimento: '',
-  cnpj: '',
-  razao_social: '',
-  nome_fantasia: '',
-  telefone: '',
+  nome_completo: "",
+  data_nascimento: "",
+  cnpj: "",
+  razao_social: "",
+  nome_fantasia: "",
+  telefone: "",
   profissionais_podem_editar_agenda: false,
-})
+});
 
-const vinculos = computed(() => authStore.vinculos || [])
+const vinculos = computed(() => authStore.vinculos || []);
 
 const dataMaximaNascimento = computed(() => {
-  const hoje = new Date()
-  const ano = hoje.getFullYear()
-  const mes = String(hoje.getMonth() + 1).padStart(2, '0')
-  const dia = String(hoje.getDate()).padStart(2, '0')
-  return `${ano}-${mes}-${dia}`
-})
+  const hoje = new Date();
+  const ano = hoje.getFullYear();
+  const mes = String(hoje.getMonth() + 1).padStart(2, "0");
+  const dia = String(hoje.getDate()).padStart(2, "0");
+  return `${ano}-${mes}-${dia}`;
+});
 
 const cpfFormatado = computed({
   get: () => formatarCPF(cpf.value),
   set: (valor) => {
-    cpf.value = String(valor || '').replace(/\D/g, '').slice(0, 11)
+    cpf.value = String(valor || "")
+      .replace(/\D/g, "")
+      .slice(0, 11);
   },
-})
+});
 
 const cnpjFormatado = computed({
   get: () => formatarCNPJ(novaClinica.value.cnpj),
   set: (valor) => {
-    novaClinica.value.cnpj = String(valor || '').replace(/\D/g, '').slice(0, 14)
+    novaClinica.value.cnpj = String(valor || "")
+      .replace(/\D/g, "")
+      .slice(0, 14);
   },
-})
+});
 
 const telefoneFormatado = computed({
   get: () => formatarTelefone(novaClinica.value.telefone),
   set: (valor) => {
-    novaClinica.value.telefone = String(valor || '').replace(/\D/g, '').slice(0, 11)
+    novaClinica.value.telefone = String(valor || "")
+      .replace(/\D/g, "")
+      .slice(0, 11);
   },
-})
+});
+
+const codigoFormatado = computed({
+  get: () => formatarCodigo(codigoPrimeiroAcesso.value),
+  set: (valor) => {
+    codigoPrimeiroAcesso.value = limparCodigo(valor);
+  },
+});
+
+function limparCodigo(valor) {
+  return String(valor || "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .slice(0, CODIGO_TAMANHO);
+}
+
+function formatarCodigo(valor) {
+  const limpo = limparCodigo(valor);
+
+  if (limpo.length > CODIGO_GRUPO) {
+    return `${limpo.slice(0, CODIGO_GRUPO)}-${limpo.slice(CODIGO_GRUPO)}`;
+  }
+
+  return limpo;
+}
 
 function formatarCPF(valor) {
-  const numeros = String(valor || '').replace(/\D/g, '').slice(0, 11)
+  const numeros = String(valor || "")
+    .replace(/\D/g, "")
+    .slice(0, 11);
   return numeros
-    .replace(/^(\d{3})(\d)/, '$1.$2')
-    .replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
-    .replace(/\.(\d{3})(\d)/, '.$1-$2')
+    .replace(/^(\d{3})(\d)/, "$1.$2")
+    .replace(/^(\d{3})\.(\d{3})(\d)/, "$1.$2.$3")
+    .replace(/\.(\d{3})(\d)/, ".$1-$2");
 }
 
 function formatarCNPJ(valor) {
-  const numeros = String(valor || '').replace(/\D/g, '').slice(0, 14)
+  const numeros = String(valor || "")
+    .replace(/\D/g, "")
+    .slice(0, 14);
   return numeros
-    .replace(/^(\d{2})(\d)/, '$1.$2')
-    .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
-    .replace(/\.(\d{3})(\d)/, '.$1/$2')
-    .replace(/(\d{4})(\d)/, '$1-$2')
+    .replace(/^(\d{2})(\d)/, "$1.$2")
+    .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
+    .replace(/\.(\d{3})(\d)/, ".$1/$2")
+    .replace(/(\d{4})(\d)/, "$1-$2");
 }
 
 function formatarTelefone(valor) {
-  const numeros = String(valor || '').replace(/\D/g, '').slice(0, 11)
+  const numeros = String(valor || "")
+    .replace(/\D/g, "")
+    .slice(0, 11);
 
   if (numeros.length <= 10) {
-    return numeros
-      .replace(/^(\d{2})(\d)/, '($1) $2')
-      .replace(/(\d{4})(\d)/, '$1-$2')
+    return numeros.replace(/^(\d{2})(\d)/, "($1) $2").replace(/(\d{4})(\d)/, "$1-$2");
   }
 
-  return numeros
-    .replace(/^(\d{2})(\d)/, '($1) $2')
-    .replace(/(\d{5})(\d)/, '$1-$2')
+  return numeros.replace(/^(\d{2})(\d)/, "($1) $2").replace(/(\d{5})(\d)/, "$1-$2");
 }
 
 function limparMensagens() {
-  erroLogin.value = ''
-  mensagemSucesso.value = ''
+  erroLogin.value = "";
+  mensagemSucesso.value = "";
+}
+
+function limparCamposPrimeiroAcesso() {
+  codigoPrimeiroAcesso.value = "";
+  novaSenha.value = "";
+  confirmarSenha.value = "";
+  mostrarNovaSenha.value = false;
 }
 
 function fecharModal() {
-  if (isLoading.value) return
+  if (isLoading.value) return;
 
-  visible.value = false
-  window.setTimeout(() => emit('close'), 180)
+  visible.value = false;
+  window.setTimeout(() => emit("close"), 180);
 }
 
 function tratarTeclaEscape(event) {
-  if (event.key === 'Escape' && !isLoading.value) {
-    fecharModal()
+  if (event.key === "Escape" && !isLoading.value) {
+    fecharModal();
   }
 }
 
 function validarCPF(valor) {
-  const numeros = String(valor || '').replace(/\D/g, '')
+  const numeros = String(valor || "").replace(/\D/g, "");
 
   if (numeros.length !== 11 || /^(\d)\1{10}$/.test(numeros)) {
-    return false
+    return false;
   }
 
-  let soma = 0
+  let soma = 0;
 
   for (let i = 0; i < 9; i++) {
-    soma += Number(numeros[i]) * (10 - i)
+    soma += Number(numeros[i]) * (10 - i);
   }
 
-  let digito = (soma * 10) % 11
-  if (digito === 10) digito = 0
-  if (digito !== Number(numeros[9])) return false
+  let digito = (soma * 10) % 11;
+  if (digito === 10) digito = 0;
+  if (digito !== Number(numeros[9])) return false;
 
-  soma = 0
+  soma = 0;
 
   for (let i = 0; i < 10; i++) {
-    soma += Number(numeros[i]) * (11 - i)
+    soma += Number(numeros[i]) * (11 - i);
   }
 
-  digito = (soma * 10) % 11
-  if (digito === 10) digito = 0
+  digito = (soma * 10) % 11;
+  if (digito === 10) digito = 0;
 
-  return digito === Number(numeros[10])
+  return digito === Number(numeros[10]);
 }
 
 function validarCNPJ(valor) {
-  const numeros = String(valor || '').replace(/\D/g, '')
+  const numeros = String(valor || "").replace(/\D/g, "");
 
   if (numeros.length !== 14 || /^(\d)\1{13}$/.test(numeros)) {
-    return false
+    return false;
   }
 
   const calcularDigito = (base, pesos) => {
     const soma = base
-      .split('')
-      .reduce(
-        (total, numero, indice) => total + Number(numero) * pesos[indice],
-        0,
-      )
+      .split("")
+      .reduce((total, numero, indice) => total + Number(numero) * pesos[indice], 0);
 
-    const resto = soma % 11
-    return resto < 2 ? 0 : 11 - resto
-  }
+    const resto = soma % 11;
+    return resto < 2 ? 0 : 11 - resto;
+  };
 
-  const primeiro = calcularDigito(
-    numeros.slice(0, 12),
-    [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2],
-  )
+  const primeiro = calcularDigito(numeros.slice(0, 12), [
+    5,
+    4,
+    3,
+    2,
+    9,
+    8,
+    7,
+    6,
+    5,
+    4,
+    3,
+    2,
+  ]);
 
-  const segundo = calcularDigito(
-    numeros.slice(0, 12) + primeiro,
-    [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2],
-  )
+  const segundo = calcularDigito(numeros.slice(0, 12) + primeiro, [
+    6,
+    5,
+    4,
+    3,
+    2,
+    9,
+    8,
+    7,
+    6,
+    5,
+    4,
+    3,
+    2,
+  ]);
 
-  return numeros.endsWith(`${primeiro}${segundo}`)
+  return numeros.endsWith(`${primeiro}${segundo}`);
 }
 
 async function handleLogin() {
-  limparMensagens()
+  limparMensagens();
 
   if (!validarCPF(cpf.value)) {
-    erroLogin.value = 'Informe um CPF válido.'
-    return
+    erroLogin.value = "Informe um CPF válido.";
+    return;
   }
 
   if (!senha.value) {
-    erroLogin.value = 'Informe sua senha.'
-    return
+    erroLogin.value = "Informe sua senha.";
+    return;
   }
 
-  isLoading.value = true
+  isLoading.value = true;
 
   try {
-    await authStore.login(cpf.value, senha.value)
+    await authStore.login(cpf.value, senha.value);
 
     if (vinculos.value.length === 1) {
-      await abrirSistema(vinculos.value[0].clinica_id)
-      return
+      await abrirSistema(vinculos.value[0].clinica_id);
+      return;
     }
 
-    clinicaSelecionadaId.value = authStore.clinicaAtivaId || ''
+    clinicaSelecionadaId.value = authStore.clinicaAtivaId || "";
 
-    step.value = 2
+    step.value = 2;
 
     if (!vinculos.value.length) {
       mensagemSucesso.value =
-        'Seu acesso foi validado. Você pode cadastrar uma clínica para começar.'
+        "Seu acesso foi validado. Você pode cadastrar uma clínica para começar.";
     }
   } catch (error) {
     erroLogin.value =
-      error.message || 'Não foi possível entrar. Verifique suas credenciais.'
+      error.message || "Não foi possível entrar. Verifique suas credenciais.";
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
 }
 
 async function abrirSistema(clinicaId) {
-  limparMensagens()
+  limparMensagens();
 
   try {
-    await authStore.setClinicaAtiva(clinicaId)
-    visible.value = false
-    await router.replace('/app/dashboard')
-    window.setTimeout(() => emit('close'), 180)
+    await authStore.setClinicaAtiva(clinicaId);
+    visible.value = false;
+    await router.replace("/app/dashboard");
+    window.setTimeout(() => emit("close"), 180);
   } catch (error) {
-    erroLogin.value =
-      error.message || 'Não foi possível acessar essa clínica.'
-    visible.value = true
+    erroLogin.value = error.message || "Não foi possível acessar essa clínica.";
+    visible.value = true;
   }
 }
 
 async function selecionarClinica() {
   if (!clinicaSelecionadaId.value) {
-    erroLogin.value = 'Selecione uma clínica para continuar.'
-    return
+    erroLogin.value = "Selecione uma clínica para continuar.";
+    return;
   }
 
-  await abrirSistema(clinicaSelecionadaId.value)
+  await abrirSistema(clinicaSelecionadaId.value);
 }
 
 function abrirCadastroClinica() {
-  limparMensagens()
-  cadastroConcluido.value = false
-  step.value = 3
+  limparMensagens();
+  cadastroConcluido.value = false;
+  step.value = 3;
+}
+
+function abrirPrimeiroAcesso() {
+  limparMensagens();
+  limparCamposPrimeiroAcesso();
+  step.value = 4;
 }
 
 function voltarParaLogin() {
-  limparMensagens()
-  step.value = 1
+  limparMensagens();
+  limparCamposPrimeiroAcesso();
+  step.value = 1;
 }
 
 function voltarParaClinicas() {
-  limparMensagens()
-  step.value = 2
+  limparMensagens();
+  step.value = 2;
+}
+
+async function handlePrimeiroAcesso() {
+  limparMensagens();
+
+  if (!validarCPF(cpf.value)) {
+    erroLogin.value = "Informe um CPF válido.";
+    return;
+  }
+
+  if (codigoPrimeiroAcesso.value.length !== CODIGO_TAMANHO) {
+    erroLogin.value = "Informe o código de primeiro acesso completo.";
+    return;
+  }
+
+  if (!novaSenha.value) {
+    erroLogin.value = "Informe a nova senha.";
+    return;
+  }
+
+  if (novaSenha.value !== confirmarSenha.value) {
+    erroLogin.value = "A confirmação da senha não confere.";
+    return;
+  }
+
+  isLoading.value = true;
+
+  try {
+    await authStore.primeiroAcesso({
+      cpf: cpf.value,
+      codigo: codigoPrimeiroAcesso.value,
+      nova_senha: novaSenha.value,
+      confirmar_senha: confirmarSenha.value,
+    });
+
+    limparCamposPrimeiroAcesso();
+    senha.value = "";
+    step.value = 1;
+    mensagemSucesso.value =
+      "Senha definida com sucesso. Entre com seu CPF e sua nova senha.";
+  } catch (error) {
+    erroLogin.value =
+      error.message || "Não foi possível concluir o primeiro acesso. Verifique os dados.";
+  } finally {
+    isLoading.value = false;
+  }
 }
 
 async function handleCriarClinica() {
-  limparMensagens()
+  limparMensagens();
 
-  const dados = novaClinica.value
-  const cpfLimpo = String(cpf.value || '').replace(/\D/g, '')
-  const cnpjLimpo = String(dados.cnpj || '').replace(/\D/g, '')
-  const telefoneLimpo = String(dados.telefone || '').replace(/\D/g, '')
+  const dados = novaClinica.value;
+  const cpfLimpo = String(cpf.value || "").replace(/\D/g, "");
+  const cnpjLimpo = String(dados.cnpj || "").replace(/\D/g, "");
+  const telefoneLimpo = String(dados.telefone || "").replace(/\D/g, "");
 
   if (!validarCPF(cpfLimpo)) {
-    erroLogin.value = 'Informe um CPF válido no campo de login.'
-    return
+    erroLogin.value = "Informe um CPF válido no campo de login.";
+    return;
   }
 
   if (!dados.nome_completo.trim()) {
-    erroLogin.value = 'Informe seu nome completo.'
-    return
+    erroLogin.value = "Informe seu nome completo.";
+    return;
   }
 
   if (!dados.data_nascimento) {
-    erroLogin.value = 'Informe sua data de nascimento.'
-    return
+    erroLogin.value = "Informe sua data de nascimento.";
+    return;
   }
 
   if (dados.data_nascimento > dataMaximaNascimento.value) {
-    erroLogin.value = 'A data de nascimento não pode ser futura.'
-    return
+    erroLogin.value = "A data de nascimento não pode ser futura.";
+    return;
   }
 
   if (!senha.value) {
-    erroLogin.value = 'Informe a senha que será usada para entrar.'
-    return
+    erroLogin.value = "Informe a senha que será usada para entrar.";
+    return;
   }
 
   if (!validarCNPJ(cnpjLimpo)) {
-    erroLogin.value = 'Informe um CNPJ válido.'
-    return
+    erroLogin.value = "Informe um CNPJ válido.";
+    return;
   }
 
   if (!dados.razao_social.trim()) {
-    erroLogin.value = 'Informe a razão social.'
-    return
+    erroLogin.value = "Informe a razão social.";
+    return;
   }
 
   if (!dados.nome_fantasia.trim()) {
-    erroLogin.value = 'Informe o nome fantasia.'
-    return
+    erroLogin.value = "Informe o nome fantasia.";
+    return;
   }
 
   if (telefoneLimpo.length < 10 || telefoneLimpo.length > 11) {
-    erroLogin.value = 'Informe um telefone válido com DDD.'
-    return
+    erroLogin.value = "Informe um telefone válido com DDD.";
+    return;
   }
 
-  isLoading.value = true
+  isLoading.value = true;
 
   try {
     const cadastro = await authStore.criarClinica({
@@ -315,63 +431,55 @@ async function handleCriarClinica() {
       razao_social: dados.razao_social.trim(),
       nome_fantasia: dados.nome_fantasia.trim(),
       telefone: telefoneLimpo,
-      profissionais_podem_editar_agenda: Boolean(
-        dados.profissionais_podem_editar_agenda,
-      ),
-    })
+      profissionais_podem_editar_agenda: Boolean(dados.profissionais_podem_editar_agenda),
+    });
 
-    cadastroConcluido.value = true
-    mensagemSucesso.value =
-      'Clínica criada com sucesso. Estamos entrando na sua conta.'
+    cadastroConcluido.value = true;
+    mensagemSucesso.value = "Clínica criada com sucesso. Estamos entrando na sua conta.";
 
     try {
-      await authStore.login(cpfLimpo, senha.value)
+      await authStore.login(cpfLimpo, senha.value);
 
       const novoVinculo = authStore.vinculos.find(
-        (vinculo) =>
-          String(vinculo.clinica_id) === String(cadastro.clinica_id),
-      )
+        (vinculo) => String(vinculo.clinica_id) === String(cadastro.clinica_id)
+      );
 
       if (novoVinculo) {
-        await abrirSistema(novoVinculo.clinica_id)
-        return
+        await abrirSistema(novoVinculo.clinica_id);
+        return;
       }
 
-      step.value = 2
+      step.value = 2;
       mensagemSucesso.value =
-        'Clínica criada. Se ela não aparecer na lista, entre novamente ou contate o suporte.'
+        "Clínica criada. Se ela não aparecer na lista, entre novamente ou contate o suporte.";
     } catch {
-      step.value = 1
+      step.value = 1;
       mensagemSucesso.value =
-        'A clínica foi criada, mas não foi possível entrar automaticamente. Faça login com seu CPF e senha; não é necessário cadastrar a clínica novamente.'
+        "A clínica foi criada, mas não foi possível entrar automaticamente. Faça login com seu CPF e senha; não é necessário cadastrar a clínica novamente.";
     }
   } catch (error) {
     erroLogin.value =
-      error.message ||
-      'Não foi possível criar a clínica. Verifique os dados informados.'
+      error.message || "Não foi possível criar a clínica. Verifique os dados informados.";
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
 }
 
 onMounted(() => {
   window.setTimeout(() => {
-    visible.value = true
-  }, 20)
+    visible.value = true;
+  }, 20);
 
-  window.addEventListener('keydown', tratarTeclaEscape)
-})
+  window.addEventListener("keydown", tratarTeclaEscape);
+});
 
 onBeforeUnmount(() => {
-  window.removeEventListener('keydown', tratarTeclaEscape)
-})
+  window.removeEventListener("keydown", tratarTeclaEscape);
+});
 </script>
 
 <template>
-  <div
-    class="login-modal-overlay"
-    @mousedown.self="!isLoading && fecharModal()"
-  >
+  <div class="login-modal-overlay" @mousedown.self="!isLoading && fecharModal()">
     <Transition name="modal">
       <section
         v-if="visible"
@@ -401,35 +509,41 @@ onBeforeUnmount(() => {
           <span class="eyebrow">
             {{
               step === 1
-                ? 'BEM-VINDO DE VOLTA'
+                ? "BEM-VINDO DE VOLTA"
                 : step === 2
-                  ? 'SEU ESPAÇO DE TRABALHO'
-                  : 'COMECE SUA JORNADA'
+                ? "SEU ESPAÇO DE TRABALHO"
+                : step === 3
+                ? "COMECE SUA JORNADA"
+                : "PRIMEIRO ACESSO"
             }}
           </span>
 
           <h2 id="login-modal-title">
             {{
               step === 1
-                ? 'Acesse sua conta'
+                ? "Acesse sua conta"
                 : step === 2
-                  ? 'Escolha sua clínica'
-                  : 'Cadastre sua clínica'
+                ? "Escolha sua clínica"
+                : step === 3
+                ? "Cadastre sua clínica"
+                : "Defina sua senha"
             }}
           </h2>
 
           <p>
             {{
               step === 1
-                ? 'Entre para gerenciar sua rotina com mais tranquilidade.'
+                ? "Entre para gerenciar sua rotina com mais tranquilidade."
                 : step === 2
-                  ? 'Selecione onde deseja continuar ou crie uma nova clínica.'
-                  : 'Preencha os dados para configurar seu espaço de trabalho.'
+                ? "Selecione onde deseja continuar ou crie uma nova clínica."
+                : step === 3
+                ? "Preencha os dados para configurar seu espaço de trabalho."
+                : "Use o código fornecido pelo administrador da clínica para criar sua senha."
             }}
           </p>
         </div>
 
-        <div class="step-indicator" aria-label="Etapas do acesso">
+        <div v-if="step !== 4" class="step-indicator" aria-label="Etapas do acesso">
           <span :class="{ active: step >= 1, current: step === 1 }" />
           <span :class="{ active: step >= 2, current: step === 2 }" />
           <span :class="{ active: step >= 3, current: step === 3 }" />
@@ -455,7 +569,7 @@ onBeforeUnmount(() => {
                 placeholder="000.000.000-00"
                 maxlength="14"
                 :disabled="isLoading"
-              >
+              />
             </div>
 
             <label class="field-label" for="login-password">Senha</label>
@@ -469,7 +583,7 @@ onBeforeUnmount(() => {
                 autocomplete="current-password"
                 placeholder="Digite sua senha"
                 :disabled="isLoading"
-              >
+              />
 
               <button
                 class="password-toggle"
@@ -507,6 +621,16 @@ onBeforeUnmount(() => {
               class="text-action"
               type="button"
               :disabled="isLoading"
+              @click="abrirPrimeiroAcesso"
+            >
+              Primeiro acesso de colaborador
+              <i class="pi pi-key" />
+            </button>
+
+            <button
+              class="text-action"
+              type="button"
+              :disabled="isLoading"
               @click="abrirCadastroClinica"
             >
               Criar uma clínica
@@ -526,14 +650,12 @@ onBeforeUnmount(() => {
                 :key="vinculo.clinica_id"
                 class="clinic-option"
                 :class="{
-                  selected:
-                    String(clinicaSelecionadaId) ===
-                    String(vinculo.clinica_id),
+                  selected: String(clinicaSelecionadaId) === String(vinculo.clinica_id),
                 }"
                 type="button"
                 @click="
                   clinicaSelecionadaId = String(vinculo.clinica_id);
-                  limparMensagens()
+                  limparMensagens();
                 "
               >
                 <span class="clinic-icon">
@@ -556,10 +678,7 @@ onBeforeUnmount(() => {
 
               <strong>Nenhuma clínica vinculada</strong>
 
-              <p>
-                Você pode cadastrar uma clínica para começar a usar a
-                plataforma.
-              </p>
+              <p>Você pode cadastrar uma clínica para começar a usar a plataforma.</p>
             </div>
 
             <p v-if="erroLogin" class="feedback error" role="alert">
@@ -605,7 +724,7 @@ onBeforeUnmount(() => {
           </form>
 
           <form
-            v-else
+            v-else-if="step === 3"
             key="cadastro"
             class="modal-form registration-form"
             @submit.prevent="handleCriarClinica"
@@ -626,12 +745,10 @@ onBeforeUnmount(() => {
                   placeholder="000.000.000-00"
                   maxlength="14"
                   :disabled="isLoading || cadastroConcluido"
-                >
+                />
               </div>
 
-              <label class="field-label" for="cadastro-nome">
-                Nome completo
-              </label>
+              <label class="field-label" for="cadastro-nome"> Nome completo </label>
 
               <div class="input-wrap">
                 <i class="pi pi-user" />
@@ -642,7 +759,7 @@ onBeforeUnmount(() => {
                   autocomplete="name"
                   placeholder="Seu nome completo"
                   :disabled="isLoading || cadastroConcluido"
-                >
+                />
               </div>
 
               <label class="field-label" for="cadastro-nascimento">
@@ -657,12 +774,10 @@ onBeforeUnmount(() => {
                   type="date"
                   :max="dataMaximaNascimento"
                   :disabled="isLoading || cadastroConcluido"
-                >
+                />
               </div>
 
-              <label class="field-label" for="cadastro-senha">
-                Senha de acesso
-              </label>
+              <label class="field-label" for="cadastro-senha"> Senha de acesso </label>
 
               <div class="input-wrap">
                 <i class="pi pi-lock" />
@@ -673,7 +788,7 @@ onBeforeUnmount(() => {
                   autocomplete="new-password"
                   placeholder="Crie sua senha"
                   :disabled="isLoading || cadastroConcluido"
-                >
+                />
               </div>
             </div>
 
@@ -692,12 +807,10 @@ onBeforeUnmount(() => {
                   placeholder="00.000.000/0000-00"
                   maxlength="18"
                   :disabled="isLoading || cadastroConcluido"
-                >
+                />
               </div>
 
-              <label class="field-label" for="cadastro-razao">
-                Razão social
-              </label>
+              <label class="field-label" for="cadastro-razao"> Razão social </label>
 
               <div class="input-wrap">
                 <i class="pi pi-building" />
@@ -707,12 +820,10 @@ onBeforeUnmount(() => {
                   type="text"
                   placeholder="Razão social da empresa"
                   :disabled="isLoading || cadastroConcluido"
-                >
+                />
               </div>
 
-              <label class="field-label" for="cadastro-fantasia">
-                Nome fantasia
-              </label>
+              <label class="field-label" for="cadastro-fantasia"> Nome fantasia </label>
 
               <div class="input-wrap">
                 <i class="pi pi-shop" />
@@ -722,12 +833,10 @@ onBeforeUnmount(() => {
                   type="text"
                   placeholder="Nome da sua clínica"
                   :disabled="isLoading || cadastroConcluido"
-                >
+                />
               </div>
 
-              <label class="field-label" for="cadastro-telefone">
-                Telefone
-              </label>
+              <label class="field-label" for="cadastro-telefone"> Telefone </label>
 
               <div class="input-wrap">
                 <i class="pi pi-phone" />
@@ -740,7 +849,7 @@ onBeforeUnmount(() => {
                   placeholder="(00) 00000-0000"
                   maxlength="15"
                   :disabled="isLoading || cadastroConcluido"
-                >
+                />
               </div>
             </div>
 
@@ -752,13 +861,13 @@ onBeforeUnmount(() => {
                 v-model="novaClinica.profissionais_podem_editar_agenda"
                 type="checkbox"
                 :disabled="isLoading || cadastroConcluido"
-              >
+              />
 
               <span class="autonomy-copy">
                 <strong>Permitir autonomia na agenda</strong>
                 <small>
-                  Profissionais poderão editar a própria agenda quando também
-                  tiverem essa permissão individual.
+                  Profissionais poderão editar a própria agenda quando também tiverem essa
+                  permissão individual.
                 </small>
               </span>
             </label>
@@ -802,6 +911,112 @@ onBeforeUnmount(() => {
             >
               <i class="pi pi-arrow-left" />
               Voltar
+            </button>
+          </form>
+
+          <form
+            v-else
+            key="primeiro-acesso"
+            class="modal-form"
+            @submit.prevent="handlePrimeiroAcesso"
+          >
+            <label class="field-label" for="primeiro-acesso-cpf">CPF</label>
+
+            <div class="input-wrap">
+              <i class="pi pi-id-card" />
+              <input
+                id="primeiro-acesso-cpf"
+                v-model="cpfFormatado"
+                type="text"
+                inputmode="numeric"
+                autocomplete="username"
+                placeholder="000.000.000-00"
+                maxlength="14"
+                :disabled="isLoading"
+              />
+            </div>
+
+            <label class="field-label" for="primeiro-acesso-codigo">
+              Código de primeiro acesso
+            </label>
+
+            <div class="input-wrap code-input">
+              <i class="pi pi-key" />
+              <input
+                id="primeiro-acesso-codigo"
+                v-model="codigoFormatado"
+                type="text"
+                autocomplete="off"
+                autocapitalize="characters"
+                spellcheck="false"
+                placeholder="XXXXX-XXXXX"
+                maxlength="11"
+                :disabled="isLoading"
+              />
+            </div>
+
+            <label class="field-label" for="primeiro-acesso-senha"> Nova senha </label>
+
+            <div class="input-wrap">
+              <i class="pi pi-lock" />
+              <input
+                id="primeiro-acesso-senha"
+                v-model="novaSenha"
+                :type="mostrarNovaSenha ? 'text' : 'password'"
+                autocomplete="new-password"
+                placeholder="Crie sua senha"
+                :disabled="isLoading"
+              />
+
+              <button
+                class="password-toggle"
+                type="button"
+                :aria-label="mostrarNovaSenha ? 'Ocultar senha' : 'Mostrar senha'"
+                @click="mostrarNovaSenha = !mostrarNovaSenha"
+              >
+                <i :class="mostrarNovaSenha ? 'pi pi-eye-slash' : 'pi pi-eye'" />
+              </button>
+            </div>
+
+            <label class="field-label" for="primeiro-acesso-confirmacao">
+              Confirmar nova senha
+            </label>
+
+            <div class="input-wrap">
+              <i class="pi pi-lock" />
+              <input
+                id="primeiro-acesso-confirmacao"
+                v-model="confirmarSenha"
+                :type="mostrarNovaSenha ? 'text' : 'password'"
+                autocomplete="new-password"
+                placeholder="Repita a senha"
+                :disabled="isLoading"
+              />
+            </div>
+
+            <p v-if="erroLogin" class="feedback error" role="alert">
+              <i class="pi pi-exclamation-circle" />
+              {{ erroLogin }}
+            </p>
+
+            <Button
+              type="submit"
+              class="primary-action"
+              :loading="isLoading"
+              :disabled="isLoading"
+              label="Definir senha"
+              icon="pi pi-check"
+              icon-pos="right"
+            />
+
+            <button
+              class="text-action back-action"
+              type="button"
+              :disabled="isLoading"
+              @click="voltarParaLogin"
+            >
+              <i class="pi pi-arrow-left" />
+              Voltar para o login
             </button>
           </form>
         </Transition>
@@ -866,10 +1081,7 @@ onBeforeUnmount(() => {
   color: #64748b;
   background: #f1f5f9;
   cursor: pointer;
-  transition:
-    color 180ms ease,
-    background 180ms ease,
-    transform 180ms ease;
+  transition: color 180ms ease, background 180ms ease, transform 180ms ease;
 }
 
 .modal-close:hover:not(:disabled) {
@@ -947,9 +1159,7 @@ onBeforeUnmount(() => {
   flex: 1;
   border-radius: 10px;
   background: #e9eef3;
-  transition:
-    background 240ms ease,
-    transform 240ms ease;
+  transition: background 240ms ease, transform 240ms ease;
 }
 
 .step-indicator span.active {
@@ -983,10 +1193,7 @@ onBeforeUnmount(() => {
   border-radius: 11px;
   color: #8290a3;
   background: #fff;
-  transition:
-    border-color 180ms ease,
-    box-shadow 180ms ease,
-    background 180ms ease;
+  transition: border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
 }
 
 .input-wrap:focus-within {
@@ -1021,6 +1228,12 @@ onBeforeUnmount(() => {
   opacity: 0.65;
 }
 
+.code-input input {
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
 .password-toggle {
   display: grid;
   width: 30px;
@@ -1053,10 +1266,7 @@ onBeforeUnmount(() => {
   font-family: inherit;
   font-size: 13px;
   font-weight: 700;
-  transition:
-    transform 180ms ease,
-    box-shadow 180ms ease,
-    background 180ms ease;
+  transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
 }
 
 .primary-action:hover:not(:disabled) {
@@ -1084,7 +1294,7 @@ onBeforeUnmount(() => {
   height: 1px;
   flex: 1;
   background: #e9eef3;
-  content: '';
+  content: "";
 }
 
 .text-action,
@@ -1102,9 +1312,7 @@ onBeforeUnmount(() => {
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
-  transition:
-    color 180ms ease,
-    background 180ms ease;
+  transition: color 180ms ease, background 180ms ease;
 }
 
 .text-action:hover:not(:disabled) {
@@ -1181,10 +1389,7 @@ onBeforeUnmount(() => {
   text-align: left;
   background: #fff;
   cursor: pointer;
-  transition:
-    border-color 180ms ease,
-    background 180ms ease,
-    transform 180ms ease,
+  transition: border-color 180ms ease, background 180ms ease, transform 180ms ease,
     box-shadow 180ms ease;
 }
 
@@ -1313,9 +1518,7 @@ onBeforeUnmount(() => {
   border-radius: 11px;
   background: #f8fafc;
   cursor: pointer;
-  transition:
-    border-color 180ms ease,
-    background 180ms ease;
+  transition: border-color 180ms ease, background 180ms ease;
 }
 
 .autonomy-option:has(input:checked) {
@@ -1372,9 +1575,7 @@ onBeforeUnmount(() => {
 
 .modal-enter-active,
 .modal-leave-active {
-  transition:
-    opacity 180ms ease,
-    transform 180ms ease;
+  transition: opacity 180ms ease, transform 180ms ease;
 }
 
 .modal-enter-from,
@@ -1385,9 +1586,7 @@ onBeforeUnmount(() => {
 
 .step-enter-active,
 .step-leave-active {
-  transition:
-    opacity 150ms ease,
-    transform 150ms ease;
+  transition: opacity 150ms ease, transform 150ms ease;
 }
 
 .step-enter-from {

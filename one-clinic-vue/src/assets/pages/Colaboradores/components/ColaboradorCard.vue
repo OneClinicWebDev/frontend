@@ -29,6 +29,15 @@
               <i class="pi pi-pencil"></i>
               Editar
             </button>
+            <button
+              v-if="colaborador.status === 'ativo' && colaborador.primeiroAcessoPendente"
+              class="dropdown-item"
+              type="button"
+              @click="emitirAcao('gerar-codigo')"
+            >
+              <i class="pi pi-key"></i>
+              Gerar código de acesso
+            </button>
             <div class="dropdown-divider"></div>
             <button
               :class="[
@@ -54,6 +63,10 @@
       <div class="contact-row">
         <i class="pi pi-id-card"></i>
         <span class="font-semibold">{{ colaborador.funcao }}</span>
+      </div>
+      <div v-if="colaborador.primeiroAcessoPendente" class="contact-row">
+        <i class="pi pi-key"></i>
+        <span>Primeiro acesso pendente</span>
       </div>
       <div v-if="colaborador.roleNome === 'PROFISSIONAL'" class="contact-row">
         <i class="pi pi-calendar"></i>
@@ -133,7 +146,7 @@ const props = defineProps({
     required: true,
   },
 });
-const emit = defineEmits(["editar", "toggle-status", "detalhes"]);
+const emit = defineEmits(["editar", "toggle-status", "detalhes", "gerar-codigo"]);
 const isMenuAberto = ref(false);
 const dataCriacao = computed(() => formatarDataHora(props.colaborador.criadoEm));
 const dataAtualizacao = computed(() => formatarDataHora(props.colaborador.atualizadoEm));

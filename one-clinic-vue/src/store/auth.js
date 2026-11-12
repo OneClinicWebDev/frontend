@@ -348,6 +348,34 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
+    async primeiroAcesso(dados) {
+      const payload = {
+        cpf: String(dados.cpf || '').replace(/\D/g, ''),
+        codigo: String(dados.codigo || '')
+          .toUpperCase()
+          .replace(/[^A-Z0-9]/g, ''),
+        nova_senha: dados.nova_senha,
+        confirmar_senha: dados.confirmar_senha,
+      }
+
+      try {
+        const response = await api.post(
+          '/api/auth/primeiro-acesso/',
+          payload,
+        )
+
+        return response.data
+      } catch (error) {
+        throw new Error(
+          obterErro(
+            error,
+            'Não foi possível concluir o primeiro acesso. Verifique os dados.',
+          ),
+          { cause: error },
+        )
+      }
+    },
+
     limparSessao() {
       this.token = null
       this.refreshToken = null
