@@ -134,9 +134,11 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.02);
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
   position: relative;
+  min-width: 0;
+  box-sizing: border-box;
   font-family: "Inter", sans-serif;
 }
 .client-card:hover {
@@ -174,15 +176,15 @@ onUnmounted(() => {
 .client-avatar {
   width: 44px;
   height: 44px;
-  background: #f0fdfa;
-  color: #0f766e;
-  border: 1px solid #ccfbf1;
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  color: #475569;
+  border: 1px solid #cbd5e1;
   border-radius: 12px;
   display: flex;
   justify-content: center;
   align-items: center;
   font-weight: 600;
-  font-size: 15px;
+  font-size: 14px;
   flex-shrink: 0;
 }
 .client-name-status {
@@ -199,7 +201,7 @@ onUnmounted(() => {
   font-size: 10px;
   font-weight: 600;
   padding: 3px 8px;
-  border-radius: 999px;
+  border-radius: 6px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   display: inline-block;
@@ -244,6 +246,17 @@ onUnmounted(() => {
   min-width: 170px;
   z-index: 10;
   transform-origin: top right;
+  animation: menu-pop 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+}
+@keyframes menu-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 .dropdown-item {
   display: flex;
@@ -277,7 +290,7 @@ onUnmounted(() => {
   margin-bottom: 16px;
   background: #f8fafc;
   border: 1px solid #f1f5f9;
-  padding: 12px;
+  padding: 12px 14px;
   border-radius: 12px;
 }
 .contact-row {
@@ -322,14 +335,14 @@ onUnmounted(() => {
   font-weight: 600;
   color: #94a3b8;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
 }
 .info-value {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
   color: #334155;
 }
 .text-sm {
-  font-size: 13px;
+  font-size: 12px;
 }
 </style>

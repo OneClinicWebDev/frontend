@@ -633,7 +633,7 @@ const salvar = () => {
   max-width: 680px;
   max-height: 90vh;
   max-height: 90dvh;
-  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.35);
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -676,8 +676,8 @@ const salvar = () => {
   background: rgba(255, 255, 255, 0.08);
   border: none;
   color: #fff;
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   border-radius: 10px;
   opacity: 0.8;
   cursor: pointer;
@@ -686,7 +686,8 @@ const salvar = () => {
 }
 .btn-close:hover {
   opacity: 1;
-  background: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.18);
+  transform: scale(1.05);
 }
 .modal-tabs {
   flex-shrink: 0;
@@ -801,6 +802,9 @@ const salvar = () => {
 .form-group input:hover:not(:disabled) {
   border-color: #94a3b8;
 }
+.form-group input:hover:not(:disabled):not(:focus) {
+  background: #fff;
+}
 .form-group input:focus {
   border-color: var(--cor-primaria, #1ca4a7);
   background: #fff;
@@ -857,7 +861,7 @@ const salvar = () => {
   bottom: 4px;
   width: calc(50% - 4px);
   border-radius: 9px;
-  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.35s ease;
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.4s ease;
   z-index: 1;
 }
 .toggle-slider.ativo {
@@ -876,6 +880,7 @@ const salvar = () => {
   background: #f8fafc;
   border: 1px dashed #cbd5e1;
   border-radius: 14px;
+  margin-top: 4px;
 }
 .data-item {
   display: flex;
@@ -900,8 +905,8 @@ const salvar = () => {
   color: #334155;
 }
 .error-feedback {
-  font-size: 12px;
-  color: #dc2626;
+  font-size: 11px;
+  color: #ef4444;
   margin-top: 2px;
   opacity: 0;
   height: 0;
@@ -979,8 +984,9 @@ const salvar = () => {
   min-width: 0;
 }
 .mock-item:hover {
-  border-color: rgba(28, 164, 167, 0.45);
+  border-color: rgba(28, 164, 167, 0.4);
   background: #fff;
+  box-shadow: 0 8px 16px -4px rgba(28, 164, 167, 0.1);
 }
 .mock-icon {
   flex-shrink: 0;
@@ -1024,8 +1030,8 @@ const salvar = () => {
   white-space: nowrap;
   font-size: 10px;
   font-weight: 600;
-  padding: 4px 9px;
-  border-radius: 999px;
+  padding: 3px 8px;
+  border-radius: 6px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -1190,7 +1196,7 @@ const salvar = () => {
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   font-family: inherit;
 }
 .btn-cancelar {
@@ -1207,6 +1213,7 @@ const salvar = () => {
   background: var(--cor-primaria, #1ca4a7);
   border: 1px solid var(--cor-primaria, #1ca4a7);
   color: #fff;
+  box-shadow: 0 4px 12px rgba(28, 164, 167, 0.25);
 }
 .btn-salvar:hover {
   filter: brightness(0.95);
@@ -1215,7 +1222,7 @@ const salvar = () => {
 }
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.25s ease;
+  transition: opacity 0.3s ease;
 }
 .fade-enter-from,
 .fade-leave-to {
@@ -1223,11 +1230,11 @@ const salvar = () => {
 }
 .scale-enter-active,
 .scale-leave-active {
-  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
 }
 .scale-enter-from,
 .scale-leave-to {
-  transform: scale(0.96);
+  transform: scale(0.95);
   opacity: 0;
 }
 .fade-slide-enter-active,
@@ -1241,6 +1248,16 @@ const salvar = () => {
 .fade-slide-leave-to {
   opacity: 0;
   transform: translateY(-6px);
+}
+@media (max-width: 760px) {
+  .modal-container {
+    max-width: 100%;
+  }
+}
+@media (max-width: 640px) {
+  .modal-footer {
+    flex-wrap: wrap;
+  }
 }
 @media (max-width: 600px) {
   .modal-overlay {
