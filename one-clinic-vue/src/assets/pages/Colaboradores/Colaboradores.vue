@@ -62,58 +62,73 @@
         <StatCard :number="colaboradoresAtivos" label="Equipe Ativa" />
         <StatCard :number="colaboradoresInativos" label="Colaboradores Inativos" />
       </div>
-      <div v-if="erroCarregamento" class="error-panel">
-        <i class="pi pi-exclamation-circle"></i>
-        <div>
-          <strong>Não foi possível carregar os colaboradores</strong>
-          <p>{{ erroCarregamento }}</p>
-          <button class="btn-retry" @click="carregarColaboradores">
-            Tentar novamente
-          </button>
+      <section class="cards-section-container">
+        <div class="cards-section-header">
+          <h3><i class="pi pi-users"></i> Lista de Colaboradores</h3>
+          <span class="results-count">
+            {{ colaboradoresFiltrados.length }}
+            {{
+              colaboradoresFiltrados.length === 1
+                ? "colaborador encontrado"
+                : "colaboradores encontrados"
+            }}
+          </span>
         </div>
-      </div>
-      <div v-else-if="carregando" class="loading-state">
-        <i class="pi pi-spin pi-spinner"></i>
-        <span>Carregando colaboradores...</span>
-      </div>
-      <TransitionGroup v-else name="list" tag="div" class="collaborators-grid">
-        <ColaboradorCard
-          v-for="colaborador in colaboradoresFiltrados"
-          :key="colaborador.id"
-          :colaborador="colaborador"
-          :pode-editar="podeEditar(colaborador)"
-          :pode-alterar-status="podeAlterarStatus(colaborador)"
-          @detalhes="abrirModalDetalhes"
-          @editar="abrirModalEdicao"
-          @toggle-status="alternarStatus"
-          @gerar-codigo="gerarNovoCodigo"
-        />
-      </TransitionGroup>
-      <div
-        v-if="!carregando && !erroCarregamento && colaboradoresFiltrados.length === 0"
-        class="empty-state"
-      >
-        <i class="pi pi-users empty-icon"></i>
-        <h3>Nenhum colaborador encontrado</h3>
-        <p>
-          {{
-            searchQuery || filtroStatus !== "todos"
-              ? "Tente alterar os filtros da sua busca."
-              : "Cadastre o primeiro colaborador desta clínica."
-          }}
-        </p>
-        <button
-          v-if="!searchQuery && filtroStatus === 'todos'"
-          class="btn-empty"
-          @click="abrirModalCriacao"
-        >
-          <i class="pi pi-plus"></i>
-          Cadastrar colaborador
-        </button>
-        <button v-else class="btn-empty btn-empty-secondary" @click="limparFiltros">
-          Limpar filtros
-        </button>
-      </div>
+        <div class="cards-section-body">
+          <div v-if="erroCarregamento" class="error-panel">
+            <i class="pi pi-exclamation-circle"></i>
+            <div>
+              <strong>Não foi possível carregar os colaboradores</strong>
+              <p>{{ erroCarregamento }}</p>
+              <button class="btn-retry" @click="carregarColaboradores">
+                Tentar novamente
+              </button>
+            </div>
+          </div>
+          <div v-else-if="carregando" class="loading-state">
+            <i class="pi pi-spin pi-spinner"></i>
+            <span>Carregando colaboradores...</span>
+          </div>
+          <TransitionGroup v-else name="list" tag="div" class="collaborators-grid">
+            <ColaboradorCard
+              v-for="colaborador in colaboradoresFiltrados"
+              :key="colaborador.id"
+              :colaborador="colaborador"
+              :pode-editar="podeEditar(colaborador)"
+              :pode-alterar-status="podeAlterarStatus(colaborador)"
+              @detalhes="abrirModalDetalhes"
+              @editar="abrirModalEdicao"
+              @toggle-status="alternarStatus"
+              @gerar-codigo="gerarNovoCodigo"
+            />
+          </TransitionGroup>
+          <div
+            v-if="!carregando && !erroCarregamento && colaboradoresFiltrados.length === 0"
+            class="empty-state"
+          >
+            <i class="pi pi-users empty-icon"></i>
+            <h3>Nenhum colaborador encontrado</h3>
+            <p>
+              {{
+                searchQuery || filtroStatus !== "todos"
+                  ? "Tente alterar os filtros da sua busca."
+                  : "Cadastre o primeiro colaborador desta clínica."
+              }}
+            </p>
+            <button
+              v-if="!searchQuery && filtroStatus === 'todos'"
+              class="btn-empty"
+              @click="abrirModalCriacao"
+            >
+              <i class="pi pi-plus"></i>
+              Cadastrar colaborador
+            </button>
+            <button v-else class="btn-empty btn-empty-secondary" @click="limparFiltros">
+              Limpar filtros
+            </button>
+          </div>
+        </div>
+      </section>
     </main>
     <ColaboradorModal
       :is-open="isModalOpen"
@@ -534,23 +549,23 @@ onUnmounted(() => {
 .page-content {
   padding: 28px;
   flex-grow: 1;
-  max-width: 1600px;
+  width: min(100%, 1600px);
   margin: 0 auto;
-  width: 100%;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   gap: 24px;
 }
 .action-panel {
-  background: linear-gradient(180deg, #fff 0%, #fcfdff 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #fdfdfe 100%);
   border-radius: 20px;
   padding: 24px;
-  box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.05);
+  box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02);
   border: 1px solid #e2e8f0;
   display: flex;
   flex-direction: column;
   gap: 20px;
+  box-sizing: border-box;
 }
 .top-row {
   display: flex;
@@ -561,17 +576,19 @@ onUnmounted(() => {
 }
 .search-input-wrapper {
   position: relative;
-  flex-grow: 1;
-  max-width: 600px;
+  flex: 1 1 340px;
+  max-width: 480px;
+  min-width: 0;
   width: 100%;
 }
 .search-icon {
   position: absolute;
-  left: 18px;
+  left: 16px;
   top: 50%;
   transform: translateY(-50%);
   color: #94a3b8;
-  font-size: 15px;
+  font-size: 16px;
+  pointer-events: none;
 }
 .search-input {
   width: 100%;
@@ -582,10 +599,19 @@ onUnmounted(() => {
   border-radius: 12px;
   outline: none;
   font-size: 14px;
-  color: #334155;
+  font-weight: 500;
+  color: #0f172a;
   background-color: #f8fafc;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   font-family: inherit;
+}
+.search-input::placeholder {
+  color: #94a3b8;
+  font-weight: 400;
+}
+.search-input:hover {
+  border-color: #94a3b8;
+  background-color: #fff;
 }
 .search-input:focus {
   border-color: var(--cor-primaria, #1ca4a7);
@@ -594,31 +620,37 @@ onUnmounted(() => {
 }
 .btn-novo,
 .btn-empty {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 10px;
   background-color: var(--cor-primaria, #1ca4a7);
   color: #fff;
-  height: 48px;
-  padding: 0 24px;
-  border: none;
+  min-height: 48px;
+  padding: 0 22px;
+  border: 1px solid transparent;
   border-radius: 12px;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+  box-shadow: 0 4px 12px rgba(28, 164, 167, 0.25);
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   white-space: nowrap;
   font-family: inherit;
 }
-.btn-novo:hover,
+.btn-novo:hover:not(:disabled),
 .btn-empty:hover {
   background-color: #158a8d;
   transform: translateY(-2px);
-  box-shadow: 0 8px 16px -4px rgba(28, 164, 167, 0.3);
+  box-shadow: 0 6px 16px rgba(28, 164, 167, 0.35);
+}
+.btn-novo:focus-visible,
+.btn-empty:focus-visible {
+  outline: 3px solid rgba(28, 164, 167, 0.35);
+  outline-offset: 2px;
 }
 .btn-novo:disabled {
-  opacity: 0.55;
+  opacity: 0.6;
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
@@ -628,6 +660,8 @@ onUnmounted(() => {
   align-items: center;
   flex-wrap: wrap;
   gap: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #e2e8f0;
 }
 .filter-group {
   display: flex;
@@ -639,89 +673,138 @@ onUnmounted(() => {
   font-weight: 600;
   color: #64748b;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   display: flex;
   align-items: center;
   gap: 6px;
   white-space: nowrap;
 }
+.filter-label i {
+  color: var(--cor-primaria, #1ca4a7);
+  font-size: 13px;
+}
 .chips-container {
-  display: flex;
+  display: inline-flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  background: #f1f5f9;
 }
 .chip {
-  background-color: #f8fafc;
-  border: 1px solid #e2e8f0;
-  color: #64748b;
-  padding: 7px 16px;
-  border-radius: 20px;
+  background-color: transparent;
+  border: 1px solid transparent;
+  color: #475569;
+  min-height: 34px;
+  padding: 0 14px;
+  border-radius: 9px;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s ease;
   font-family: inherit;
 }
-.chip:hover {
-  border-color: var(--cor-primaria, #1ca4a7);
-  color: #0f766e;
-  background-color: #f0fdfa;
+.chip:hover:not(.active) {
+  color: #0f172a;
+  background-color: rgba(255, 255, 255, 0.7);
 }
 .chip.active {
-  background-color: var(--cor-primaria, #1ca4a7);
-  border-color: var(--cor-primaria, #1ca4a7);
-  color: #fff;
+  color: var(--cor-primaria, #168f92);
+  background-color: #fff;
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
 }
 .chip-status.active {
-  background-color: #334155;
-  border-color: #334155;
-  color: #fff;
+  color: #1e293b;
 }
 .divider {
   width: 1px;
-  height: 24px;
+  height: 28px;
   background-color: #e2e8f0;
 }
 .btn-limpar {
   background: none;
-  border: none;
+  border: 1px solid transparent;
   color: #dc2626;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  padding: 7px 14px;
+  padding: 8px 14px;
   border-radius: 10px;
   display: flex;
   align-items: center;
   gap: 6px;
   margin-left: auto;
-  transition: background-color 0.25s ease;
+  transition: all 0.2s ease;
   font-family: inherit;
 }
 .btn-limpar:hover {
   background-color: #fef2f2;
+  border-color: #fecaca;
 }
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 20px;
 }
+.cards-section-container {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.02);
+  box-sizing: border-box;
+}
+.cards-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 16px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #e2e8f0;
+}
+.cards-section-header h3 {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1e293b;
+}
+.cards-section-header h3 i {
+  color: var(--cor-primaria, #1ca4a7);
+}
+.results-count {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 4px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
 .collaborators-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 20px;
+  width: 100%;
+  position: relative;
 }
 .loading-state {
-  min-height: 220px;
+  min-height: 180px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 12px;
   color: #64748b;
-  font-size: 14px;
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 500;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 14px;
 }
 .loading-state i {
   color: var(--cor-primaria, #1ca4a7);
@@ -732,43 +815,55 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 56px 24px;
+  padding: 40px 20px;
   color: #64748b;
-  gap: 10px;
+  gap: 4px;
   text-align: center;
   background: #f8fafc;
   border-radius: 14px;
-  border: 2px dashed #cbd5e1;
+  border: 1px dashed #cbd5e1;
 }
 .empty-state h3,
 .empty-state p {
   margin: 0;
 }
 .empty-state h3 {
-  color: #334155;
-  font-size: 16px;
+  color: #0f172a;
+  font-size: 15px;
   font-weight: 600;
 }
 .empty-state p {
   max-width: 440px;
-  font-size: 13px;
+  font-size: 12px;
   line-height: 1.6;
+  color: #64748b;
 }
 .empty-icon {
-  font-size: 44px;
-  color: #cbd5e1;
-  margin-bottom: 4px;
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: #e2e8f0;
+  font-size: 24px;
+  color: #64748b;
+  margin-bottom: 12px;
 }
 .btn-empty {
-  margin-top: 10px;
+  margin-top: 18px;
+  min-height: 44px;
+  font-size: 13px;
 }
 .btn-empty-secondary {
   color: #475569;
-  background: #f1f5f9;
+  background: #fff;
+  border-color: #cbd5e1;
+  box-shadow: none;
 }
-.btn-empty-secondary:hover {
-  color: #334155;
-  background: #e2e8f0;
+.btn-empty-secondary:hover:not(:disabled) {
+  color: #0f172a;
+  background: #f1f5f9;
+  border-color: #94a3b8;
   box-shadow: none;
 }
 .error-panel {
@@ -780,6 +875,7 @@ onUnmounted(() => {
   background: #fef2f2;
   border: 1px solid #fecaca;
   border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.02);
 }
 .error-panel > i {
   font-size: 22px;
@@ -788,6 +884,7 @@ onUnmounted(() => {
 .error-panel strong {
   display: block;
   margin-bottom: 6px;
+  font-size: 15px;
   font-weight: 600;
 }
 .error-panel p {
@@ -797,42 +894,43 @@ onUnmounted(() => {
 }
 .btn-retry {
   margin-top: 14px;
-  height: 38px;
-  padding: 0 16px;
+  height: 40px;
+  padding: 0 18px;
   border: 1px solid #fecaca;
-  border-radius: 10px;
+  border-radius: 12px;
   color: #b91c1c;
   background: #fff;
   cursor: pointer;
   font: inherit;
   font-size: 13px;
   font-weight: 600;
-  transition: all 0.25s ease;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .btn-retry:hover {
   background: #fee2e2;
+  transform: translateY(-1px);
 }
 .toast-notification {
   position: fixed;
-  bottom: 28px;
-  right: 28px;
-  max-width: min(480px, calc(100vw - 32px));
+  bottom: 24px;
+  right: 24px;
+  max-width: min(420px, calc(100vw - 32px));
   background: #fff;
-  color: #334155;
-  padding: 14px 16px;
-  border-radius: 14px;
+  color: #065f46;
+  padding: 15px 18px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   gap: 12px;
-  box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.12);
-  border: 1px solid #a7f3d0;
+  box-shadow: 0 12px 35px rgba(15, 23, 42, 0.14);
+  border: 1px solid #d1fae5;
   z-index: 3000;
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 600;
   line-height: 1.5;
 }
 .toast-notification.error {
-  background: #fef2f2;
+  background: #fff;
   color: #b91c1c;
   border-color: #fecaca;
 }
@@ -844,18 +942,21 @@ onUnmounted(() => {
   opacity: 0.6;
   cursor: pointer;
   padding: 4px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
 }
 .toast-close:hover {
   opacity: 1;
+  background: #f1f5f9;
 }
 .list-enter-active,
 .list-leave-active {
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  transition: all 0.35s ease;
 }
 .list-enter-from,
 .list-leave-to {
   opacity: 0;
-  transform: translateY(16px);
+  transform: translateY(12px);
 }
 .list-leave-active {
   position: absolute;
@@ -869,6 +970,11 @@ onUnmounted(() => {
   opacity: 0;
   transform: translateY(14px) scale(0.98);
 }
+@media (max-width: 1024px) {
+  .filters-row {
+    gap: 16px;
+  }
+}
 @media (max-width: 992px) {
   .top-row {
     flex-direction: column;
@@ -876,6 +982,7 @@ onUnmounted(() => {
   }
   .search-input-wrapper {
     max-width: 100%;
+    flex-basis: auto;
   }
   .btn-novo {
     width: 100%;
@@ -887,12 +994,12 @@ onUnmounted(() => {
     gap: 16px;
   }
   .action-panel {
-    padding: 16px;
+    padding: 18px;
   }
   .filters-row {
     flex-direction: column;
     align-items: flex-start;
-    gap: 20px;
+    gap: 16px;
   }
   .filter-group {
     flex-direction: column;
@@ -913,6 +1020,23 @@ onUnmounted(() => {
   .toast-notification {
     right: 16px;
     bottom: 16px;
+  }
+}
+@media (max-width: 640px) {
+  .cards-section-container {
+    padding: 16px;
+  }
+  .cards-section-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .chips-container {
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .chip {
+    flex: 1;
+    padding: 0 10px;
   }
 }
 </style>

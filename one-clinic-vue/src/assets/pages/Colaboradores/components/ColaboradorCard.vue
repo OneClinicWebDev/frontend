@@ -195,15 +195,17 @@ onUnmounted(() => {
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap");
 .collaborator-card {
   min-width: 0;
+  box-sizing: border-box;
   background-color: #fff;
   border: 1px solid #e2e8f0;
   border-radius: 16px;
-  padding: 22px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
   box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.02);
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
+  position: relative;
   font-family: "Inter", sans-serif;
 }
 .collaborator-card:hover {
@@ -211,31 +213,45 @@ onUnmounted(() => {
   box-shadow: 0 12px 20px -4px rgba(28, 164, 167, 0.12);
   border-color: rgba(28, 164, 167, 0.4);
 }
+.collaborator-card::before {
+  content: "";
+  position: absolute;
+  top: 16px;
+  bottom: 16px;
+  left: 0;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: transparent;
+  transition: background 0.25s;
+}
+.collaborator-card:hover::before {
+  background: var(--cor-primaria, #1ca4a7);
+}
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: 12px;
-  margin-bottom: 20px;
+  margin-bottom: 18px;
 }
 .collaborator-info-main {
   display: flex;
-  gap: 14px;
+  gap: 12px;
   align-items: center;
   min-width: 0;
 }
 .collaborator-avatar {
-  width: 48px;
-  height: 48px;
-  background-color: #f0fdfa;
-  color: var(--cor-primaria, #1ca4a7);
-  border: 1px solid #ccfbf1;
-  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%);
+  color: #0f766e;
+  border: 1px solid #99f6e4;
+  border-radius: 12px;
   display: flex;
   justify-content: center;
   align-items: center;
   font-weight: 600;
-  font-size: 15px;
+  font-size: 14px;
   flex-shrink: 0;
 }
 .collaborator-name-status {
@@ -250,11 +266,12 @@ onUnmounted(() => {
   margin: 0 0 6px;
 }
 .status-badge {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
-  padding: 3px 10px;
-  border-radius: 20px;
+  padding: 3px 8px;
+  border-radius: 6px;
   display: inline-block;
+  white-space: nowrap;
 }
 .badge-ativo {
   background-color: #ecfdf5;
@@ -275,13 +292,17 @@ onUnmounted(() => {
   border: none;
   color: #94a3b8;
   cursor: pointer;
-  padding: 8px;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  padding: 0;
   border-radius: 10px;
   font-size: 15px;
-  transition: all 0.25s ease;
+  transition: all 0.2s ease;
 }
 .btn-dots:hover {
-  color: #334155;
+  color: #0f172a;
   background-color: #f1f5f9;
 }
 .dropdown-menu {
@@ -291,9 +312,9 @@ onUnmounted(() => {
   background: #fff;
   border: 1px solid #e2e8f0;
   border-radius: 14px;
-  box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.12);
+  box-shadow: 0 12px 30px -6px rgba(15, 23, 42, 0.16);
   padding: 6px;
-  min-width: 190px;
+  min-width: 200px;
   z-index: 20;
   transform-origin: top right;
 }
@@ -336,23 +357,22 @@ onUnmounted(() => {
   background: #ecfdf5;
 }
 .dropdown-divider {
-  height: 1px;
-  background-color: #f1f5f9;
-  margin: 4px 0;
+  border-top: 1px dashed #e2e8f0;
+  margin: 4px 6px;
 }
 .collaborator-contact {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-bottom: 20px;
+  gap: 10px;
+  margin-bottom: 18px;
   min-height: 76px;
 }
 .contact-row {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
+  gap: 10px;
   color: #64748b;
-  font-size: 13px;
+  font-size: 12px;
   line-height: 1.5;
 }
 .tags-row {
@@ -366,23 +386,24 @@ onUnmounted(() => {
 .badge-especialidade {
   background-color: #f0fdfa;
   color: #0f766e;
-  font-size: 11px;
-  font-weight: 500;
-  padding: 3px 10px;
-  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
   border: 1px solid #ccfbf1;
 }
 .contact-row i {
   color: #94a3b8;
-  font-size: 14px;
+  font-size: 13px;
   width: 16px;
   text-align: center;
   flex-shrink: 0;
-  margin-top: 3px;
+  margin-top: 2px;
 }
 .font-semibold {
   font-weight: 600;
-  color: #334155;
+  font-size: 13px;
+  color: #0f172a;
 }
 .card-divider {
   width: 100%;
@@ -400,13 +421,13 @@ onUnmounted(() => {
 .footer-infos {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px 24px;
+  gap: 12px 20px;
   min-width: 0;
 }
 .footer-info {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
   min-width: 0;
 }
 .info-label {
@@ -414,18 +435,20 @@ onUnmounted(() => {
   font-weight: 600;
   color: #94a3b8;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
 }
 .info-value {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
   overflow-wrap: anywhere;
 }
 .value-active {
   color: #047857;
+  font-weight: 600;
 }
 .value-inactive {
   color: #64748b;
+  font-weight: 600;
 }
 .value-date {
   color: #334155;
@@ -451,6 +474,7 @@ onUnmounted(() => {
   background: var(--cor-primaria, #1ca4a7);
   border-color: var(--cor-primaria, #1ca4a7);
   color: #fff;
+  box-shadow: 0 4px 12px rgba(28, 164, 167, 0.25);
   transform: translateY(-1px);
 }
 .menu-enter-active,
@@ -462,6 +486,11 @@ onUnmounted(() => {
   opacity: 0;
   transform: translateY(-5px) scale(0.98);
 }
+@media (max-width: 640px) {
+  .card-footer {
+    flex-wrap: wrap;
+  }
+}
 @media (max-width: 380px) {
   .collaborator-card {
     padding: 16px;
@@ -470,9 +499,9 @@ onUnmounted(() => {
     gap: 10px;
   }
   .collaborator-avatar {
-    width: 42px;
-    height: 42px;
-    font-size: 14px;
+    width: 40px;
+    height: 40px;
+    font-size: 13px;
   }
   .collaborator-name {
     font-size: 14px;
