@@ -289,8 +289,8 @@ watch(
   justify-content: center;
   padding: 1rem;
   box-sizing: border-box;
-  background: rgba(4, 31, 46, 0.42);
-  backdrop-filter: blur(5px);
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(6px);
   font-family: Inter, sans-serif;
 }
 
@@ -301,10 +301,10 @@ watch(
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border: 1px solid #e8edf2;
-  border-radius: 18px;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
   background: #fff;
-  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.22);
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
 }
 
 .modal-header {

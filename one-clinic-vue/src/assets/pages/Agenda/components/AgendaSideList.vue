@@ -75,9 +75,10 @@ const formatStatus = (status) => {
 <style scoped>
 .action-panel {
   box-sizing: border-box;
-  background-color: #ffffff;
+  background: linear-gradient(135deg, #ffffff 0%, #fdfdfe 100%);
   border-radius: 20px;
-  padding: 20px;
+  padding: 24px;
+  font-family: "Inter", sans-serif;
   box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02);
   border: 1px solid #e2e8f0;
   display: flex;
@@ -131,16 +132,16 @@ const formatStatus = (status) => {
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  padding: 14px;
+  padding: 16px;
   background-color: #ffffff;
   border: 1px solid #e2e8f0;
-  border-radius: 14px;
+  border-radius: 16px;
   box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.02);
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .appointment-card:hover {
-  transform: translateY(-3px);
+  transform: translateY(-4px);
   box-shadow: 0 12px 20px -4px rgba(28, 164, 167, 0.12);
   border-color: rgba(28, 164, 167, 0.4);
 }
@@ -178,6 +179,8 @@ const formatStatus = (status) => {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  padding-top: 10px;
+  border-top: 1px dashed #e2e8f0;
   font-size: 12px;
   color: #64748b;
 }
@@ -191,8 +194,8 @@ const formatStatus = (status) => {
   font-size: 11px;
 }
 .status-badge {
-  padding: 3px 9px;
-  border-radius: 999px;
+  padding: 3px 8px;
+  border-radius: 6px;
   border: 1px solid transparent;
   font-size: 10px;
   font-weight: 600;

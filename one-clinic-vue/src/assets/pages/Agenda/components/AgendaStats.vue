@@ -32,33 +32,35 @@ defineProps({
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 1.25rem;
+  gap: 20px;
 }
 .stat-card {
   background-color: var(--branco);
-  border: 1px solid var(--cor-clara);
-  border-radius: 12px;
-  padding: 1.25rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+  box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.02);
   transition: transform 0.3s ease, border-color 0.3s ease;
 }
 .stat-card:hover {
-  transform: translateY(-3px);
+  transform: translateY(-2px);
   border-color: var(--cor-primaria);
 }
 .stat-number {
   font-size: 1.8rem;
   font-weight: 600;
-  color: var(--cor-escura);
-  margin: 0 0 0.2rem 0;
+  color: #0f172a;
+  margin: 0 0 4px 0;
 }
 .stat-label {
-  font-size: 0.85rem;
-  color: var(--cor-secundaria);
-  font-weight: 500;
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   margin: 0;
 }
 .text-success {
@@ -70,9 +72,15 @@ defineProps({
 .text-danger {
   color: #ef4444 !important;
 }
-@media (max-width: 992px) {
+@media (max-width: 1024px) {
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 640px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
   }
 }
 </style>

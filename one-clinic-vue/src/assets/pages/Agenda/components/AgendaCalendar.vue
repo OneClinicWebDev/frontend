@@ -29,9 +29,9 @@ defineExpose({ changeView });
 <style scoped>
 .action-panel {
   box-sizing: border-box;
-  background-color: #ffffff;
+  background: linear-gradient(135deg, #ffffff 0%, #fdfdfe 100%);
   border-radius: 20px;
-  padding: 20px;
+  padding: 24px;
   box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02);
   border: 1px solid #e2e8f0;
   display: flex;
@@ -39,7 +39,7 @@ defineExpose({ changeView });
   gap: 16px;
 }
 :deep(.fc) {
-  font-family: inherit;
+  font-family: "Inter", sans-serif;
 }
 :deep(.fc-toolbar-title) {
   font-size: 1.1rem !important;
@@ -53,8 +53,8 @@ defineExpose({ changeView });
   box-shadow: none !important;
   font-weight: 600 !important;
   font-size: 0.8rem !important;
-  border-radius: 10px !important;
-  padding: 7px 14px !important;
+  border-radius: 12px !important;
+  padding: 9px 16px !important;
   text-transform: capitalize;
   transition: all 0.2s ease;
 }
@@ -67,15 +67,17 @@ defineExpose({ changeView });
   background: var(--cor-primaria, #1ca4a7) !important;
   color: #ffffff !important;
   border-color: var(--cor-primaria, #1ca4a7) !important;
+  box-shadow: 0 4px 12px rgba(28, 164, 167, 0.25) !important;
 }
 :deep(.fc-button-group > .fc-button) {
-  border-radius: 10px !important;
+  border-radius: 12px !important;
   margin-right: 4px;
 }
 :deep(.fc-scrollgrid) {
   border-color: #e2e8f0 !important;
-  border-radius: 14px;
+  border-radius: 16px;
   overflow: hidden;
+  border: 1px solid #e2e8f0 !important;
 }
 :deep(.fc-theme-standard td),
 :deep(.fc-theme-standard th) {
@@ -85,7 +87,9 @@ defineExpose({ changeView });
   background-color: #f8fafc;
   padding: 8px 0;
   font-weight: 600;
-  font-size: 0.8rem;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   color: #64748b;
 }
 :deep(.fc-timegrid-slot-label) {
@@ -101,7 +105,7 @@ defineExpose({ changeView });
   border-left-width: 3px !important;
 }
 :deep(.fc-v-event:hover) {
-  transform: scale(1.01);
+  transform: translateY(-1px);
   z-index: 5 !important;
   box-shadow: 0 4px 8px rgba(15, 23, 42, 0.08);
 }
@@ -110,7 +114,10 @@ defineExpose({ changeView });
   font-size: 0.75rem;
 }
 :deep(.fc-day-today) {
-  background-color: rgba(28, 164, 167, 0.04) !important;
+  background-color: rgba(28, 164, 167, 0.06) !important;
+}
+:deep(.fc-day-today .fc-col-header-cell-cushion) {
+  color: var(--cor-primaria, #1ca4a7);
 }
 @media (max-width: 768px) {
   .action-panel {
