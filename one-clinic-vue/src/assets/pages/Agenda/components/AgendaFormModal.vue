@@ -168,9 +168,15 @@
                           v-for="modelo in modelosAtivos"
                           :key="'m' + modelo.id"
                           :value="'m:' + modelo.id"
+                          :disabled="modeloJaAdquirido(modelo)"
                         >
                           {{ modelo.nome }} — {{ modelo.quantidade_sessoes }} sessões —
                           {{ formatarMoeda(modelo.valor_total) }}
+                          {{
+                            modeloJaAdquirido(modelo)
+                              ? " (cliente já possui este pacote ativo)"
+                              : ""
+                          }}
                         </option>
                       </optgroup>
                     </select>
@@ -519,6 +525,8 @@ const pacotesCarregando = ref(false);
 const pacotesIndisponivel = ref(false);
 const origemInicial = ref({ cliente: "", servico: "", pacote: "" });
 const modelosPacote = ref([]);
+const modelosComPacoteAtivo = ref([]);
+let tokenModelosAtivos = 0;
 const modelosCarregados = ref(false);
 const modeloSelecionado = ref("");
 const vendendo = ref(false);
@@ -543,7 +551,7 @@ const rotuloFuncao = (funcao) => rotulosFuncao[funcao] || "Profissional";
 const normalizarTexto = (valor) =>
   String(valor ?? "")
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[̀-ͯ]/g, "")
     .toLocaleLowerCase("pt-BR")
     .trim();
 const apenasNumeros = (valor) => String(valor ?? "").replace(/\D/g, "");
@@ -784,6 +792,27 @@ const sugerirFim = () => {
   );
   if (sugestao) props.form.horaFim = sugestao;
 };
+const modeloJaAdquirido = (modelo) =>
+  modelosComPacoteAtivo.value.includes(String(modelo.id));
+const carregarModelosComPacoteAtivo = async () => {
+  const cliente = clienteEscolhido.value?.id;
+  const token = ++tokenModelosAtivos;
+  modelosComPacoteAtivo.value = [];
+  if (!cliente || bloqueado.value || props.editing) return;
+  try {
+    const dados = await listarPacotes({ cliente, status: "ATIVO" });
+    if (token !== tokenModelosAtivos) return;
+    modelosComPacoteAtivo.value = dados
+      .filter((pacote) => pacote.modelo)
+      .map((pacote) => String(pacote.modelo));
+    if (modelosComPacoteAtivo.value.includes(String(modeloSelecionado.value))) {
+      modeloSelecionado.value = "";
+    }
+  } catch (erro) {
+    if (token !== tokenModelosAtivos) return;
+    modelosComPacoteAtivo.value = [];
+  }
+};
 const carregarPacotes = async () => {
   const cliente = clienteEscolhido.value?.id;
   const servico = servicoSelecionado.value;
@@ -852,6 +881,7 @@ const sincronizarFormulario = () => {
   modeloSelecionado.value = "";
   carregarModelos();
   carregarPacotes();
+  carregarModelosComPacoteAtivo();
   nextTick(() => {
     sincronizando.value = false;
   });
@@ -899,6 +929,7 @@ const salvar = async () => {
       });
       modeloSelecionado.value = "";
       await carregarPacotes();
+      await carregarModelosComPacoteAtivo();
       props.form.pacote_id = String(novo.id);
     } catch (erro) {
       falhou = true;
@@ -950,6 +981,7 @@ watch(
   () => {
     if (!props.isOpen || sincronizando.value) return;
     carregarPacotes();
+    carregarModelosComPacoteAtivo();
   }
 );
 watch(
