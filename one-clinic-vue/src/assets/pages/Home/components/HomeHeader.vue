@@ -10,10 +10,6 @@ defineEmits(["open-colaborador", "open-cliente"]);
     <div class="container header-content">
       <div class="logo">
         <img :src="LOGO_URL" alt="One Clinic Logo" class="logo-img-main" />
-        <span class="logo-text">
-          <span class="logo-one">ONE</span>
-          <span class="logo-clinic">clinic</span>
-        </span>
       </div>
       <nav class="nav-desktop">
         <a href="#recursos" class="nav-link">Recursos</a>
