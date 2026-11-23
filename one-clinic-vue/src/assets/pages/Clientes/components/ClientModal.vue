@@ -422,12 +422,15 @@
 import { ref, watch, computed } from "vue";
 import { obterHistoricoCliente, listarSessoesPacote } from "@/services/agendamentos";
 import { formatarDataHora } from "@/utils/datas";
+
 const props = defineProps({
   isOpen: Boolean,
   mode: String,
   clienteEdicao: Object,
 });
+
 const emit = defineEmits(["close", "save", "notify"]);
+
 const activeTab = ref("cadastro");
 const formRef = ref(null);
 const foiValidado = ref(false);
@@ -436,6 +439,7 @@ const pacoteAberto = ref(null);
 const sessoesPacote = ref({});
 const carregandoSessoes = ref(false);
 const carregandoExtras = ref(false);
+
 const form = ref({
   id: null,
   nome: "",
@@ -445,18 +449,24 @@ const form = ref({
   numero: "",
   status_cadastro: "ATIVO",
 });
+
 const exibicaoCpf = ref("");
 const exibicaoTelefone = ref("");
 const exibicaoCep = ref("");
+
 const tituloModal = computed(() => {
   if (props.mode === "detalhes") return "Perfil do Cliente";
   if (props.mode === "editar") return "Editar Cliente";
   return "Novo Cliente";
 });
+
 const isDetalhes = computed(() => props.mode === "detalhes");
+
 const carregarExtras = async () => {
   if (!props.clienteEdicao?.id) return;
+
   carregandoExtras.value = true;
+
   try {
     historico.value = await obterHistoricoCliente(props.clienteEdicao.id);
   } catch (error) {
@@ -465,35 +475,45 @@ const carregarExtras = async () => {
     carregandoExtras.value = false;
   }
 };
+
 const classeSessao = (status) => {
   if (status === "UTILIZADA") return "badge-concluido";
   if (status === "PERDIDA" || status === "CANCELADA") return "badge-cancelado";
   return "badge-ativo";
 };
+
 const alternarPacote = async (id) => {
   if (pacoteAberto.value === id) {
     pacoteAberto.value = null;
     return;
   }
+
   pacoteAberto.value = id;
   carregandoSessoes.value = true;
+
   try {
-    sessoesPacote.value = { ...sessoesPacote.value, [id]: await listarSessoesPacote(id) };
+    sessoesPacote.value = {
+      ...sessoesPacote.value,
+      [id]: await listarSessoesPacote(id),
+    };
   } catch (error) {
     emit("notify", { message: "Erro ao buscar as sessões do pacote.", type: "error" });
   } finally {
     carregandoSessoes.value = false;
   }
 };
+
 const rotuloAtendimento = (ag) => {
   if (ag.resultado === "FALTA") return "FALTA";
   return ag.status;
 };
+
 const classeAtendimento = (ag) => {
   if (ag.resultado === "FALTA" || ag.status === "CANCELADO") return "badge-cancelado";
   if (ag.status === "CONCLUIDO") return "badge-concluido";
   return "badge-ativo";
 };
+
 const aplicarMascaraCpf = (v) => {
   if (!v) return "";
   v = v.replace(/\D/g, "");
@@ -504,6 +524,7 @@ const aplicarMascaraCpf = (v) => {
   }
   return v;
 };
+
 const aplicarMascaraTelefone = (v) => {
   if (!v) return "";
   v = v.replace(/\D/g, "");
@@ -513,6 +534,7 @@ const aplicarMascaraTelefone = (v) => {
   }
   return v;
 };
+
 const aplicarMascaraCep = (v) => {
   if (!v) return "";
   v = v.replace(/\D/g, "");
@@ -521,26 +543,31 @@ const aplicarMascaraCep = (v) => {
   }
   return v;
 };
+
 const processarCpf = (event) => {
   let num = event.target.value.replace(/\D/g, "").slice(0, 11);
   exibicaoCpf.value = aplicarMascaraCpf(num);
   form.value.cpf = exibicaoCpf.value;
 };
+
 const processarTelefone = (event) => {
   let num = event.target.value.replace(/\D/g, "").slice(0, 11);
   exibicaoTelefone.value = aplicarMascaraTelefone(num);
   form.value.telefone = exibicaoTelefone.value;
 };
+
 const processarCep = (event) => {
   let num = event.target.value.replace(/\D/g, "").slice(0, 8);
   exibicaoCep.value = aplicarMascaraCep(num);
   form.value.cep = exibicaoCep.value;
 };
+
 const processarNumero = (event) => {
   let num = event.target.value.replace(/\D/g, "").slice(0, 4);
   form.value.numero = num;
   event.target.value = num;
 };
+
 watch(
   () => props.isOpen,
   (aberto) => {
@@ -550,17 +577,19 @@ watch(
       pacoteAberto.value = null;
       sessoesPacote.value = {};
       foiValidado.value = false;
+
       if (props.clienteEdicao && props.mode !== "criar") {
         form.value = {
           id: props.clienteEdicao.id,
           nome: props.clienteEdicao.usuario_nome || "",
-          cpf: props.clienteEdicao.usuario_cpf || "",
+          cpf: "",
           telefone: props.clienteEdicao.telefone || "",
           cep: props.clienteEdicao.cep || "",
           numero: props.clienteEdicao.numero_endereco || "",
           status_cadastro: props.clienteEdicao.status_cadastro || "ATIVO",
         };
-        exibicaoCpf.value = aplicarMascaraCpf(form.value.cpf);
+
+        exibicaoCpf.value = props.clienteEdicao.usuario_cpf || "";
         exibicaoTelefone.value = aplicarMascaraTelefone(form.value.telefone);
         exibicaoCep.value = aplicarMascaraCep(form.value.cep);
       } else {
@@ -573,6 +602,7 @@ watch(
           numero: "",
           status_cadastro: "ATIVO",
         };
+
         exibicaoCpf.value = "";
         exibicaoTelefone.value = "";
         exibicaoCep.value = "";
@@ -580,6 +610,7 @@ watch(
     }
   }
 );
+
 watch(activeTab, (newTab) => {
   if (
     (newTab === "historico" || newTab === "pacotes") &&
@@ -589,21 +620,28 @@ watch(activeTab, (newTab) => {
     carregarExtras();
   }
 });
+
 const fechar = () => {
   emit("close");
 };
+
 const salvar = () => {
   if (isDetalhes.value) return;
+
   if (formRef.value && !formRef.value.checkValidity()) {
     foiValidado.value = true;
+
     emit("notify", {
       message: "Por favor, corrija os campos em vermelho para prosseguir.",
       type: "error",
     });
+
     const firstInvalid = formRef.value.querySelector(":invalid");
     if (firstInvalid) firstInvalid.focus();
+
     return;
   }
+
   emit("save", { ...form.value });
 };
 </script>

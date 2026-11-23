@@ -121,6 +121,7 @@ import { ref, computed, onMounted } from "vue";
 import api from "@/services/api";
 import ClientCard from "./components/ClientCard.vue";
 import ClientModal from "./components/ClientModal.vue";
+
 const clientes = ref([]);
 const carregando = ref(false);
 const searchQuery = ref("");
@@ -130,16 +131,19 @@ const isModalOpen = ref(false);
 const modalMode = ref("criar");
 const clienteSelecionado = ref(null);
 const toast = ref({ show: false, message: "", type: "success" });
+
 const camposBusca = [
   { label: "Nome", value: "nome" },
   { label: "CPF", value: "cpf" },
   { label: "Telefone", value: "telefone" },
 ];
+
 const statusBusca = [
   { label: "Todos", value: "todos" },
   { label: "Ativos", value: "ATIVO" },
   { label: "Inativos", value: "INATIVO" },
 ];
+
 const buscarClientes = async () => {
   carregando.value = true;
   try {
@@ -151,22 +155,28 @@ const buscarClientes = async () => {
     carregando.value = false;
   }
 };
+
 onMounted(() => {
   buscarClientes();
 });
+
 const totalClientes = computed(() => clientes.value.length);
+
 const clientesAtivos = computed(
   () => clientes.value.filter((c) => c.status_cadastro === "ATIVO").length
 );
+
 const clientesInativos = computed(
   () => clientes.value.filter((c) => c.status_cadastro === "INATIVO").length
 );
+
 const placeholderBusca = computed(() => {
   const campos = camposBusca
     .filter((c) => camposAtivos.value.includes(c.value))
     .map((c) => c.label);
   return `Buscar por ${campos.join(", ")}...`;
 });
+
 const temFiltroAtivo = computed(() => {
   return (
     searchQuery.value.length > 0 ||
@@ -175,6 +185,7 @@ const temFiltroAtivo = computed(() => {
     filtroStatus.value !== "todos"
   );
 });
+
 const toggleCampo = (campo) => {
   const index = camposAtivos.value.indexOf(campo);
   if (index === -1) {
@@ -185,76 +196,96 @@ const toggleCampo = (campo) => {
     }
   }
 };
+
 const limparFiltros = () => {
   camposAtivos.value = ["nome"];
   filtroStatus.value = "todos";
   searchQuery.value = "";
 };
+
 const clientesFiltrados = computed(() => {
   let resultado = clientes.value;
+
   if (filtroStatus.value !== "todos") {
     resultado = resultado.filter((c) => c.status_cadastro === filtroStatus.value);
   }
+
   if (!searchQuery.value || camposAtivos.value.length === 0) {
     return resultado;
   }
+
   const queryLimpa = searchQuery.value.toLowerCase().replace(/\D/g, "");
   const queryNormal = searchQuery.value.toLowerCase();
+
   return resultado.filter((c) => {
     return camposAtivos.value.some((campo) => {
       if (campo === "cpf") {
         const valorLimpo = String(c.usuario_cpf || "").replace(/\D/g, "");
         return valorLimpo.includes(queryLimpa);
       }
+
       if (campo === "telefone") {
         const valorLimpo = String(c.telefone || "").replace(/\D/g, "");
         return valorLimpo.includes(queryLimpa);
       }
+
       if (campo === "nome") {
         const valor = String(c.usuario_nome || "").toLowerCase();
         return valor.includes(queryNormal);
       }
+
       return false;
     });
   });
 });
+
 const dispararToast = (mensagem, tipo = "success") => {
   toast.value = { show: true, message: mensagem, type: tipo };
   setTimeout(() => {
     toast.value.show = false;
   }, 3500);
 };
+
 const receberNotificacaoModal = (evento) => {
   dispararToast(evento.message, evento.type);
 };
+
 const abrirModalCriacao = () => {
   modalMode.value = "criar";
   clienteSelecionado.value = null;
   isModalOpen.value = true;
 };
+
 const abrirModalEdicao = (cliente) => {
   modalMode.value = "editar";
   clienteSelecionado.value = cliente;
   isModalOpen.value = true;
 };
+
 const abrirModalDetalhes = (cliente) => {
   modalMode.value = "detalhes";
   clienteSelecionado.value = cliente;
   isModalOpen.value = true;
 };
+
 const fecharModal = () => {
   isModalOpen.value = false;
   clienteSelecionado.value = null;
 };
+
 const salvarCliente = async (dadosForm) => {
   const payload = {
     nome_completo: dadosForm.nome,
-    cpf: dadosForm.cpf.replace(/\D/g, ""),
     telefone: dadosForm.telefone.replace(/\D/g, ""),
     cep: dadosForm.cep.replace(/\D/g, ""),
     numero_endereco: dadosForm.numero,
     status_cadastro: dadosForm.status_cadastro,
   };
+
+  if (!dadosForm.id) {
+    payload.cpf = dadosForm.cpf.replace(/\D/g, "");
+  }
+
   try {
     if (dadosForm.id) {
       await api.patch(`/api/clientes/${dadosForm.id}/`, payload);
@@ -263,6 +294,7 @@ const salvarCliente = async (dadosForm) => {
       await api.post("/api/clientes/", payload);
       dispararToast(`Cliente cadastrado com sucesso!`);
     }
+
     fecharModal();
     buscarClientes();
   } catch (error) {
@@ -270,11 +302,14 @@ const salvarCliente = async (dadosForm) => {
     const msg = erroAPI
       ? Object.values(erroAPI).flat()[0]
       : "Erro ao processar solicitação.";
+
     dispararToast(msg, "error");
   }
 };
+
 const alternarStatus = async (cliente) => {
   const novoStatus = cliente.status_cadastro === "ATIVO" ? "INATIVO" : "ATIVO";
+
   try {
     await api.patch(`/api/clientes/${cliente.id}/`, { status_cadastro: novoStatus });
     dispararToast(`Status do cliente atualizado para ${novoStatus}.`);
